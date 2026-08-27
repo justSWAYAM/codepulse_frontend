@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* ── Design Tokens (Section 3) ── */
+@theme {
+  --color-background: #FAFAF8;
+  --color-surface: #FFFFFF;
+  --color-ink: #1B1E3A;
+  --color-accent-compile: #2F9E6E;
+  --color-accent-compile-hover: #278a5e;
+  --color-accent-syntax: #E8A33D;
+  --color-accent-error: #E85D4E;
+  --color-hairline: #E4E2DC;
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ── Base ── */
+html {
+  background-color: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* ── Typography utility classes ── */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Smooth scroll (Lenis overrides the default) ── */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: var(--color-accent-compile);
+  color: white;
+}
