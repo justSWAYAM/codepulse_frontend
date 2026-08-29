@@ -18,7 +18,7 @@ export interface UserRecord {
   email: string;
   fullName: string;
   role: UserRole;
-  active: boolean;
+  isActive: boolean;
   createdAt: string;
   rollNumber?: string;
 }
@@ -60,7 +60,7 @@ export interface UserProfile {
   email: string;
   fullName: string;
   role: UserRole;
-  active: boolean;
+  isActive: boolean;
   createdAt: string;
 }
 
@@ -83,8 +83,13 @@ export const userApi = {
     search?: string;
     role?: UserRole;
   }): Promise<UsersResponse> => {
-    const { data } = await apiClient.get<ApiWrapper<UsersResponse>>('/users', { params });
-    return data.data;
+    const { data } = await apiClient.get<ApiWrapper<any>>('/users', { params });
+    return {
+      users: data.data.content,
+      total: data.data.totalElements,
+      page: data.data.pageNumber,
+      pageSize: data.data.pageSize,
+    };
   },
 
   createUser: async (payload: CreateUserPayload): Promise<UserRecord> => {

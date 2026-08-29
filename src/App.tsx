@@ -7,6 +7,9 @@ import AppShell from './layouts/AppShell';
 import DashboardHome from './pages/DashboardHome';
 import UserManagementPage from './pages/UserManagementPage';
 import ProfilePage from './pages/ProfilePage';
+import ContestListPage from './pages/ContestListPage';
+import ContestCreatePage from './pages/ContestCreatePage';
+import ContestDetailPage from './pages/ContestDetailPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -36,6 +39,18 @@ const App: React.FC = () => {
               }
             />
             <Route path="profile" element={<ProfilePage />} />
+
+            {/* Contest routes */}
+            <Route path="contests" element={<ContestListPage />} />
+            <Route
+              path="contests/new"
+              element={
+                <ProtectedRoute roles={['ADMIN']}>
+                  <ContestCreatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="contests/:id" element={<ContestDetailPage />} />
           </Route>
 
           {/* Catch-all → redirect to landing */}
@@ -47,3 +62,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

@@ -70,7 +70,7 @@ apiClient.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        const newToken = data.accessToken;
+        const newToken = data.data.accessToken;
         setAccessToken(newToken);
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;

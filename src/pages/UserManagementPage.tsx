@@ -109,12 +109,12 @@ const RowActions: React.FC<{
                 onToggleActive(user);
               }}
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer ${
-                user.active
+                user.isActive
                   ? 'text-accent-error/70 hover:bg-accent-error/5 hover:text-accent-error'
                   : 'text-accent-compile/70 hover:bg-accent-compile/5 hover:text-accent-compile'
               }`}
             >
-              {user.active ? (
+              {user.isActive ? (
                 <>
                   <UserX className="w-3.5 h-3.5" />
                   Deactivate
@@ -143,7 +143,7 @@ const ConfirmDialog: React.FC<{
 }> = ({ open, user, onConfirm, onCancel, isPending }) => {
   if (!open || !user) return null;
 
-  const isDeactivating = user.active;
+  const isDeactivating = user.isActive;
 
   return (
     <>
@@ -226,8 +226,8 @@ const UserManagementPage: React.FC = () => {
 
   const users = data?.users ?? [];
   const totalUsers = data?.total ?? users.length;
-  const activeUsers = users.filter((u) => u.active).length;
-  const inactiveUsers = users.filter((u) => !u.active).length;
+  const activeUsers = users.filter((u) => u.isActive).length;
+  const inactiveUsers = users.filter((u) => !u.isActive).length;
 
   const handleToggleActive = (user: UserRecord) => {
     setConfirmUser(user);
@@ -266,7 +266,7 @@ const UserManagementPage: React.FC = () => {
     {
       accessorKey: 'active',
       header: 'Status',
-      cell: ({ row }) => <StatusBadge active={row.original.active} />,
+      cell: ({ row }) => <StatusBadge active={row.original.isActive} />,
       enableSorting: true,
     },
     {
