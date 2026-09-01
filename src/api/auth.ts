@@ -21,7 +21,7 @@ export interface LoginResponse {
 }
 
 // The backend wraps all responses in { success, data, message, timestamp, traceId }
-interface ApiWrapper<T> {
+export interface ApiWrapper<T> {
   success: boolean;
   data: T;
   message: string;

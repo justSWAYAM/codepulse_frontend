@@ -65,7 +65,7 @@ const AppShell: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-ink leading-tight">
-              {user?.name}
+              {user?.fullName}
             </p>
             <p className="text-[11px] text-ink/40 font-mono leading-tight">
               {user?.role ? getRoleLabel(user.role) : ''}
@@ -73,7 +73,7 @@ const AppShell: React.FC = () => {
           </div>
           {/* Avatar */}
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white text-xs font-bold uppercase">
-            {user?.name?.charAt(0) || 'U'}
+            {user?.fullName?.charAt(0) || 'U'}
           </div>
           <button
             onClick={() => logoutMutation.mutate()}
@@ -197,12 +197,12 @@ const AppShell: React.FC = () => {
                 {/* Mobile user info */}
                 <div className="p-4 border-t border-hairline">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white text-sm font-bold uppercase">
-                      {user?.name?.charAt(0) || 'U'}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white font-bold shrink-0 shadow-sm shadow-accent-compile/20">
+                      {user?.fullName?.charAt(0) || 'U'}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-ink">
-                        {user?.name}
+                        {user?.fullName}
                       </p>
                       <p className="text-[11px] text-ink/40 font-mono">
                         {user?.role ? getRoleLabel(user.role) : ''}

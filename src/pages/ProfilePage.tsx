@@ -57,7 +57,7 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
   }, [userName, reset]);
 
   const onSubmit = (data: ProfileFormData) => {
-    updateMutation.mutate(data);
+    updateMutation.mutate({ fullName: data.name });
   };
 
   return (
@@ -281,11 +281,11 @@ const ProfilePage: React.FC = () => {
         <div className="flex items-start gap-4 mb-6">
           {/* Avatar */}
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white text-2xl font-bold uppercase shrink-0">
-            {displayUser?.name?.charAt(0) || 'U'}
+            {displayUser?.fullName?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-display text-xl font-semibold text-ink truncate">
-              {displayUser?.name}
+              {displayUser?.fullName}
             </h2>
             <div className="flex items-center flex-wrap gap-2 mt-2">
               <RoleBadge role={displayUser?.role || 'CANDIDATE'} />
@@ -346,7 +346,7 @@ const ProfilePage: React.FC = () => {
             <p className="text-xs text-ink/40">Update your display name</p>
           </div>
         </div>
-        <ProfileForm userName={displayUser?.name || ''} />
+        <ProfileForm userName={displayUser?.fullName || ''} />
       </motion.div>
 
       {/* Change Password Card */}

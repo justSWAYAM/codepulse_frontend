@@ -5,7 +5,7 @@ import { authApi, type LoginPayload } from '../api/auth';
 interface User {
   id: string;
   email: string;
-  name: string;
+  fullName: string;
   role: 'CANDIDATE' | 'EVALUATOR' | 'ADMIN';
 }
 
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: payload.userId || payload.sub || payload.id,
           email: payload.sub || payload.email,
-          name: payload.fullName || payload.name || payload.sub || '',
+          fullName: payload.fullName || payload.name || payload.sub || '',
           role: payload.role,
         });
       } catch {
@@ -50,11 +50,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await authApi.login(payload);
     setAccessToken(response.accessToken);
-    // Map fullName → name for internal consistency
     setUser({
       id: response.user.id,
       email: response.user.email,
-      name: response.user.fullName,
+      fullName: response.user.fullName,
       role: response.user.role,
     });
   }, []);

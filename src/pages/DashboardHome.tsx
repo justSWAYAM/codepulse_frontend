@@ -63,7 +63,7 @@ const DashboardHome: React.FC = () => {
           </span>
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-bold text-ink mb-2">
-          {getGreeting()}, {user?.name?.split(' ')[0] || 'there'}
+          {getGreeting()}, {user?.fullName?.split(' ')[0] || 'there'}
         </h1>
         <p className="text-sm text-ink/50">
           You're signed in as{' '}

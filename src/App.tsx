@@ -7,6 +7,8 @@ import AppShell from './layouts/AppShell';
 import DashboardHome from './pages/DashboardHome';
 import UserManagementPage from './pages/UserManagementPage';
 import ProfilePage from './pages/ProfilePage';
+import { QuestionCreatePage } from './pages/QuestionCreatePage';
+import { QuestionEditPage } from './pages/QuestionEditPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -36,6 +38,24 @@ const App: React.FC = () => {
               }
             />
             <Route path="profile" element={<ProfilePage />} />
+
+            {/* Question routes — nested under a specific contest */}
+            <Route
+              path="contests/:contestId/questions/new"
+              element={
+                <ProtectedRoute roles={['ADMIN']}>
+                  <QuestionCreatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="contests/:contestId/questions/:questionId/edit"
+              element={
+                <ProtectedRoute roles={['ADMIN']}>
+                  <QuestionEditPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* Catch-all → redirect to landing */}

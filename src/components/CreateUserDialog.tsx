@@ -37,7 +37,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
   const onSubmit = (data: CreateUserFormData) => {
     const payload = {
       email: data.email,
-      name: data.name,
+      fullName: data.name,
       role: data.role as UserRole,
       ...(data.password ? { password: data.password } : {}),
     };

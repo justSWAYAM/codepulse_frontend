@@ -20,7 +20,7 @@ const DashboardPage: React.FC = () => {
           <span className="text-2xl">👋</span>
         </div>
         <h1 className="font-display text-2xl font-bold text-ink mb-2">
-          Welcome{user?.name ? `, ${user.name}` : ''}!
+          Welcome{user?.fullName ? `, ${user.fullName}` : ''}!
         </h1>
         <p className="text-sm text-ink/50 mb-1">
           You're logged in as{' '}
