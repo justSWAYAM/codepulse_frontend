@@ -128,7 +128,9 @@ const AppShell: React.FC = () => {
                         transition={{ duration: 0.15 }}
                         className="overflow-hidden whitespace-nowrap"
                       >
-                        {item.label}
+                        {item.candidateLabel && user?.role === 'CANDIDATE'
+                          ? item.candidateLabel
+                          : item.label}
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -188,7 +190,9 @@ const AppShell: React.FC = () => {
                         }`}
                       >
                         <Icon className="w-[18px] h-[18px]" />
-                        {item.label}
+                        {item.candidateLabel && user?.role === 'CANDIDATE'
+                          ? item.candidateLabel
+                          : item.label}
                       </Link>
                     );
                   })}

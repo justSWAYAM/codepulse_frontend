@@ -34,7 +34,7 @@ const item = {
 
 // ── Profile Form ──
 const profileSchema = z.object({
-  name: z.string().min(1, 'Name is required').min(2, 'Name must be at least 2 characters'),
+  fullName: z.string().min(1, 'Name is required').min(2, 'Name must be at least 2 characters'),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -49,11 +49,11 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
     formState: { errors, isDirty },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { name: userName },
+    defaultValues: { fullName: userName },
   });
 
   useEffect(() => {
-    reset({ name: userName });
+    reset({ fullName: userName });
   }, [userName, reset]);
 
   const onSubmit = (data: ProfileFormData) => {
@@ -67,12 +67,12 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
         <input
           type="text"
           className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-            errors.name ? 'border-accent-error' : 'border-hairline'
+            errors.fullName ? 'border-accent-error' : 'border-hairline'
           }`}
-          {...register('name')}
+          {...register('fullName')}
         />
-        {errors.name && (
-          <p className="mt-1 text-xs text-accent-error">{errors.name.message}</p>
+        {errors.fullName && (
+          <p className="mt-1 text-xs text-accent-error">{errors.fullName.message}</p>
         )}
       </div>
       <div className="flex justify-end">
@@ -258,6 +258,8 @@ const ProfilePage: React.FC = () => {
   const { data: profile, isLoading } = useCurrentUser();
 
   const displayUser = profile || authUser;
+  // 'profile' uses 'fullName', 'authUser' uses 'name'
+  const displayName = (displayUser as any)?.fullName || (displayUser as any)?.name || '';
 
   if (isLoading) {
     return <LoadingState message="Loading profile..." />;
@@ -289,7 +291,7 @@ const ProfilePage: React.FC = () => {
             </h2>
             <div className="flex items-center flex-wrap gap-2 mt-2">
               <RoleBadge role={displayUser?.role || 'CANDIDATE'} />
-              {profile && <StatusBadge active={profile.active} />}
+              {profile && <StatusBadge active={profile.isActive} />}
             </div>
           </div>
         </div>

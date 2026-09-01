@@ -9,7 +9,7 @@ import type { UserRecord, UserRole } from '../api/userApi';
 
 const editUserSchema = z.object({
   role: z.enum(['CANDIDATE', 'EVALUATOR', 'ADMIN'] as const),
-  active: z.boolean(),
+  isActive: z.boolean(),
 });
 
 type EditUserFormData = z.infer<typeof editUserSchema>;
@@ -31,13 +31,13 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
     formState: { errors },
   } = useForm<EditUserFormData>({
     resolver: zodResolver(editUserSchema),
-    defaultValues: { role: 'CANDIDATE', active: true },
+    defaultValues: { role: 'CANDIDATE', isActive: true },
   });
 
   useEffect(() => {
     if (editingUser) {
       setValue('role', editingUser.role);
-      setValue('active', editingUser.active);
+      setValue('active', editingUser.isActive);
     }
   }, [editingUser, setValue]);
 
@@ -46,7 +46,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
     updateMutation.mutate(
       {
         id: editingUser.id,
-        payload: { role: data.role as UserRole, active: data.active },
+        payload: { role: data.role as UserRole, isActive: data.isActive },
       },
       {
         onSuccess: () => {

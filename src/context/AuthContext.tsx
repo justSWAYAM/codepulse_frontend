@@ -29,15 +29,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { accessToken } = await authApi.refresh();
         setAccessToken(accessToken);
-        // Decode user from token (simple base64 decode of payload)
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        
+        // Safely decode JWT (handles base64url -/_, padding, and unicode)
+        const base64Url = accessToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+
         setUser({
           id: payload.userId || payload.sub || payload.id,
           email: payload.sub || payload.email,
           fullName: payload.fullName || payload.name || payload.sub || '',
           role: payload.role,
         });
-      } catch {
+      } catch (err) {
         setAccessToken(null);
         setUser(null);
       } finally {
