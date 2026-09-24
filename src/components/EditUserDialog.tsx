@@ -37,7 +37,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
   useEffect(() => {
     if (editingUser) {
       setValue('role', editingUser.role);
-      setValue('active', editingUser.isActive);
+      setValue('isActive', editingUser.isActive);
     }
   }, [editingUser, setValue]);
 
@@ -46,7 +46,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
     updateMutation.mutate(
       {
         id: editingUser.id,
-        payload: { role: data.role as UserRole, isActive: data.isActive },
+        payload: { role: data.role as UserRole, active: data.isActive },
       },
       {
         onSuccess: () => {
@@ -125,7 +125,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
                     <input
                       type="checkbox"
                       className="w-4 h-4 rounded border-hairline text-accent-compile focus:ring-accent-compile/30 cursor-pointer"
-                      {...register('active')}
+                      {...register('isActive')}
                     />
                     <span className="text-sm text-ink/70">Active</span>
                   </label>

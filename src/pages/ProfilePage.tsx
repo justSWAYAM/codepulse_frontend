@@ -57,7 +57,7 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
   }, [userName, reset]);
 
   const onSubmit = (data: ProfileFormData) => {
-    updateMutation.mutate({ fullName: data.name });
+    updateMutation.mutate({ fullName: data.fullName });
   };
 
   return (
@@ -256,10 +256,7 @@ const ChangePasswordForm: React.FC = () => {
 const ProfilePage: React.FC = () => {
   const { user: authUser } = useAuth();
   const { data: profile, isLoading } = useCurrentUser();
-
   const displayUser = profile || authUser;
-  // 'profile' uses 'fullName', 'authUser' uses 'name'
-  const displayName = (displayUser as any)?.fullName || (displayUser as any)?.name || '';
 
   if (isLoading) {
     return <LoadingState message="Loading profile..." />;

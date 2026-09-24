@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Users, BookOpen, Send, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, BookOpen, Send, AlertTriangle, FileCode2 } from 'lucide-react';
 import { useContest, usePublishContest, useAssignCandidates } from '../hooks/useContests';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../context/AuthContext';
 import { ContestStatusBadge } from '../components/contest/ContestStatusBadge';
+import { QuestionListPanel } from '../components/question/QuestionListPanel';
 import { toast } from 'sonner';
 
 const CONTEST_STATUSES = ['DRAFT', 'PUBLISHED', 'ONGOING', 'COMPLETED'] as const;
@@ -24,7 +25,7 @@ const ContestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'candidates'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'questions'>('overview');
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
@@ -192,6 +193,17 @@ const ContestDetailPage: React.FC = () => {
             )}
           </button>
         )}
+        <button
+          onClick={() => setActiveTab('questions')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
+            activeTab === 'questions'
+              ? 'border-ink text-ink'
+              : 'border-transparent text-ink/50 hover:text-ink'
+          }`}
+        >
+          <FileCode2 className="w-4 h-4" />
+          Questions
+        </button>
       </div>
 
       {/* Tab: Overview */}
@@ -391,6 +403,21 @@ const ContestDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+        </motion.div>
+      )}
+
+      {/* Tab: Questions */}
+      {activeTab === 'questions' && (
+        <motion.div
+          key="questions"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <QuestionListPanel
+            contestId={contest.id}
+            role={user?.role || 'CANDIDATE'}
+            contestStatus={contest.status}
+          />
         </motion.div>
       )}
     </div>
