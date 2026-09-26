@@ -1,6 +1,7 @@
 import apiClient from '../lib/apiClient';
 import type { ApiWrapper } from './auth';
 import type { Difficulty } from '../components/DifficultyBadge';
+import type { TestCaseAdminRecord, TestCaseSampleRecord } from './testCaseApi';
 
 export interface QuestionAdminRecord {
   id: string;
@@ -14,6 +15,7 @@ export interface QuestionAdminRecord {
   orderIndex: number;
   createdAt: string;
   createdBy: string;
+  testCases: TestCaseAdminRecord[];
 }
 
 export interface QuestionCandidateRecord {
@@ -26,6 +28,7 @@ export interface QuestionCandidateRecord {
   timeLimitMs: number;
   memoryLimitKb: number;
   orderIndex: number;
+  sampleTestCases: TestCaseSampleRecord[];
 }
 
 export type QuestionRecord = QuestionAdminRecord | QuestionCandidateRecord;
