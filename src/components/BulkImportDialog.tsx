@@ -223,11 +223,11 @@ export const BulkImportDialog: React.FC<BulkImportDialogProps> = ({ open, onClos
                       <div className="mt-4 p-3 rounded-lg bg-ink/[0.03] border border-hairline">
                         <p className="text-xs text-ink/50 font-medium mb-1">Expected CSV format:</p>
                         <code className="text-[11px] font-mono text-ink/40 block">
-                          email, name, role
+                          email, name, role, password, rollNumber, year, branch, division, batch
                           <br />
-                          john@example.com, John Doe, CANDIDATE
+                          john@example.com, John Doe, CANDIDATE, password123, 12345, 1, CSE, A, B
                           <br />
-                          jane@example.com, Jane Smith, EVALUATOR
+                          jane@example.com, Jane Smith, EVALUATOR, , , , , , 
                         </code>
                       </div>
                     </motion.div>

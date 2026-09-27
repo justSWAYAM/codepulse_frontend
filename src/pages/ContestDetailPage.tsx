@@ -28,6 +28,11 @@ const ContestDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'questions'>('overview');
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  
+  // Filter states
+  const [filterBranch, setFilterBranch] = useState<string>('');
+  const [filterDivision, setFilterDivision] = useState<string>('');
+  const [filterBatch, setFilterBatch] = useState<string>('');
 
   const { data: contest, isLoading, isError, error } = useContest(id!);
   const publishMutation = usePublishContest(id!);
@@ -35,7 +40,25 @@ const ContestDetailPage: React.FC = () => {
 
   // Candidate picker — fetch all candidates for admin assignment
   const { data: candidatesData } = useUsers({ role: 'CANDIDATE' });
-  const allCandidates = (candidatesData as unknown as { users?: { id: string; fullName: string; email: string; rollNumber?: string }[] })?.users ?? [];
+  const allCandidates = (candidatesData as unknown as { users?: { id: string; fullName: string; email: string; rollNumber?: string; branch?: string; division?: string; batch?: string }[] })?.users ?? [];
+
+  const filteredCandidates = allCandidates.filter((c) => {
+    if (filterBranch && c.branch !== filterBranch) return false;
+    if (filterDivision && c.division !== filterDivision) return false;
+    if (filterBatch && c.batch !== filterBatch) return false;
+    return true;
+  });
+
+  const handleSelectAllFiltered = () => {
+    const unassignedFiltered = filteredCandidates.filter((c) => !contest?.candidates?.some((cc) => cc.id === c.id));
+    const newIds = unassignedFiltered.map((c) => c.id);
+    setSelectedCandidateIds((prev) => Array.from(new Set([...prev, ...newIds])));
+  };
+
+  const handleDeselectAllFiltered = () => {
+    const filteredIds = new Set(filteredCandidates.map(c => c.id));
+    setSelectedCandidateIds((prev) => prev.filter(id => !filteredIds.has(id)));
+  };
 
   const isAdmin = user?.role === 'ADMIN';
   const isEvaluator = user?.role === 'EVALUATOR';
@@ -318,12 +341,73 @@ const ContestDetailPage: React.FC = () => {
           {/* Assignment panel — admin only, not for completed contests */}
           {isAdmin && contest.status !== 'COMPLETED' && (
             <div className="bg-surface border border-hairline rounded-2xl p-5">
-              <h3 className="font-display text-base font-bold text-ink mb-4">Assign Candidates</h3>
-              <div className="max-h-48 overflow-y-auto space-y-1.5 mb-4 pr-1">
-                {allCandidates.length === 0 ? (
-                  <p className="text-sm text-ink/40 text-center py-4">No candidates found</p>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-base font-bold text-ink">Assign Candidates</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSelectAllFiltered}
+                    className="px-3 py-1.5 text-xs font-semibold bg-accent-compile/10 text-accent-compile rounded-lg hover:bg-accent-compile/20 transition-colors cursor-pointer"
+                  >
+                    Select All Filtered
+                  </button>
+                  <button
+                    onClick={handleDeselectAllFiltered}
+                    className="px-3 py-1.5 text-xs font-semibold bg-ink/5 text-ink/60 rounded-lg hover:bg-ink/10 transition-colors cursor-pointer"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <select
+                  value={filterBranch}
+                  onChange={(e) => {
+                    setFilterBranch(e.target.value);
+                    if (e.target.value === 'MECH' || e.target.value === 'ECS') {
+                      setFilterDivision('');
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-lg border border-hairline bg-background text-sm focus:outline-none focus:border-ink/30 transition-colors"
+                >
+                  <option value="">All Branches</option>
+                  <option value="CSE">CSE</option>
+                  <option value="CE">CE</option>
+                  <option value="ECS">ECS</option>
+                  <option value="MECH">MECH</option>
+                </select>
+                
+                <select
+                  value={filterDivision}
+                  onChange={(e) => setFilterDivision(e.target.value)}
+                  disabled={filterBranch === 'MECH' || filterBranch === 'ECS'}
+                  className="w-full px-3 py-2 rounded-lg border border-hairline bg-background text-sm focus:outline-none focus:border-ink/30 transition-colors disabled:opacity-50"
+                >
+                  <option value="">All Divisions</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
+
+                <select
+                  value={filterBatch}
+                  onChange={(e) => setFilterBatch(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-hairline bg-background text-sm focus:outline-none focus:border-ink/30 transition-colors"
+                >
+                  <option value="">All Batches</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+
+              <div data-lenis-prevent className="max-h-48 overflow-y-auto space-y-1.5 mb-4 pr-1">
+                {filteredCandidates.length === 0 ? (
+                  <p className="text-sm text-ink/40 text-center py-4">No candidates found for these filters</p>
                 ) : (
-                  allCandidates.map((c) => {
+                  filteredCandidates.map((c) => {
                     const isAssigned = contest.candidates?.some((cc) => cc.id === c.id);
                     const isSelected = selectedCandidateIds.includes(c.id);
                     return (

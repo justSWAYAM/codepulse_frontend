@@ -61,7 +61,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col md:flex-row gap-6 h-full">
       {/* Left Column: Form Fields */}
-      <div className="flex-1 space-y-6 md:w-[60%] overflow-y-auto pr-2 pb-20">
+      <div data-lenis-prevent className="flex-1 space-y-6 md:w-[60%] overflow-y-auto pr-2 pb-20">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
           <input
@@ -140,6 +140,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             Description (Markdown)
           </label>
           <textarea
+            data-lenis-prevent
             {...register('description')}
             className={`w-full flex-1 min-h-[300px] px-4 py-3 rounded-lg border font-mono text-sm ${
               errors.description ? 'border-[#E85D4E]' : 'border-gray-200'
@@ -153,9 +154,9 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       {/* Right Column: Markdown Preview */}
-      <div className="flex-1 md:w-[40%] flex flex-col bg-gray-50 border border-gray-200 rounded-lg p-6 overflow-y-auto pb-20 sticky top-0 h-full max-h-screen">
+      <div data-lenis-prevent className="flex-1 md:w-[40%] flex flex-col bg-gray-50 border border-gray-200 rounded-lg p-6 overflow-y-auto pb-20 sticky top-0 h-full max-h-screen">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Preview</h3>
-        <div className="prose prose-slate prose-sm max-w-none prose-pre:bg-white prose-pre:border prose-pre:border-gray-200 prose-pre:text-gray-900 overflow-y-auto">
+        <div data-lenis-prevent className="prose prose-slate prose-sm max-w-none prose-pre:bg-white prose-pre:border prose-pre:border-gray-200 prose-pre:text-gray-900 overflow-y-auto">
           {descriptionValue ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {descriptionValue}

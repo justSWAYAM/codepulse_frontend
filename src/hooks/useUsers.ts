@@ -73,7 +73,19 @@ export const useDeactivateUser = () => {
     mutationFn: (id: string) => userApi.deactivateUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
-      toast.success('User status updated');
+      toast.success('User deactivated');
+    },
+  });
+};
+
+export const useReactivateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => userApi.reactivateUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      toast.success('User reactivated');
     },
   });
 };

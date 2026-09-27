@@ -21,6 +21,10 @@ export interface UserRecord {
   isActive: boolean;
   createdAt: string;
   rollNumber?: string;
+  year?: number;
+  branch?: string;
+  division?: string;
+  batch?: string;
 }
 
 export interface UsersResponse {
@@ -35,12 +39,22 @@ export interface CreateUserPayload {
   fullName: string;
   role: UserRole;
   password?: string;
+  rollNumber?: string;
+  year?: number;
+  branch?: string;
+  division?: string;
+  batch?: string;
 }
 
 export interface UpdateUserPayload {
   fullName?: string;
   role?: UserRole;
-  active?: boolean;
+  isActive?: boolean;
+  rollNumber?: string;
+  year?: number;
+  branch?: string;
+  division?: string;
+  batch?: string;
 }
 
 export interface BulkImportResponse {
@@ -62,6 +76,11 @@ export interface UserProfile {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+  rollNumber?: string;
+  year?: number;
+  branch?: string;
+  division?: string;
+  batch?: string;
 }
 
 export interface UpdateProfilePayload {
@@ -112,15 +131,33 @@ export const userApi = {
     return data.data;
   },
 
+  reactivateUser: async (id: string): Promise<UserRecord> => {
+    const { data } = await apiClient.patch<ApiWrapper<UserRecord>>(
+      `/users/${id}/reactivate`
+    );
+    return data.data;
+  },
+
   bulkImport: async (file: File): Promise<BulkImportResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-    const { data } = await apiClient.post<ApiWrapper<BulkImportResponse>>(
+    const { data } = await apiClient.post<ApiWrapper<any>>(
       '/users/bulk-import',
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );
-    return data.data;
+    const raw = data.data;
+    return {
+      totalProcessed: raw.totalRows || 0,
+      successCount: raw.succeededCount || 0,
+      failureCount: raw.failedCount || 0,
+      results: (raw.errors || []).map((err: any) => ({
+        row: err.rowNumber,
+        email: 'N/A', // Backend does not return email for errors
+        success: false,
+        error: err.reason
+      }))
+    };
   },
 
   getProfile: async (): Promise<UserProfile> => {

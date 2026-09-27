@@ -18,7 +18,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { CreateUserDialog } from '../components/CreateUserDialog';
 import { EditUserDialog } from '../components/EditUserDialog';
 import { BulkImportDialog } from '../components/BulkImportDialog';
-import { useUsers, useDeactivateUser } from '../hooks/useUsers';
+import { useUsers, useDeactivateUser, useReactivateUser } from '../hooks/useUsers';
 import type { UserRecord } from '../api/userApi';
 import { ErrorState } from '../components/states/ErrorState';
 
@@ -223,6 +223,7 @@ const UserManagementPage: React.FC = () => {
 
   const { data, isLoading, isError, refetch } = useUsers();
   const deactivateMutation = useDeactivateUser();
+  const reactivateMutation = useReactivateUser();
 
   const users = data?.users ?? [];
   const totalUsers = data?.total ?? users.length;
@@ -235,9 +236,15 @@ const UserManagementPage: React.FC = () => {
 
   const confirmToggle = () => {
     if (!confirmUser) return;
-    deactivateMutation.mutate(confirmUser.id, {
-      onSuccess: () => setConfirmUser(null),
-    });
+    if (confirmUser.isActive) {
+      deactivateMutation.mutate(confirmUser.id, {
+        onSuccess: () => setConfirmUser(null),
+      });
+    } else {
+      reactivateMutation.mutate(confirmUser.id, {
+        onSuccess: () => setConfirmUser(null),
+      });
+    }
   };
 
   const columns: ColumnDef<UserRecord, unknown>[] = [
@@ -406,7 +413,7 @@ const UserManagementPage: React.FC = () => {
         user={confirmUser}
         onConfirm={confirmToggle}
         onCancel={() => setConfirmUser(null)}
-        isPending={deactivateMutation.isPending}
+        isPending={deactivateMutation.isPending || reactivateMutation.isPending}
       />
     </>
   );

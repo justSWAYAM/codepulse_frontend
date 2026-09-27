@@ -12,6 +12,11 @@ const createUserSchema = z.object({
   name: z.string().min(1, 'Full name is required').min(2, 'Name must be at least 2 characters'),
   role: z.enum(['CANDIDATE', 'EVALUATOR', 'ADMIN'] as const),
   password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
+  rollNumber: z.string().optional(),
+  year: z.number().optional(),
+  branch: z.enum(['CSE', 'CE', 'ECS', 'MECH', '']).optional(),
+  division: z.enum(['A', 'B', 'C', '']).optional(),
+  batch: z.enum(['A', 'B', 'C', 'D', '']).optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -28,11 +33,15 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
     defaultValues: { email: '', name: '', role: 'CANDIDATE', password: '' },
   });
+
+  const selectedRole = watch('role');
+  const selectedBranch = watch('branch');
 
   const onSubmit = (data: CreateUserFormData) => {
     const payload = {
@@ -40,6 +49,11 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
       fullName: data.name,
       role: data.role as UserRole,
       ...(data.password ? { password: data.password } : {}),
+      ...(data.role === 'CANDIDATE' && data.rollNumber ? { rollNumber: data.rollNumber } : {}),
+      ...(data.role === 'CANDIDATE' && data.year ? { year: data.year } : {}),
+      ...(data.role === 'CANDIDATE' && data.branch ? { branch: data.branch } : {}),
+      ...(data.role === 'CANDIDATE' && data.division && !['MECH', 'ECS'].includes(data.branch || '') ? { division: data.division } : {}),
+      ...(data.role === 'CANDIDATE' && data.batch ? { batch: data.batch } : {}),
     };
     createMutation.mutate(payload, {
       onSuccess: () => {
@@ -147,6 +161,90 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                     <p className="mt-1 text-xs text-accent-error">{errors.role.message}</p>
                   )}
                 </div>
+
+                {selectedRole === 'CANDIDATE' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Year */}
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">Year</label>
+                        <select
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          {...register('year', { valueAsNumber: true })}
+                        >
+                          <option value="">Select</option>
+                          <option value="1">1st Year</option>
+                          <option value="2">2nd Year</option>
+                          <option value="3">3rd Year</option>
+                          <option value="4">4th Year</option>
+                        </select>
+                      </div>
+
+                      {/* Branch */}
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">Branch</label>
+                        <select
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          {...register('branch')}
+                        >
+                          <option value="">Select</option>
+                          <option value="CSE">CSE</option>
+                          <option value="CE">CE</option>
+                          <option value="ECS">ECS</option>
+                          <option value="MECH">MECH</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Division */}
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">Division</label>
+                        <select
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline disabled:opacity-50 disabled:cursor-not-allowed`}
+                          {...register('division')}
+                          disabled={selectedBranch === 'MECH' || selectedBranch === 'ECS'}
+                        >
+                          <option value="">Select</option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                        </select>
+                      </div>
+
+                      {/* Batch */}
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">Batch</label>
+                        <select
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          {...register('batch')}
+                        >
+                          <option value="">Select</option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Roll Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">Roll Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 123456"
+                        className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
+                          errors.rollNumber ? 'border-accent-error' : 'border-hairline'
+                        }`}
+                        {...register('rollNumber')}
+                      />
+                      {errors.rollNumber && (
+                        <p className="mt-1 text-xs text-accent-error">{errors.rollNumber.message}</p>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Password */}
                 <div>

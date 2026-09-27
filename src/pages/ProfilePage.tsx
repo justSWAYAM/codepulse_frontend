@@ -326,6 +326,57 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
           )}
+          
+          {/* Candidate specific fields */}
+          {displayUser?.role === 'CANDIDATE' && profile && (
+            <>
+              {profile.year && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
+                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">Y</div>
+                  <div>
+                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Year</p>
+                    <p className="text-sm text-ink">{profile.year}</p>
+                  </div>
+                </div>
+              )}
+              {profile.branch && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
+                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">B</div>
+                  <div>
+                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Branch</p>
+                    <p className="text-sm text-ink">{profile.branch}</p>
+                  </div>
+                </div>
+              )}
+              {profile.division && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
+                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">D</div>
+                  <div>
+                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Division</p>
+                    <p className="text-sm text-ink">{profile.division}</p>
+                  </div>
+                </div>
+              )}
+              {profile.batch && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
+                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">C</div>
+                  <div>
+                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Batch</p>
+                    <p className="text-sm text-ink">{profile.batch}</p>
+                  </div>
+                </div>
+              )}
+              {profile.rollNumber && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background sm:col-span-2">
+                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">#</div>
+                  <div>
+                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Roll Number</p>
+                    <p className="text-sm text-ink font-mono">{profile.rollNumber}</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </motion.div>
 
