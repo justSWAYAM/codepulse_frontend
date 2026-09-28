@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, FlaskConical } from 'lucide-react';
 import { QuestionForm } from '../components/question/QuestionForm';
 import type { QuestionFormData } from '../components/question/QuestionForm';
@@ -9,7 +9,9 @@ import { useQuestion, useUpdateQuestion } from '../hooks/useQuestions';
 export const QuestionEditPage: React.FC = () => {
   const { contestId, questionId } = useParams<{ contestId: string; questionId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'details' | 'testcases'>('details');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'testcases' ? 'testcases' : 'details';
+  const [activeTab, setActiveTab] = useState<'details' | 'testcases'>(initialTab);
 
   const { data: question, isLoading } = useQuestion(contestId!, questionId!);
   const updateMutation = useUpdateQuestion(contestId!, questionId!);

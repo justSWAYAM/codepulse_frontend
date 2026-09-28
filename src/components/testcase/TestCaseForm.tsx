@@ -18,9 +18,10 @@ export type TestCaseFormData = z.infer<typeof testCaseSchema>;
 interface TestCaseFormProps {
   onSubmit: (data: TestCaseFormData) => void;
   isPending: boolean;
+  submitLabel?: string;
 }
 
-export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending }) => {
+export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending, submitLabel = 'Add Test Case' }) => {
   const {
     register,
     handleSubmit,
@@ -40,8 +41,9 @@ export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Input */}
       <div>
-        <label className="block text-sm font-medium text-ink/70 mb-1.5">Input</label>
+        <label htmlFor="testcase-input" className="block text-sm font-medium text-ink/70 mb-1.5">Input</label>
         <textarea
+          id="testcase-input"
           {...register('input')}
           rows={4}
           className={`w-full px-4 py-3 rounded-xl border font-mono text-sm bg-background resize-y ${
@@ -56,8 +58,9 @@ export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending 
 
       {/* Expected Output */}
       <div>
-        <label className="block text-sm font-medium text-ink/70 mb-1.5">Expected Output</label>
+        <label htmlFor="testcase-expected-output" className="block text-sm font-medium text-ink/70 mb-1.5">Expected Output</label>
         <textarea
+          id="testcase-expected-output"
           {...register('expectedOutput')}
           rows={4}
           className={`w-full px-4 py-3 rounded-xl border font-mono text-sm bg-background resize-y ${
@@ -105,8 +108,9 @@ export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending 
 
         {/* Weight */}
         <div className="w-32">
-          <label className="block text-sm font-medium text-ink/70 mb-1.5">Weight</label>
+          <label htmlFor="testcase-weight" className="block text-sm font-medium text-ink/70 mb-1.5">Weight</label>
           <input
+            id="testcase-weight"
             type="number"
             step="any"
             {...register('weight', { valueAsNumber: true })}
@@ -133,7 +137,7 @@ export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending 
           className="px-5 py-2.5 rounded-xl bg-accent-compile text-white text-sm font-medium hover:bg-accent-compile-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
         >
           {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isPending ? 'Adding...' : 'Add Test Case'}
+          {isPending ? 'Adding...' : submitLabel}
         </button>
       </div>
     </form>

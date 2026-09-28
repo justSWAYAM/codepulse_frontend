@@ -15,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Toaster
           position="top-right"
           toastOptions={{
+            duration: 1500,
             style: {
               fontFamily: "'Inter', system-ui, sans-serif",
               borderRadius: '12px',

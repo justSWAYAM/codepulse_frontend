@@ -1,7 +1,11 @@
 import apiClient from '../lib/apiClient';
 import type { ApiWrapper } from './auth';
 import type { Difficulty } from '../components/DifficultyBadge';
-import type { TestCaseAdminRecord, TestCaseSampleRecord } from './testCaseApi';
+import type {
+  CreateTestCasePayload,
+  TestCaseAdminRecord,
+  TestCaseSampleRecord,
+} from './testCaseApi';
 
 export interface QuestionAdminRecord {
   id: string;
@@ -40,6 +44,7 @@ export interface CreateQuestionPayload {
   points: number;
   timeLimitMs: number;
   memoryLimitKb: number;
+  testCases?: CreateTestCasePayload[];
 }
 
 export interface UpdateQuestionPayload {

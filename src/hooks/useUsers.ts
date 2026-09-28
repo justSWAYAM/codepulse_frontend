@@ -25,10 +25,11 @@ export const useUsers = (params?: {
   pageSize?: number;
   search?: string;
   role?: UserRole;
-}) => {
+}, enabled = true) => {
   return useQuery({
     queryKey: userKeys.list(params),
     queryFn: () => userApi.getUsers(params),
+    enabled,
   });
 };
 

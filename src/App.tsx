@@ -12,6 +12,7 @@ import { QuestionEditPage } from './pages/QuestionEditPage';
 import ContestListPage from './pages/ContestListPage';
 import ContestCreatePage from './pages/ContestCreatePage';
 import ContestDetailPage from './pages/ContestDetailPage';
+import AssessmentPage from './pages/AssessmentPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -72,6 +73,16 @@ const App: React.FC = () => {
               }
             />
           </Route>
+
+          {/* Assessment page — outside AppShell (focus-mode, no sidebar) */}
+          <Route
+            path="/dashboard/contests/:contestId/assessment"
+            element={
+              <ProtectedRoute roles={['CANDIDATE']}>
+                <AssessmentPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Catch-all → redirect to landing */}
           <Route path="*" element={<Navigate to="/" replace />} />

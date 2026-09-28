@@ -7,6 +7,7 @@ import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../context/AuthContext';
 import { ContestStatusBadge } from '../components/contest/ContestStatusBadge';
 import { QuestionListPanel } from '../components/question/QuestionListPanel';
+import { ExamEntryCard } from '../components/session/ExamEntryCard';
 import { toast } from 'sonner';
 
 const CONTEST_STATUSES = ['DRAFT', 'PUBLISHED', 'ONGOING', 'COMPLETED'] as const;
@@ -34,12 +35,19 @@ const ContestDetailPage: React.FC = () => {
   const [filterDivision, setFilterDivision] = useState<string>('');
   const [filterBatch, setFilterBatch] = useState<string>('');
 
+  const isAdmin = user?.role === 'ADMIN';
+  const isEvaluator = user?.role === 'EVALUATOR';
+  const isCandidate = user?.role === 'CANDIDATE';
+
   const { data: contest, isLoading, isError, error } = useContest(id!);
   const publishMutation = usePublishContest(id!);
   const assignMutation = useAssignCandidates(id!);
 
   // Candidate picker — fetch all candidates for admin assignment
-  const { data: candidatesData } = useUsers({ role: 'CANDIDATE' });
+  const { data: candidatesData } = useUsers(
+    { role: 'CANDIDATE' },
+    isAdmin || isEvaluator
+  );
   const allCandidates = (candidatesData as unknown as { users?: { id: string; fullName: string; email: string; rollNumber?: string; branch?: string; division?: string; batch?: string }[] })?.users ?? [];
 
   const filteredCandidates = allCandidates.filter((c) => {
@@ -59,9 +67,6 @@ const ContestDetailPage: React.FC = () => {
     const filteredIds = new Set(filteredCandidates.map(c => c.id));
     setSelectedCandidateIds((prev) => prev.filter(id => !filteredIds.has(id)));
   };
-
-  const isAdmin = user?.role === 'ADMIN';
-  const isEvaluator = user?.role === 'EVALUATOR';
 
   if (isLoading) {
     return (
@@ -216,17 +221,20 @@ const ContestDetailPage: React.FC = () => {
             )}
           </button>
         )}
-        <button
-          onClick={() => setActiveTab('questions')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
-            activeTab === 'questions'
-              ? 'border-ink text-ink'
-              : 'border-transparent text-ink/50 hover:text-ink'
-          }`}
-        >
-          <FileCode2 className="w-4 h-4" />
-          Questions
-        </button>
+        {/* Questions tab — hidden for candidates (Section 10) */}
+        {!isCandidate && (
+          <button
+            onClick={() => setActiveTab('questions')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
+              activeTab === 'questions'
+                ? 'border-ink text-ink'
+                : 'border-transparent text-ink/50 hover:text-ink'
+            }`}
+          >
+            <FileCode2 className="w-4 h-4" />
+            Questions
+          </button>
+        )}
       </div>
 
       {/* Tab: Overview */}
@@ -237,6 +245,8 @@ const ContestDetailPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-5"
         >
+          {/* Candidate exam entry card — Section 6.1 */}
+          {isCandidate && <ExamEntryCard contest={contest} />}
           {/* Meta card */}
           <div className="bg-surface border border-hairline rounded-2xl p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
