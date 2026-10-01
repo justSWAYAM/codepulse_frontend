@@ -5,6 +5,18 @@
 
 **Important:** Module 7 does not yet have a `POST /submissions/*` endpoint — those belong to Module 8. The editor and Run UI built here fire against Module 8's API. Module 7's frontend work is therefore: install Monaco, build the code editor component, and wire the Run flow UI so it is ready the moment Module 8's endpoints exist.
 
+> **Implementation status (Oct 2026): built together with Module 8.** The plan below is kept for history. Where it disagrees with the backend that shipped, the code wins:
+>
+> - **No stdin.** `POST /api/submissions/run` has no stdin field; it runs the question's sample tests. Its body is `{ questionId, language, sourceCode }`, and it returns a summary with no per-test output. The UI then calls `GET /api/submissions/{id}` to show each sample's result.
+> - **No `ApiResponse` wrapper.** `/api/submissions/*` return the DTO directly. Import `apiClient` from `src/lib/apiClient`, not `./apiClient`.
+> - **No `RUNNING` status.** `PENDING` covers both queued and executing.
+> - **Status names.** Time and memory verdicts are `TIME_LIMIT_EXCEEDED` and `MEMORY_LIMIT_EXCEEDED`.
+> - **Allowed languages** come from `contest.allowedLanguages`, not from the question.
+> - **Theme.** The app is light or dark, chosen by the user. The editor area is always dark, using the custom `codepulse-dark` Monaco theme.
+> - **Editor placement.** The editor replaced `EditorSlot` (now deleted). Below `xl` it sits behind a Problem | Code switch rather than being hidden.
+>
+> See `CodePulse_Module8_Submission_Frontend_Plan.md` for what was actually built.
+
 ---
 
 ## 1. Purpose of This Document
