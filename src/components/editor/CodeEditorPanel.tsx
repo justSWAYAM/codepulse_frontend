@@ -135,7 +135,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
   const submitsLeft = SUBMIT_LIMIT - submitsUsed;
 
   return (
-    <section data-theme="dark" aria-label="Code editor" className="flex h-full min-h-0 w-full flex-col bg-editor-bg text-editor-fg">
+    <section data-theme="dark" aria-label="Code editor" className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-editor-bg text-editor-fg">
       {/* ── Toolbar ── */}
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-editor-line bg-editor-panel px-3">
         <label htmlFor="language-selector" className="sr-only">

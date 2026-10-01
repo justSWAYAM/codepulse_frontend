@@ -301,7 +301,7 @@ const AssessmentPage: React.FC = () => {
           <div className="flex min-h-0 flex-1">
             {/* Problem panel */}
             <div
-              className={cn('min-w-0 bg-surface', pane === 'code' && 'hidden xl:block')}
+              className={cn('min-w-0 bg-surface overflow-hidden', pane === 'code' && 'hidden xl:block')}
               style={{ flex: `0 0 ${(problemFraction * 100).toFixed(2)}%` }}
             >
               {activeQuestion ? (
@@ -328,7 +328,7 @@ const AssessmentPage: React.FC = () => {
             {/* Code editor panel — kept mounted to preserve state */}
             <div
               className={cn(
-                'min-w-0 border-line',
+                'min-w-0 border-line overflow-hidden',
                 pane === 'code' ? 'flex flex-1' : 'hidden xl:flex',
               )}
               style={{ flex: `1 1 0%` }}
