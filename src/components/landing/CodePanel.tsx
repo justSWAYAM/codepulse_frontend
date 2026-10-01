@@ -64,9 +64,9 @@ export const CodePanel: React.FC = () => {
         {/* Title bar */}
         <div className="flex items-center gap-2 px-4 py-3 bg-[#181825] border-b border-white/5">
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-accent-error/80" />
-            <div className="w-3 h-3 rounded-full bg-accent-syntax/80" />
-            <div className="w-3 h-3 rounded-full bg-accent-compile/80" />
+            <div className="w-3 h-3 rounded-full bg-danger/80" />
+            <div className="w-3 h-3 rounded-full bg-warning/80" />
+            <div className="w-3 h-3 rounded-full bg-primary/80" />
           </div>
           <span className="text-xs text-white/30 font-mono ml-2">solution.js</span>
         </div>
@@ -84,7 +84,7 @@ export const CodePanel: React.FC = () => {
                   <motion.span
                     animate={{ opacity: [1, 0] }}
                     transition={{ repeat: Infinity, duration: 0.8 }}
-                    className="inline-block w-[2px] h-[14px] bg-accent-compile ml-0.5 align-text-bottom"
+                    className="inline-block w-[2px] h-[14px] bg-primary ml-0.5 align-text-bottom"
                   />
                 )}
               </span>
@@ -102,10 +102,10 @@ export const CodePanel: React.FC = () => {
               transition={{ duration: 0.4 }}
               className="flex items-center gap-1.5"
             >
-              <div className="w-5 h-5 rounded-full bg-accent-compile/20 flex items-center justify-center">
-                <Check className="w-3 h-3 text-accent-compile" />
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                <Check className="w-3 h-3 text-primary-text" />
               </div>
-              <span className="text-xs font-medium text-accent-compile">Submitted</span>
+              <span className="text-xs font-medium text-primary-text">Submitted</span>
             </motion.div>
           )}
         </div>

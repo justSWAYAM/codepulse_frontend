@@ -1,63 +1,355 @@
 @import "tailwindcss";
 
-/* ── Design Tokens (Section 3) ── */
-@theme {
-  --color-background: #FAFAF8;
-  --color-surface: #FFFFFF;
-  --color-ink: #1B1E3A;
-  --color-accent-compile: #2F9E6E;
-  --color-accent-compile-hover: #278a5e;
-  --color-accent-syntax: #E8A33D;
-  --color-accent-error: #E85D4E;
-  --color-hairline: #E4E2DC;
+/* Dark mode follows [data-theme="dark"] on <html>, set before paint by index.html */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+/* ─────────────────────────────────────────────────────────────
+   Design tokens
+   Navy ink + cobalt primary. Green / amber / red mean status only
+   (verdicts, session state) — never decoration or primary actions.
+   Components use the semantic names below; themes swap the values.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --canvas: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f3f8;
+  --surface-3: #e7eaf2;
+  --line: #e2e5ee;
+  --line-strong: #cbd0de;
+
+  --fg: #11152e;
+  --fg-muted: #4a5070;
+  --fg-subtle: #767c96;
+
+  --primary: #2f5bea;
+  --primary-hover: #244ad0;
+  --primary-soft: #ebf0ff;
+  --primary-fg: #ffffff;
+  --primary-text: #2448c4;
+
+  --success: #17935c;
+  --success-soft: #e5f5ed;
+  --success-text: #0f6e44;
+  --warning: #c98314;
+  --warning-soft: #fdf3e1;
+  --warning-text: #8a580a;
+  --danger: #d9443a;
+  --danger-soft: #fcebea;
+  --danger-text: #a52f26;
+  --info: #2a86cf;
+  --info-soft: #e6f2fb;
+  --info-text: #1d6aa6;
+
+  --ring: color-mix(in oklab, var(--primary) 55%, transparent);
+  --scrim: rgb(9 12 28 / 0.4);
+
+  /* Editor surfaces stay dark in both themes */
+  --editor-bg: #0d1120;
+  --editor-panel: #121729;
+  --editor-line: #232a42;
+  --editor-fg: #d7dcef;
+  --editor-muted: #8189a8;
+
+  --shadow-card: 0 0 0 1px rgb(17 21 46 / 0.04), 0 1px 2px rgb(17 21 46 / 0.04), 0 8px 24px -12px rgb(17 21 46 / 0.12);
+  --shadow-pop: 0 0 0 1px rgb(17 21 46 / 0.06), 0 4px 12px rgb(17 21 46 / 0.08), 0 24px 48px -16px rgb(17 21 46 / 0.24);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0a0d19;
+  --surface: #111526;
+  --surface-2: #171c30;
+  --surface-3: #1f253b;
+  --line: #242a42;
+  --line-strong: #343b57;
+
+  --fg: #e8ebf6;
+  --fg-muted: #a4aac4;
+  --fg-subtle: #747b98;
+
+  --primary: #4d76ff;
+  --primary-hover: #6789ff;
+  --primary-soft: rgb(77 118 255 / 0.15);
+  --primary-fg: #ffffff;
+  --primary-text: #8aa6ff;
+
+  --success: #34c185;
+  --success-soft: rgb(52 193 133 / 0.14);
+  --success-text: #5fd6a2;
+  --warning: #eaa93f;
+  --warning-soft: rgb(234 169 63 / 0.14);
+  --warning-text: #f2c06d;
+  --danger: #f2655a;
+  --danger-soft: rgb(242 101 90 / 0.14);
+  --danger-text: #ff8d84;
+  --info: #4fa9ee;
+  --info-soft: rgb(79 169 238 / 0.14);
+  --info-text: #7cc0f4;
+
+  --scrim: rgb(3 5 12 / 0.6);
+
+  --editor-bg: #0b0f1d;
+  --editor-panel: #0f1426;
+
+  /* In dark UI depth comes from lighter surfaces; shadows only separate edges */
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.07), 0 24px 48px -16px rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-text: var(--primary-text);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-text: var(--danger-text);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-text: var(--info-text);
+
+  --color-ring: var(--ring);
+  --color-scrim: var(--scrim);
+
+  --color-editor-bg: var(--editor-bg);
+  --color-editor-panel: var(--editor-panel);
+  --color-editor-line: var(--editor-line);
+  --color-editor-fg: var(--editor-fg);
+  --color-editor-muted: var(--editor-muted);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Motion (interface-craft/motion.md) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --animate-pop-in: pop-in 180ms var(--ease-out);
+  --animate-pop-out: pop-out 140ms var(--ease-out);
+  --animate-fade-in: fade-in 200ms var(--ease-out);
+  --animate-fade-out: fade-out 160ms var(--ease-out);
+  --animate-sheet-in: sheet-in 320ms var(--ease-drawer);
+  --animate-sheet-out: sheet-out 240ms var(--ease-drawer);
+
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.96); }
+  }
+  @keyframes pop-out {
+    to { opacity: 0; transform: scale(0.96); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+  @keyframes fade-out {
+    to { opacity: 0; }
+  }
+  @keyframes sheet-in {
+    from { transform: translateX(100%); }
+  }
+  @keyframes sheet-out {
+    to { transform: translateX(100%); }
+  }
+  @keyframes sheet-in-left {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes sheet-out-left {
+    to { transform: translateX(-100%); }
+  }
+}
+
+@keyframes cp-spin-bar {
+  from { opacity: 1; }
+  to { opacity: 0.15; }
+}
+
+/* Fixed stacking scale — never 9999 */
+:root {
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-sheet: 310;
+  --z-popover: 400;
+  --z-tooltip: 500;
 }
 
 /* ── Base ── */
-html {
-  background-color: var(--color-background);
-  color: var(--color-ink);
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  html {
+    background-color: var(--canvas);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--canvas);
+    overflow-x: clip;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  *, ::before, ::after {
+    border-color: var(--line);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  select {
+    background-color: var(--surface);
+    color: var(--fg);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 28%, transparent);
+  }
+
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
+/* ── Utilities ── */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
 
-/* ── Typography utility classes ── */
-.font-display {
+/* Press feedback (laws 4): every pressable thing answers the press */
+@utility press {
+  transition-property: transform, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: scale(0.97);
+  }
+}
+
+@utility press-sm {
+  transition-property: transform, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: scale(0.94);
+  }
+}
+
+/* Hover is an enhancement: only on devices that really hover */
+@custom-variant hover-fine {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+/* Theme switches must not animate */
+.no-transitions, .no-transitions * {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .press:active, .press-sm:active {
+    transform: none !important;
+  }
+}
+
+/* Scrollbars styled only inside small panels (code, output) */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* ── Markdown prose for problem statements ── */
+.prose-cp {
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.prose-cp > * + * { margin-top: 0.85em; }
+.prose-cp h1, .prose-cp h2, .prose-cp h3 {
   font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 1.4em;
 }
-
-.font-mono {
+.prose-cp h1 { font-size: 1.35em; }
+.prose-cp h2 { font-size: 1.2em; }
+.prose-cp h3 { font-size: 1.05em; }
+.prose-cp a { color: var(--primary-text); text-decoration: underline; text-underline-offset: 2px; }
+.prose-cp ul { list-style: disc; padding-left: 1.4em; }
+.prose-cp ol { list-style: decimal; padding-left: 1.4em; }
+.prose-cp li + li { margin-top: 0.3em; }
+.prose-cp code {
   font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
 }
-
-/* ── Smooth scroll (Lenis overrides the default) ── */
-html.lenis, html.lenis body {
-  height: auto;
+.prose-cp pre {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  overflow-x: auto;
 }
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
+.prose-cp pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+.prose-cp blockquote {
+  border-left: 3px solid var(--line-strong);
+  padding-left: 1em;
+  color: var(--fg-muted);
 }
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-/* ── Selection ── */
-::selection {
-  background-color: var(--color-accent-compile);
-  color: white;
-}
+.prose-cp table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.prose-cp th, .prose-cp td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+.prose-cp th { background: var(--surface-2); font-weight: 600; }
+.prose-cp strong { font-weight: 600; }

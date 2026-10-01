@@ -42,15 +42,15 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
             }}
             className={`relative flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-colors cursor-pointer group ${
               isCurrent
-                ? 'ring-1 ring-accent-compile/20'
-                : 'hover:bg-ink/3'
+                ? 'ring-1 ring-ring'
+                : 'hover:bg-fg/3'
             }`}
           >
             {/* Active indicator */}
             {isCurrent && (
               <motion.div
                 layoutId="question-active"
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-accent-compile"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-primary"
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
             )}
@@ -59,10 +59,10 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
                 isCurrent
-                  ? 'bg-accent-compile text-white'
+                  ? 'bg-primary text-white'
                   : isVisited
-                  ? 'bg-accent-compile/15 text-accent-compile'
-                  : 'bg-ink/8 text-ink/40'
+                  ? 'bg-primary/15 text-primary-text'
+                  : 'bg-fg/8 text-fg-subtle'
               }`}
             >
               {index + 1}
@@ -72,20 +72,20 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
             <div className="flex-1 min-w-0">
               <p
                 className={`text-sm font-medium truncate ${
-                  isCurrent ? 'text-ink' : 'text-ink/70 group-hover:text-ink'
+                  isCurrent ? 'text-fg' : 'text-fg-muted group-hover:text-fg'
                 }`}
               >
                 {q.title}
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <DifficultyBadge difficulty={q.difficulty} className="!text-[9px] !px-1.5 !py-0" />
-                <span className="text-[11px] font-mono text-ink/40">{q.points} pts</span>
+                <span className="text-[11px] font-mono text-fg-subtle">{q.points} pts</span>
               </div>
             </div>
 
             {/* Status slot — Module 8 will replace this with attempted/unattempted indicator */}
             {isVisited && !isCurrent && (
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-compile/40 mt-2 shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-2 shrink-0" />
             )}
           </motion.button>
         );

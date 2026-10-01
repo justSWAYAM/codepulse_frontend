@@ -25,7 +25,7 @@ export const CreateTestCaseDialog: React.FC<CreateTestCaseDialogProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
             onClick={onClose}
           />
 
@@ -35,25 +35,25 @@ export const CreateTestCaseDialog: React.FC<CreateTestCaseDialogProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-surface rounded-2xl border border-hairline shadow-lg w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+              className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-hairline shrink-0">
+              <div className="flex items-center justify-between p-6 border-b border-line shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-accent-compile/10 flex items-center justify-center">
-                    <FlaskConical className="w-4 h-4 text-accent-compile" />
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <FlaskConical className="w-4 h-4 text-primary-text" />
                   </div>
                   <div>
-                    <h2 className="font-display text-lg font-semibold text-ink">
+                    <h2 className="font-display text-lg font-semibold text-fg">
                       Add Test Case
                     </h2>
-                    <p className="text-xs text-ink/40">Define input and expected output</p>
+                    <p className="text-xs text-fg-subtle">Define input and expected output</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-ink/30 hover:text-ink hover:bg-ink/5 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>

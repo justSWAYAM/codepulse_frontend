@@ -36,27 +36,27 @@ const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       {/* ─── Top Navbar ─── */}
-      <header className="h-16 bg-surface border-b border-hairline flex items-center justify-between px-4 md:px-6 z-30 sticky top-0">
+      <header className="h-16 bg-surface border-b border-line flex items-center justify-between px-4 md:px-6 z-30 sticky top-0">
         {/* Left: Brand + Mobile toggle */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-ink/5 transition-colors cursor-pointer"
+            className="md:hidden p-2 rounded-lg hover:bg-fg/5 transition-colors cursor-pointer"
           >
             {mobileMenuOpen ? (
-              <X className="w-5 h-5 text-ink" />
+              <X className="w-5 h-5 text-fg" />
             ) : (
-              <Menu className="w-5 h-5 text-ink" />
+              <Menu className="w-5 h-5 text-fg" />
             )}
           </button>
           <Link to="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center group-hover:bg-ink/90 transition-colors">
-              <Terminal className="w-4 h-4 text-accent-compile" />
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary-hover transition-colors">
+              <Terminal className="w-4 h-4 text-primary-text" />
             </div>
-            <span className="font-display text-lg font-bold text-ink tracking-tight hidden sm:inline">
-              Code<span className="text-accent-compile">Pulse</span>
+            <span className="font-display text-lg font-bold text-fg tracking-tight hidden sm:inline">
+              Code<span className="text-primary-text">Pulse</span>
             </span>
           </Link>
         </div>
@@ -64,21 +64,21 @@ const AppShell: React.FC = () => {
         {/* Right: User menu */}
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-ink leading-tight">
+            <p className="text-sm font-medium text-fg leading-tight">
               {user?.fullName}
             </p>
-            <p className="text-[11px] text-ink/40 font-mono leading-tight">
+            <p className="text-[11px] text-fg-subtle font-mono leading-tight">
               {user?.role ? getRoleLabel(user.role) : ''}
             </p>
           </div>
           {/* Avatar */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white text-xs font-bold uppercase">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white text-xs font-bold uppercase">
             {user?.fullName?.charAt(0) || 'U'}
           </div>
           <button
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="p-2 rounded-lg text-ink/40 hover:text-accent-error hover:bg-accent-error/5 transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-fg-subtle hover:text-danger-text hover:bg-danger-soft transition-colors cursor-pointer"
             title="Log out"
           >
             <LogOut className="w-4 h-4" />
@@ -91,7 +91,7 @@ const AppShell: React.FC = () => {
         <motion.aside
           animate={{ width: sidebarCollapsed ? 72 : 240 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="hidden md:flex flex-col bg-surface border-r border-hairline relative z-20 shrink-0"
+          className="hidden md:flex flex-col bg-surface border-r border-line relative z-20 shrink-0"
         >
           <nav className="flex-1 py-4 px-3 space-y-1">
             {navItems.map((item) => {
@@ -105,16 +105,16 @@ const AppShell: React.FC = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group relative ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition group relative ${
                     isActive
-                      ? 'bg-accent-compile/10 text-accent-compile'
-                      : 'text-ink/50 hover:text-ink hover:bg-ink/5'
+                      ? 'bg-primary/10 text-primary-text'
+                      : 'text-fg-muted hover:text-fg hover:bg-fg/5'
                   }`}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="sidebar-active"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-accent-compile"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-primary"
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   )}
@@ -142,7 +142,7 @@ const AppShell: React.FC = () => {
           {/* Collapse toggle */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink/40 hover:text-ink hover:border-ink/20 transition-colors cursor-pointer shadow-sm z-10"
+            className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-surface border border-line flex items-center justify-center text-fg-subtle hover:text-fg hover:border-line-strong transition-colors cursor-pointer shadow-sm z-10"
           >
             {sidebarCollapsed ? (
               <ChevronRight className="w-3 h-3" />
@@ -160,7 +160,7 @@ const AppShell: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-40 md:hidden"
+                className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-40 md:hidden"
                 onClick={() => setMobileMenuOpen(false)}
               />
               <motion.aside
@@ -168,7 +168,7 @@ const AppShell: React.FC = () => {
                 animate={{ x: 0 }}
                 exit={{ x: -280 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                className="fixed left-0 top-16 bottom-0 w-[260px] bg-surface border-r border-hairline z-50 md:hidden flex flex-col"
+                className="fixed left-0 top-16 bottom-0 w-[260px] bg-surface border-r border-line z-50 md:hidden flex flex-col"
               >
                 <nav className="flex-1 py-4 px-3 space-y-1">
                   {navItems.map((item) => {
@@ -183,10 +183,10 @@ const AppShell: React.FC = () => {
                         key={item.path}
                         to={item.path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
                           isActive
-                            ? 'bg-accent-compile/10 text-accent-compile'
-                            : 'text-ink/50 hover:text-ink hover:bg-ink/5'
+                            ? 'bg-primary/10 text-primary-text'
+                            : 'text-fg-muted hover:text-fg hover:bg-fg/5'
                         }`}
                       >
                         <Icon className="w-[18px] h-[18px]" />
@@ -199,16 +199,16 @@ const AppShell: React.FC = () => {
                 </nav>
 
                 {/* Mobile user info */}
-                <div className="p-4 border-t border-hairline">
+                <div className="p-4 border-t border-line">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white font-bold shrink-0 shadow-sm shadow-accent-compile/20">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white font-bold shrink-0 shadow-sm shadow-primary/20">
                       {user?.fullName?.charAt(0) || 'U'}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-ink">
+                      <p className="text-sm font-medium text-fg">
                         {user?.fullName}
                       </p>
-                      <p className="text-[11px] text-ink/40 font-mono">
+                      <p className="text-[11px] text-fg-subtle font-mono">
                         {user?.role ? getRoleLabel(user.role) : ''}
                       </p>
                     </div>

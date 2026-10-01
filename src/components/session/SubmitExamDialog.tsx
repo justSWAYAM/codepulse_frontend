@@ -30,7 +30,7 @@ export const SubmitExamDialog: React.FC<SubmitExamDialogProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-ink/30 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-fg/30 backdrop-blur-sm z-50"
             onClick={onClose}
           />
 
@@ -44,21 +44,21 @@ export const SubmitExamDialog: React.FC<SubmitExamDialogProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="bg-surface rounded-2xl border border-hairline shadow-xl max-w-md w-full p-6"
+              className="bg-surface rounded-2xl border border-line shadow-xl max-w-md w-full p-6"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Icon */}
-              <div className="w-12 h-12 rounded-xl bg-accent-syntax/10 flex items-center justify-center mb-4 mx-auto">
-                <AlertTriangle className="w-6 h-6 text-accent-syntax" />
+              <div className="w-12 h-12 rounded-xl bg-warning-soft flex items-center justify-center mb-4 mx-auto">
+                <AlertTriangle className="w-6 h-6 text-warning-text" />
               </div>
 
               {/* Title */}
-              <h2 className="font-display text-lg font-bold text-ink text-center mb-2">
+              <h2 className="font-display text-lg font-bold text-fg text-center mb-2">
                 Submit your exam?
               </h2>
 
               {/* Message */}
-              <p className="text-sm text-ink/60 text-center mb-6 leading-relaxed">
+              <p className="text-sm text-fg-muted text-center mb-6 leading-relaxed">
                 You won't be able to make further changes. Any time remaining will be forfeited.
               </p>
 
@@ -67,14 +67,14 @@ export const SubmitExamDialog: React.FC<SubmitExamDialogProps> = ({
                 <button
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-ink/60 border border-hairline hover:border-ink/20 transition-colors cursor-pointer disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-fg-muted border border-line hover:border-line-strong transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={onConfirm}
                   disabled={isSubmitting}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-error text-white rounded-xl text-sm font-semibold hover:bg-accent-error/90 disabled:opacity-60 transition-colors cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-danger text-white rounded-xl text-sm font-semibold hover:bg-danger/90 disabled:opacity-60 transition-colors cursor-pointer"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -63,16 +63,16 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-ink mb-1.5">Full Name</label>
+        <label className="block text-sm font-medium text-fg mb-1.5">Full Name</label>
         <input
           type="text"
-          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-            errors.fullName ? 'border-accent-error' : 'border-hairline'
+          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+            errors.fullName ? 'border-danger' : 'border-line'
           }`}
           {...register('fullName')}
         />
         {errors.fullName && (
-          <p className="mt-1 text-xs text-accent-error">{errors.fullName.message}</p>
+          <p className="mt-1 text-xs text-danger-text">{errors.fullName.message}</p>
         )}
       </div>
       <div className="flex justify-end">
@@ -81,7 +81,7 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
           disabled={updateMutation.isPending || !isDirty}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
-          className="px-4 py-2 rounded-lg bg-accent-compile text-white text-sm font-medium hover:bg-accent-compile-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
         >
           {updateMutation.isPending ? (
             <>
@@ -154,79 +154,79 @@ const ChangePasswordForm: React.FC = () => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {serverError && (
-        <div className="p-3 rounded-lg bg-accent-error/10 border border-accent-error/20">
-          <p className="text-sm text-accent-error">{serverError}</p>
+        <div className="p-3 rounded-lg bg-danger-soft border border-danger/30">
+          <p className="text-sm text-danger-text">{serverError}</p>
         </div>
       )}
 
       {/* Current Password */}
       <div>
-        <label className="block text-sm font-medium text-ink mb-1.5">Current Password</label>
+        <label className="block text-sm font-medium text-fg mb-1.5">Current Password</label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
           <input
             type={showCurrent ? 'text' : 'password'}
             placeholder="••••••••"
-            className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-              errors.currentPassword ? 'border-accent-error' : 'border-hairline'
+            className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+              errors.currentPassword ? 'border-danger' : 'border-line'
             }`}
             {...register('currentPassword')}
           />
           <button
             type="button"
             onClick={() => setShowCurrent(!showCurrent)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60 transition-colors cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted transition-colors cursor-pointer"
           >
             {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
         {errors.currentPassword && (
-          <p className="mt-1 text-xs text-accent-error">{errors.currentPassword.message}</p>
+          <p className="mt-1 text-xs text-danger-text">{errors.currentPassword.message}</p>
         )}
       </div>
 
       {/* New Password */}
       <div>
-        <label className="block text-sm font-medium text-ink mb-1.5">New Password</label>
+        <label className="block text-sm font-medium text-fg mb-1.5">New Password</label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
           <input
             type={showNew ? 'text' : 'password'}
             placeholder="••••••••"
-            className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-              errors.newPassword ? 'border-accent-error' : 'border-hairline'
+            className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+              errors.newPassword ? 'border-danger' : 'border-line'
             }`}
             {...register('newPassword')}
           />
           <button
             type="button"
             onClick={() => setShowNew(!showNew)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60 transition-colors cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted transition-colors cursor-pointer"
           >
             {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
         {errors.newPassword && (
-          <p className="mt-1 text-xs text-accent-error">{errors.newPassword.message}</p>
+          <p className="mt-1 text-xs text-danger-text">{errors.newPassword.message}</p>
         )}
       </div>
 
       {/* Confirm Password */}
       <div>
-        <label className="block text-sm font-medium text-ink mb-1.5">Confirm New Password</label>
+        <label className="block text-sm font-medium text-fg mb-1.5">Confirm New Password</label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/30" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
           <input
             type="password"
             placeholder="••••••••"
-            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-              errors.confirmPassword ? 'border-accent-error' : 'border-hairline'
+            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+              errors.confirmPassword ? 'border-danger' : 'border-line'
             }`}
             {...register('confirmPassword')}
           />
         </div>
         {errors.confirmPassword && (
-          <p className="mt-1 text-xs text-accent-error">{errors.confirmPassword.message}</p>
+          <p className="mt-1 text-xs text-danger-text">{errors.confirmPassword.message}</p>
         )}
       </div>
 
@@ -236,7 +236,7 @@ const ChangePasswordForm: React.FC = () => {
           disabled={changeMutation.isPending}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
-          className="px-4 py-2 rounded-lg bg-ink text-white text-sm font-medium hover:bg-ink/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
         >
           {changeMutation.isPending ? (
             <>
@@ -266,24 +266,24 @@ const ProfilePage: React.FC = () => {
     <motion.div variants={container} initial="hidden" animate="show" className="max-w-2xl">
       {/* Header */}
       <motion.div variants={item} className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-ink mb-1">
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-fg mb-1">
           My Profile
         </h1>
-        <p className="text-sm text-ink/50">Manage your account information</p>
+        <p className="text-sm text-fg-muted">Manage your account information</p>
       </motion.div>
 
       {/* Profile Overview Card */}
       <motion.div
         variants={item}
-        className="p-6 rounded-2xl bg-surface border border-hairline mb-6"
+        className="p-6 rounded-2xl bg-surface border border-line mb-6"
       >
         <div className="flex items-start gap-4 mb-6">
           {/* Avatar */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white text-2xl font-bold uppercase shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white text-2xl font-bold uppercase shrink-0">
             {displayUser?.fullName?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-display text-xl font-semibold text-ink truncate">
+            <h2 className="font-display text-xl font-semibold text-fg truncate">
               {displayUser?.fullName}
             </h2>
             <div className="flex items-center flex-wrap gap-2 mt-2">
@@ -295,28 +295,28 @@ const ProfilePage: React.FC = () => {
 
         {/* Info grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-            <Mail className="w-4 h-4 text-ink/30" />
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
+            <Mail className="w-4 h-4 text-fg-subtle" />
             <div>
-              <p className="text-[11px] text-ink/40 uppercase tracking-wider">Email</p>
-              <p className="text-sm text-ink font-mono">{displayUser?.email}</p>
+              <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Email</p>
+              <p className="text-sm text-fg font-mono">{displayUser?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-            <Shield className="w-4 h-4 text-ink/30" />
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
+            <Shield className="w-4 h-4 text-fg-subtle" />
             <div>
-              <p className="text-[11px] text-ink/40 uppercase tracking-wider">Role</p>
-              <p className="text-sm text-ink">{displayUser?.role}</p>
+              <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Role</p>
+              <p className="text-sm text-fg">{displayUser?.role}</p>
             </div>
           </div>
           {profile?.createdAt && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-background sm:col-span-2">
-              <Calendar className="w-4 h-4 text-ink/30" />
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas sm:col-span-2">
+              <Calendar className="w-4 h-4 text-fg-subtle" />
               <div>
-                <p className="text-[11px] text-ink/40 uppercase tracking-wider">
+                <p className="text-[11px] text-fg-subtle uppercase tracking-wider">
                   Member Since
                 </p>
-                <p className="text-sm text-ink">
+                <p className="text-sm text-fg">
                   {new Date(profile.createdAt).toLocaleDateString('en-US', {
                     month: 'long',
                     day: 'numeric',
@@ -331,47 +331,47 @@ const ProfilePage: React.FC = () => {
           {displayUser?.role === 'CANDIDATE' && profile && (
             <>
               {profile.year && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">Y</div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
+                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">Y</div>
                   <div>
-                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Year</p>
-                    <p className="text-sm text-ink">{profile.year}</p>
+                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Year</p>
+                    <p className="text-sm text-fg">{profile.year}</p>
                   </div>
                 </div>
               )}
               {profile.branch && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">B</div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
+                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">B</div>
                   <div>
-                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Branch</p>
-                    <p className="text-sm text-ink">{profile.branch}</p>
+                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Branch</p>
+                    <p className="text-sm text-fg">{profile.branch}</p>
                   </div>
                 </div>
               )}
               {profile.division && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">D</div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
+                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">D</div>
                   <div>
-                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Division</p>
-                    <p className="text-sm text-ink">{profile.division}</p>
+                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Division</p>
+                    <p className="text-sm text-fg">{profile.division}</p>
                   </div>
                 </div>
               )}
               {profile.batch && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">C</div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
+                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">C</div>
                   <div>
-                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Batch</p>
-                    <p className="text-sm text-ink">{profile.batch}</p>
+                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Batch</p>
+                    <p className="text-sm text-fg">{profile.batch}</p>
                   </div>
                 </div>
               )}
               {profile.rollNumber && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background sm:col-span-2">
-                  <div className="w-4 h-4 text-ink/30 flex items-center justify-center font-bold text-xs">#</div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas sm:col-span-2">
+                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">#</div>
                   <div>
-                    <p className="text-[11px] text-ink/40 uppercase tracking-wider">Roll Number</p>
-                    <p className="text-sm text-ink font-mono">{profile.rollNumber}</p>
+                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Roll Number</p>
+                    <p className="text-sm text-fg font-mono">{profile.rollNumber}</p>
                   </div>
                 </div>
               )}
@@ -383,17 +383,17 @@ const ProfilePage: React.FC = () => {
       {/* Update Name Card */}
       <motion.div
         variants={item}
-        className="p-6 rounded-2xl bg-surface border border-hairline mb-6"
+        className="p-6 rounded-2xl bg-surface border border-line mb-6"
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-accent-compile/10 flex items-center justify-center">
-            <User className="w-4 h-4 text-accent-compile" />
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <User className="w-4 h-4 text-primary-text" />
           </div>
           <div>
-            <h3 className="font-display text-base font-semibold text-ink">
+            <h3 className="font-display text-base font-semibold text-fg">
               Personal Information
             </h3>
-            <p className="text-xs text-ink/40">Update your display name</p>
+            <p className="text-xs text-fg-subtle">Update your display name</p>
           </div>
         </div>
         <ProfileForm userName={displayUser?.fullName || ''} />
@@ -402,17 +402,17 @@ const ProfilePage: React.FC = () => {
       {/* Change Password Card */}
       <motion.div
         variants={item}
-        className="p-6 rounded-2xl bg-surface border border-hairline"
+        className="p-6 rounded-2xl bg-surface border border-line"
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-ink/5 flex items-center justify-center">
-            <Lock className="w-4 h-4 text-ink/40" />
+          <div className="w-9 h-9 rounded-xl bg-fg/5 flex items-center justify-center">
+            <Lock className="w-4 h-4 text-fg-subtle" />
           </div>
           <div>
-            <h3 className="font-display text-base font-semibold text-ink">
+            <h3 className="font-display text-base font-semibold text-fg">
               Change Password
             </h3>
-            <p className="text-xs text-ink/40">Update your account password</p>
+            <p className="text-xs text-fg-subtle">Update your account password</p>
           </div>
         </div>
         <ChangePasswordForm />

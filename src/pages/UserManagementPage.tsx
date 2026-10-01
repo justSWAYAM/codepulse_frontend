@@ -80,7 +80,7 @@ const RowActions: React.FC<{
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg text-ink/30 hover:text-ink hover:bg-ink/5 transition-colors cursor-pointer"
+        className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
@@ -91,14 +91,14 @@ const RowActions: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.12 }}
-            className="absolute right-0 top-full mt-1 w-44 bg-surface rounded-xl border border-hairline shadow-lg z-50 py-1"
+            className="absolute right-0 top-full mt-1 w-44 bg-surface rounded-xl border border-line shadow-lg z-50 py-1"
           >
             <button
               onClick={() => {
                 setOpen(false);
                 onEdit(user);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink/70 hover:bg-ink/5 hover:text-ink transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-fg-muted hover:bg-fg/5 hover:text-fg transition-colors cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit
@@ -110,8 +110,8 @@ const RowActions: React.FC<{
               }}
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer ${
                 user.isActive
-                  ? 'text-accent-error/70 hover:bg-accent-error/5 hover:text-accent-error'
-                  : 'text-accent-compile/70 hover:bg-accent-compile/5 hover:text-accent-compile'
+                  ? 'text-danger-text hover:bg-danger-soft hover:text-danger-text'
+                  : 'text-primary-text hover:bg-primary/5 hover:text-primary-text'
               }`}
             >
               {user.isActive ? (
@@ -151,7 +151,7 @@ const ConfirmDialog: React.FC<{
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
         onClick={onCancel}
       />
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
@@ -159,24 +159,24 @@ const ConfirmDialog: React.FC<{
           initial={{ opacity: 0, scale: 0.95, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="bg-surface rounded-2xl border border-hairline shadow-lg w-full max-w-sm p-6"
+          className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-sm p-6"
           onClick={(e) => e.stopPropagation()}
         >
           <div
             className={`w-11 h-11 rounded-xl ${
-              isDeactivating ? 'bg-accent-error/10' : 'bg-accent-compile/10'
+              isDeactivating ? 'bg-danger-soft' : 'bg-primary/10'
             } flex items-center justify-center mb-4`}
           >
             {isDeactivating ? (
-              <UserX className="w-5 h-5 text-accent-error" />
+              <UserX className="w-5 h-5 text-danger-text" />
             ) : (
-              <UserCheck className="w-5 h-5 text-accent-compile" />
+              <UserCheck className="w-5 h-5 text-primary-text" />
             )}
           </div>
-          <h3 className="font-display text-lg font-semibold text-ink mb-1">
+          <h3 className="font-display text-lg font-semibold text-fg mb-1">
             {isDeactivating ? 'Deactivate' : 'Reactivate'} User
           </h3>
-          <p className="text-sm text-ink/50 mb-6">
+          <p className="text-sm text-fg-muted mb-6">
             {isDeactivating
               ? `Are you sure you want to deactivate ${user.fullName}? They will no longer be able to log in.`
               : `Reactivate ${user.fullName}? They'll be able to log in again.`}
@@ -184,7 +184,7 @@ const ConfirmDialog: React.FC<{
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={onCancel}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-ink/60 border border-hairline hover:border-ink/20 hover:text-ink transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -195,8 +195,8 @@ const ConfirmDialog: React.FC<{
               whileTap={{ scale: 0.97 }}
               className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
                 isDeactivating
-                  ? 'bg-accent-error hover:bg-accent-error/90'
-                  : 'bg-accent-compile hover:bg-accent-compile-hover'
+                  ? 'bg-danger hover:bg-danger/90'
+                  : 'bg-primary hover:bg-primary-hover'
               }`}
             >
               {isPending
@@ -254,7 +254,7 @@ const UserManagementPage: React.FC = () => {
       header: 'Name',
       cell: ({ row }) => (
         <div>
-          <p className="font-medium text-ink text-sm">{row.original.fullName}</p>
+          <p className="font-medium text-fg text-sm">{row.original.fullName}</p>
         </div>
       ),
     },
@@ -262,7 +262,7 @@ const UserManagementPage: React.FC = () => {
       accessorKey: 'email',
       header: 'Email',
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-ink/60">{row.original.email}</span>
+        <span className="font-mono text-xs text-fg-muted">{row.original.email}</span>
       ),
     },
     {
@@ -281,7 +281,7 @@ const UserManagementPage: React.FC = () => {
       accessorKey: 'createdAt',
       header: 'Created',
       cell: ({ row }) => (
-        <span className="text-xs text-ink/40">
+        <span className="text-xs text-fg-subtle">
           {new Date(row.original.createdAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -318,17 +318,17 @@ const UserManagementPage: React.FC = () => {
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
         >
           <div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-ink mb-1">
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-fg mb-1">
               User Management
             </h1>
-            <p className="text-sm text-ink/50">Create, manage, and import user accounts</p>
+            <p className="text-sm text-fg-muted">Create, manage, and import user accounts</p>
           </div>
           <div className="flex items-center gap-2">
             <motion.button
               onClick={() => setBulkOpen(true)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="px-4 py-2.5 rounded-lg text-sm font-medium text-ink/60 border border-hairline hover:border-ink/20 hover:text-ink transition-colors cursor-pointer flex items-center gap-2"
+              className="px-4 py-2.5 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer flex items-center gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span className="hidden sm:inline">Bulk Import</span>
@@ -337,7 +337,7 @@ const UserManagementPage: React.FC = () => {
               onClick={() => setCreateOpen(true)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="px-4 py-2.5 rounded-lg bg-accent-compile text-white text-sm font-medium hover:bg-accent-compile-hover transition-colors cursor-pointer flex items-center gap-2 relative overflow-hidden group"
+              className="px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer flex items-center gap-2 relative overflow-hidden group"
             >
               {/* shimmer effect */}
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -349,42 +349,42 @@ const UserManagementPage: React.FC = () => {
 
         {/* Stats */}
         <motion.div variants={item} className="grid grid-cols-3 gap-3 mb-6">
-          <div className="p-4 rounded-xl bg-surface border border-hairline">
+          <div className="p-4 rounded-xl bg-surface border border-line">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-ink/5 flex items-center justify-center">
-                <Users className="w-4 h-4 text-ink/40" />
+              <div className="w-9 h-9 rounded-lg bg-fg/5 flex items-center justify-center">
+                <Users className="w-4 h-4 text-fg-subtle" />
               </div>
               <div>
-                <p className="text-xl font-bold font-display text-ink">
+                <p className="text-xl font-bold font-display text-fg">
                   <NumberTicker value={totalUsers} />
                 </p>
-                <p className="text-[11px] text-ink/40">Total Users</p>
+                <p className="text-[11px] text-fg-subtle">Total Users</p>
               </div>
             </div>
           </div>
-          <div className="p-4 rounded-xl bg-surface border border-hairline">
+          <div className="p-4 rounded-xl bg-surface border border-line">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-accent-compile/10 flex items-center justify-center">
-                <UserCheck2 className="w-4 h-4 text-accent-compile" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <UserCheck2 className="w-4 h-4 text-primary-text" />
               </div>
               <div>
-                <p className="text-xl font-bold font-display text-accent-compile">
+                <p className="text-xl font-bold font-display text-primary-text">
                   <NumberTicker value={activeUsers} />
                 </p>
-                <p className="text-[11px] text-ink/40">Active</p>
+                <p className="text-[11px] text-fg-subtle">Active</p>
               </div>
             </div>
           </div>
-          <div className="p-4 rounded-xl bg-surface border border-hairline">
+          <div className="p-4 rounded-xl bg-surface border border-line">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-ink/5 flex items-center justify-center">
-                <UserMinus className="w-4 h-4 text-ink/30" />
+              <div className="w-9 h-9 rounded-lg bg-fg/5 flex items-center justify-center">
+                <UserMinus className="w-4 h-4 text-fg-subtle" />
               </div>
               <div>
-                <p className="text-xl font-bold font-display text-ink/50">
+                <p className="text-xl font-bold font-display text-fg-muted">
                   <NumberTicker value={inactiveUsers} />
                 </p>
-                <p className="text-[11px] text-ink/40">Inactive</p>
+                <p className="text-[11px] text-fg-subtle">Inactive</p>
               </div>
             </div>
           </div>

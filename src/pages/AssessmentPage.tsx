@@ -163,7 +163,7 @@ const AssessmentPage: React.FC = () => {
       : (sessionErr as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Something went wrong loading your session.';
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
         <ErrorState message={message} />
       </div>
     );
@@ -182,24 +182,24 @@ const AssessmentPage: React.FC = () => {
 
   // ── Active session: render the exam ──
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-canvas overflow-hidden">
       {/* ── Header ── */}
-      <header className="h-14 bg-surface border-b border-hairline flex items-center justify-between px-4 shrink-0 z-30">
+      <header className="h-14 bg-surface border-b border-line flex items-center justify-between px-4 shrink-0 z-30">
         {/* Left: brand + title */}
         <div className="flex items-center gap-3 min-w-0">
           {/* Mobile sidebar toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-ink/5 transition-colors cursor-pointer"
+            className="lg:hidden p-2 rounded-lg hover:bg-fg/5 transition-colors cursor-pointer"
           >
-            {sidebarOpen ? <X className="w-4 h-4 text-ink" /> : <Menu className="w-4 h-4 text-ink" />}
+            {sidebarOpen ? <X className="w-4 h-4 text-fg" /> : <Menu className="w-4 h-4 text-fg" />}
           </button>
 
-          <div className="w-7 h-7 rounded-lg bg-ink flex items-center justify-center shrink-0">
-            <Terminal className="w-3.5 h-3.5 text-accent-compile" />
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <Terminal className="w-3.5 h-3.5 text-primary-text" />
           </div>
           <div className="min-w-0 hidden sm:block">
-            <p className="text-sm font-display font-bold text-ink truncate">
+            <p className="text-sm font-display font-bold text-fg truncate">
               {contest?.title ?? 'Assessment'}
             </p>
           </div>
@@ -208,7 +208,7 @@ const AssessmentPage: React.FC = () => {
         {/* Center: status + timer */}
         <div className="flex items-center gap-4">
           {!isOnline && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-syntax/10 text-accent-syntax">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning-soft text-warning-text">
               <WifiOff className="w-3 h-3" />
               <span className="text-[11px] font-semibold">Reconnecting…</span>
             </div>
@@ -221,7 +221,7 @@ const AssessmentPage: React.FC = () => {
         <button
           onClick={() => setShowSubmitDialog(true)}
           disabled={isExpired || submitMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-xl text-sm font-semibold hover:bg-ink/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {submitMutation.isPending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -236,9 +236,9 @@ const AssessmentPage: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — Question Navigator */}
         {/* Desktop: always visible */}
-        <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-surface border-r border-hairline overflow-y-auto" data-lenis-prevent>
-          <div className="px-4 py-3 border-b border-hairline">
-            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wider">
+        <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-surface border-r border-line overflow-y-auto" data-lenis-prevent>
+          <div className="px-4 py-3 border-b border-line">
+            <p className="text-[11px] font-semibold text-fg-subtle uppercase tracking-wider">
               Questions ({questions.length})
             </p>
           </div>
@@ -262,7 +262,7 @@ const AssessmentPage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-40 lg:hidden"
+                className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-40 lg:hidden"
                 onClick={() => setSidebarOpen(false)}
               />
               <motion.aside
@@ -270,10 +270,10 @@ const AssessmentPage: React.FC = () => {
                 animate={{ x: 0 }}
                 exit={{ x: -280 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                className="fixed left-0 top-14 bottom-0 w-[260px] bg-surface border-r border-hairline z-50 lg:hidden flex flex-col overflow-y-auto"
+                className="fixed left-0 top-14 bottom-0 w-[260px] bg-surface border-r border-line z-50 lg:hidden flex flex-col overflow-y-auto"
               >
-                <div className="px-4 py-3 border-b border-hairline">
-                  <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wider">
+                <div className="px-4 py-3 border-b border-line">
+                  <p className="text-[11px] font-semibold text-fg-subtle uppercase tracking-wider">
                     Questions ({questions.length})
                   </p>
                 </div>
@@ -299,8 +299,8 @@ const AssessmentPage: React.FC = () => {
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
-                <AlertTriangle className="w-8 h-8 text-ink/20 mx-auto mb-3" />
-                <p className="text-sm text-ink/40">Select a question to get started</p>
+                <AlertTriangle className="w-8 h-8 text-fg-subtle mx-auto mb-3" />
+                <p className="text-sm text-fg-subtle">Select a question to get started</p>
               </div>
             </div>
           )}

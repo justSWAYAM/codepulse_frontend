@@ -29,25 +29,25 @@ export const QuestionEditPage: React.FC = () => {
   }
 
   if (!question) {
-    return <div className="p-8 text-red-500">Question not found.</div>;
+    return <div className="p-8 text-danger-text">Question not found.</div>;
   }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-white border-b border-[#E4E2DC] px-8 py-6 shrink-0 flex justify-between items-start">
+      <div className="bg-surface border-b border-line px-8 py-6 shrink-0 flex justify-between items-start">
         <div>
           <button
             onClick={() => navigate(`/dashboard/contests/${contestId}`)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1B1E3A] mb-4 transition-colors"
+            className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg mb-4 transition-colors"
           >
             <ArrowLeft size={16} />
             Back to Contest
           </button>
-          <h1 className="text-3xl font-display font-bold text-[#1B1E3A]">
+          <h1 className="text-3xl font-display font-bold text-fg">
             Edit Question
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-fg-muted mt-1">
             Update properties and markdown for this question.
           </p>
         </div>
@@ -55,13 +55,13 @@ export const QuestionEditPage: React.FC = () => {
 
       {/* Tabs — only show when questionId exists (always true on this page) */}
       {questionId && (
-        <div className="flex gap-1 px-8 pt-4 border-b border-hairline bg-white shrink-0">
+        <div className="flex gap-1 px-8 pt-4 border-b border-line bg-surface shrink-0">
           <button
             onClick={() => setActiveTab('details')}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
               activeTab === 'details'
-                ? 'border-ink text-ink'
-                : 'border-transparent text-ink/50 hover:text-ink'
+                ? 'border-fg text-fg'
+                : 'border-transparent text-fg-muted hover:text-fg'
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -71,8 +71,8 @@ export const QuestionEditPage: React.FC = () => {
             onClick={() => setActiveTab('testcases')}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
               activeTab === 'testcases'
-                ? 'border-ink text-ink'
-                : 'border-transparent text-ink/50 hover:text-ink'
+                ? 'border-fg text-fg'
+                : 'border-transparent text-fg-muted hover:text-fg'
             }`}
           >
             <FlaskConical className="w-4 h-4" />

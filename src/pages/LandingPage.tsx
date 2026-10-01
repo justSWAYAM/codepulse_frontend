@@ -1,4 +1,5 @@
 import React from 'react';
+import { ReactLenis } from 'lenis/react';
 import { Navbar } from '../components/landing/Navbar';
 import { Hero } from '../components/landing/Hero';
 import { RolesStrip } from '../components/landing/RolesStrip';
@@ -8,7 +9,8 @@ import { Footer } from '../components/landing/Footer';
 
 const LandingPage: React.FC = () => {
   return (
-    <>
+    // Smooth scroll only on the marketing page — it would fight Monaco and app panels
+    <ReactLenis root options={{ lerp: 0.12, smoothWheel: true }}>
       <Navbar />
       <main>
         <Hero />
@@ -17,7 +19,7 @@ const LandingPage: React.FC = () => {
         <FinalCTASection />
       </main>
       <Footer />
-    </>
+    </ReactLenis>
   );
 };
 

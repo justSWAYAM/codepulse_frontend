@@ -94,7 +94,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
             onClick={handleClose}
           />
 
@@ -104,23 +104,23 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-surface rounded-2xl border border-hairline shadow-lg w-full max-w-md"
+              className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-md"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-hairline">
+              <div className="flex items-center justify-between p-6 border-b border-line">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-accent-syntax/10 flex items-center justify-center">
-                    <Pencil className="w-4 h-4 text-accent-syntax" />
+                  <div className="w-9 h-9 rounded-xl bg-warning-soft flex items-center justify-center">
+                    <Pencil className="w-4 h-4 text-warning-text" />
                   </div>
                   <div>
-                    <h2 className="font-display text-lg font-semibold text-ink">Edit User</h2>
-                    <p className="text-xs text-ink/40">{editingUser.fullName} · {editingUser.email}</p>
+                    <h2 className="font-display text-lg font-semibold text-fg">Edit User</h2>
+                    <p className="text-xs text-fg-subtle">{editingUser.fullName} · {editingUser.email}</p>
                   </div>
                 </div>
                 <button
                   onClick={handleClose}
-                  className="p-1.5 rounded-lg text-ink/30 hover:text-ink hover:bg-ink/5 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -130,10 +130,10 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
               <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
                 {/* Role */}
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Role</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Role</label>
                   <select
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-                      errors.role ? 'border-accent-error' : 'border-hairline'
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+                      errors.role ? 'border-danger' : 'border-line'
                     }`}
                     {...register('role')}
                   >
@@ -148,9 +148,9 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
                     <div className="grid grid-cols-2 gap-4">
                       {/* Year */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Year</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Year</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                           defaultValue={editingUser.year || ""}
                           {...register('year', { valueAsNumber: true })}
                         >
@@ -164,9 +164,9 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
 
                       {/* Branch */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Branch</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Branch</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                           defaultValue={editingUser.branch || ""}
                           {...register('branch')}
                         >
@@ -182,9 +182,9 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
                     <div className="grid grid-cols-2 gap-4">
                       {/* Division */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Division</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Division</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline disabled:opacity-50 disabled:cursor-not-allowed`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line disabled:opacity-50 disabled:cursor-not-allowed`}
                           defaultValue={editingUser.division || ""}
                           {...register('division')}
                           disabled={selectedBranch === 'MECH' || selectedBranch === 'ECS'}
@@ -198,9 +198,9 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
 
                       {/* Batch */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Batch</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Batch</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                           defaultValue={editingUser.batch || ""}
                           {...register('batch')}
                         >
@@ -215,12 +215,12 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
 
                     {/* Roll Number */}
                     <div>
-                      <label className="block text-sm font-medium text-ink mb-1.5">Roll Number</label>
+                      <label className="block text-sm font-medium text-fg mb-1.5">Roll Number</label>
                       <input
                         type="text"
                         placeholder="e.g. 123456"
                         defaultValue={editingUser.rollNumber || ""}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                        className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                         {...register('rollNumber')}
                       />
                     </div>
@@ -229,14 +229,14 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
 
                 {/* Status */}
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Status</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Status</label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-hairline text-accent-compile focus:ring-accent-compile/30 cursor-pointer"
+                      className="w-4 h-4 rounded border-line text-primary-text focus:ring-ring cursor-pointer"
                       {...register('isActive')}
                     />
-                    <span className="text-sm text-ink/70">Active</span>
+                    <span className="text-sm text-fg-muted">Active</span>
                   </label>
                 </div>
 
@@ -245,7 +245,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-ink/60 border border-hairline hover:border-ink/20 hover:text-ink transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -254,7 +254,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
                     disabled={updateMutation.isPending}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.97 }}
-                    className="px-4 py-2 rounded-lg bg-accent-compile text-white text-sm font-medium hover:bg-accent-compile-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
                   >
                     {updateMutation.isPending ? (
                       <>

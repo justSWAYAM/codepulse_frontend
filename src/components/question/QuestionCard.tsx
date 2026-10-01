@@ -26,23 +26,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   return (
     <div
       onClick={() => onClick?.(question.id)}
-      className={`bg-white border border-[#E4E2DC] rounded-lg p-4 flex items-center gap-4 transition-colors ${
-        onClick ? 'cursor-pointer hover:bg-gray-50' : ''
+      className={`bg-surface border border-line rounded-lg p-4 flex items-center gap-4 transition-colors ${
+        onClick ? 'cursor-pointer hover:bg-surface-2' : ''
       }`}
     >
       {isAdmin && (
-        <div className="text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-600 transition-colors px-1 -ml-2">
+        <div className="text-fg-subtle cursor-grab active:cursor-grabbing hover:text-fg-muted transition-colors px-1 -ml-2">
           <GripVertical size={20} />
         </div>
       )}
       
-      <div className="w-8 h-8 rounded-full bg-[#FAFAF8] text-[#1B1E3A] flex items-center justify-center font-bold text-sm shrink-0">
+      <div className="w-8 h-8 rounded-full bg-canvas text-fg flex items-center justify-center font-bold text-sm shrink-0">
         {index + 1}
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-[#1B1E3A] truncate">{question.title}</h3>
-        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 font-mono">
+        <h3 className="font-medium text-fg truncate">{question.title}</h3>
+        <div className="flex items-center gap-4 mt-1 text-sm text-fg-muted font-mono">
           <span>{question.points} pts</span>
           <span>{question.timeLimitMs} ms</span>
           <span>{Math.round(question.memoryLimitKb / 1024)} MB</span>
@@ -58,7 +58,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               e.stopPropagation();
               onEdit?.(question.id);
             }}
-            className="p-2 text-gray-400 hover:text-[#E8A33D] hover:bg-[#E8A33D]/10 rounded-md transition-colors"
+            className="p-2 text-fg-subtle hover:text-warning-text hover:bg-warning-soft rounded-md transition-colors"
             title="Edit Question"
           >
             <Pencil size={16} />
@@ -68,7 +68,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               e.stopPropagation();
               onDelete?.(question.id, question.title);
             }}
-            className="p-2 text-gray-400 hover:text-[#E85D4E] hover:bg-[#E85D4E]/10 rounded-md transition-colors"
+            className="p-2 text-fg-subtle hover:text-danger-text hover:bg-danger-soft rounded-md transition-colors"
             title="Delete Question"
           >
             <Trash2 size={16} />

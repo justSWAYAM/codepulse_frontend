@@ -31,12 +31,12 @@ export const ContestCard: React.FC<ContestCardProps> = ({
       whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(27,30,58,0.08)' }}
       transition={{ duration: 0.15 }}
       onClick={() => navigate(`/dashboard/contests/${contest.id}`)}
-      className="bg-surface border border-hairline rounded-2xl p-5 cursor-pointer transition-shadow"
+      className="bg-surface border border-line rounded-2xl p-5 cursor-pointer transition-shadow"
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-display text-[15px] font-bold text-ink truncate mb-1.5">
+          <h3 className="font-display text-[15px] font-bold text-fg truncate mb-1.5">
             {contest.title}
           </h3>
           <ContestStatusBadge status={contest.status} />
@@ -45,13 +45,13 @@ export const ContestCard: React.FC<ContestCardProps> = ({
 
       {/* Description excerpt */}
       {contest.description && (
-        <p className="text-sm text-ink/50 leading-relaxed line-clamp-2 mb-4">
+        <p className="text-sm text-fg-muted leading-relaxed line-clamp-2 mb-4">
           {contest.description}
         </p>
       )}
 
       {/* Meta row */}
-      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-ink/50 mb-3">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-fg-muted mb-3">
         <span className="flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5" />
           {formatDate(contest.startTime)}
@@ -71,11 +71,11 @@ export const ContestCard: React.FC<ContestCardProps> = ({
       {/* Language tags */}
       {contest.allowedLanguages.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Code2 className="w-3.5 h-3.5 text-ink/30" />
+          <Code2 className="w-3.5 h-3.5 text-fg-subtle" />
           {contest.allowedLanguages.map((lang) => (
             <span
               key={lang}
-              className="font-mono text-[10px] px-2 py-0.5 rounded bg-ink/5 text-ink/60 tracking-tight"
+              className="font-mono text-[10px] px-2 py-0.5 rounded bg-fg/5 text-fg-muted tracking-tight"
             >
               {lang}
             </span>

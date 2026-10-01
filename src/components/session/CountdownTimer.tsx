@@ -21,9 +21,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ remainingSeconds
   if (remainingSeconds <= 0) {
     return (
       <div className="flex items-center gap-2">
-        <Timer className="w-4 h-4 text-accent-error" />
+        <Timer className="w-4 h-4 text-danger-text" />
         <span
-          className="font-mono text-sm font-bold text-accent-error"
+          className="font-mono text-sm font-bold text-danger-text"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
           Time's up
@@ -46,16 +46,16 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ remainingSeconds
   let iconColorClass: string;
   if (remainingSeconds <= 120) {
     // ≤ 2 minutes — danger red
-    colorClass = 'text-accent-error';
-    iconColorClass = 'text-accent-error';
+    colorClass = 'text-danger-text';
+    iconColorClass = 'text-danger-text';
   } else if (remainingSeconds <= 600) {
     // ≤ 10 minutes — caution amber
-    colorClass = 'text-accent-syntax';
-    iconColorClass = 'text-accent-syntax';
+    colorClass = 'text-warning-text';
+    iconColorClass = 'text-warning-text';
   } else {
     // Calm — default ink
-    colorClass = 'text-ink';
-    iconColorClass = 'text-ink/50';
+    colorClass = 'text-fg';
+    iconColorClass = 'text-fg-muted';
   }
 
   return (

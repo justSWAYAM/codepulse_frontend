@@ -25,17 +25,17 @@ export const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-compile/10 text-accent-compile text-xs font-mono font-medium mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-compile animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary-text text-xs font-mono font-medium mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
               NOW IN BETA
             </div>
 
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.4rem] font-bold text-ink leading-[1.1] tracking-tight mb-5">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.4rem] font-bold text-fg leading-[1.1] tracking-tight mb-5">
               Where code meets{' '}
-              <span className="text-accent-compile">evaluation</span>
+              <span className="text-primary-text">evaluation</span>
             </h1>
 
-            <p className="text-lg text-ink/55 leading-relaxed max-w-lg mb-8">
+            <p className="text-lg text-fg-muted leading-relaxed max-w-lg mb-8">
               Run coding contests, auto-grade submissions, and deliver instant feedback — 
               built for classrooms and competitive programming alike.
             </p>
@@ -45,7 +45,7 @@ export const Hero: React.FC = () => {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-accent-compile text-white font-medium hover:bg-accent-compile-hover transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover transition-colors"
                 >
                   Log In
                   <ArrowRight className="w-4 h-4" />
@@ -56,7 +56,7 @@ export const Hero: React.FC = () => {
                 onClick={scrollToHowItWorks}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-hairline text-ink/70 font-medium hover:border-ink/20 hover:text-ink transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-line text-fg-muted font-medium hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
               >
                 See how it works
                 <ChevronDown className="w-4 h-4" />

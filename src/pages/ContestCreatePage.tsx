@@ -96,13 +96,13 @@ const ContestCreatePage: React.FC = () => {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/dashboard/contests')}
-          className="p-2 rounded-xl text-ink/40 hover:text-ink hover:bg-ink/5 transition-colors cursor-pointer"
+          className="p-2 rounded-xl text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="font-display text-2xl font-bold text-ink">Create Contest</h1>
-          <p className="text-sm text-ink/50">Set up a new coding contest</p>
+          <h1 className="font-display text-2xl font-bold text-fg">Create Contest</h1>
+          <p className="text-sm text-fg-muted">Set up a new coding contest</p>
         </div>
       </div>
 
@@ -110,27 +110,27 @@ const ContestCreatePage: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-surface border border-hairline rounded-2xl p-6"
+        className="bg-surface border border-line rounded-2xl p-6"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">Title *</label>
+            <label className="block text-sm font-medium text-fg mb-1.5">Title *</label>
             <input
               {...register('title')}
               placeholder="e.g. Mid-Semester Coding Exam"
-              className="w-full px-4 py-2.5 rounded-xl border border-hairline bg-background text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:border-ink/30 transition-colors"
+              className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm placeholder:text-fg-subtle focus:outline-none focus:border-primary transition-colors"
             />
             {errors.title && (
-              <p className="mt-1 text-xs text-accent-error">{errors.title.message}</p>
+              <p className="mt-1 text-xs text-danger-text">{errors.title.message}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-sm font-medium text-fg mb-1.5">
               Description{' '}
-              <span className="text-ink/40 font-normal">({description.length}/2000)</span>
+              <span className="text-fg-subtle font-normal">({description.length}/2000)</span>
             </label>
             <textarea
               {...register('description')}
@@ -141,59 +141,59 @@ const ContestCreatePage: React.FC = () => {
               }}
               placeholder="Describe the contest, rules, and objectives..."
               rows={4}
-              className="w-full px-4 py-2.5 rounded-xl border border-hairline bg-background text-ink text-sm placeholder:text-ink/30 focus:outline-none focus:border-ink/30 transition-colors resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm placeholder:text-fg-subtle focus:outline-none focus:border-primary transition-colors resize-none"
             />
             {errors.description && (
-              <p className="mt-1 text-xs text-accent-error">{errors.description.message}</p>
+              <p className="mt-1 text-xs text-danger-text">{errors.description.message}</p>
             )}
           </div>
 
           {/* Time inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">Start Time *</label>
+              <label className="block text-sm font-medium text-fg mb-1.5">Start Time *</label>
               <input
                 {...register('startTime')}
                 type="datetime-local"
-                className="w-full px-4 py-2.5 rounded-xl border border-hairline bg-background text-ink text-sm focus:outline-none focus:border-ink/30 transition-colors"
+                className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm focus:outline-none focus:border-primary transition-colors"
               />
               {errors.startTime && (
-                <p className="mt-1 text-xs text-accent-error">{errors.startTime.message}</p>
+                <p className="mt-1 text-xs text-danger-text">{errors.startTime.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">End Time *</label>
+              <label className="block text-sm font-medium text-fg mb-1.5">End Time *</label>
               <input
                 {...register('endTime')}
                 type="datetime-local"
-                className="w-full px-4 py-2.5 rounded-xl border border-hairline bg-background text-ink text-sm focus:outline-none focus:border-ink/30 transition-colors"
+                className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm focus:outline-none focus:border-primary transition-colors"
               />
               {errors.endTime && (
-                <p className="mt-1 text-xs text-accent-error">{errors.endTime.message}</p>
+                <p className="mt-1 text-xs text-danger-text">{errors.endTime.message}</p>
               )}
             </div>
           </div>
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-sm font-medium text-fg mb-1.5">
               Duration (minutes) *
-              <span className="text-ink/40 font-normal ml-1">— auto-computed, can be overridden</span>
+              <span className="text-fg-subtle font-normal ml-1">— auto-computed, can be overridden</span>
             </label>
             <input
               {...register('durationMinutes', { valueAsNumber: true })}
               type="number"
               min={1}
-              className="w-full px-4 py-2.5 rounded-xl border border-hairline bg-background text-ink text-sm focus:outline-none focus:border-ink/30 transition-colors"
+              className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm focus:outline-none focus:border-primary transition-colors"
             />
             {errors.durationMinutes && (
-              <p className="mt-1 text-xs text-accent-error">{errors.durationMinutes.message}</p>
+              <p className="mt-1 text-xs text-danger-text">{errors.durationMinutes.message}</p>
             )}
           </div>
 
           {/* Languages */}
           <div>
-            <label className="block text-sm font-medium text-ink mb-2">
+            <label className="block text-sm font-medium text-fg mb-2">
               Allowed Languages *
             </label>
             <div className="flex flex-wrap gap-2">
@@ -204,10 +204,10 @@ const ContestCreatePage: React.FC = () => {
                     key={lang}
                     type="button"
                     onClick={() => toggleLanguage(lang)}
-                    className={`font-mono text-xs px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    className={`font-mono text-xs px-3 py-1.5 rounded-lg border transition cursor-pointer ${
                       selected
-                        ? 'bg-ink text-white border-ink'
-                        : 'bg-background text-ink/60 border-hairline hover:border-ink/30'
+                        ? 'bg-primary text-white border-fg'
+                        : 'bg-canvas text-fg-muted border-line hover:border-line-strong'
                     }`}
                   >
                     {lang}
@@ -216,7 +216,7 @@ const ContestCreatePage: React.FC = () => {
               })}
             </div>
             {errors.allowedLanguages && (
-              <p className="mt-1.5 text-xs text-accent-error">
+              <p className="mt-1.5 text-xs text-danger-text">
                 {errors.allowedLanguages.message}
               </p>
             )}
@@ -224,8 +224,8 @@ const ContestCreatePage: React.FC = () => {
 
           {/* API error */}
           {apiError && (
-            <div className="px-4 py-3 rounded-xl bg-accent-error/5 border border-accent-error/20">
-              <p className="text-sm text-accent-error">{apiError}</p>
+            <div className="px-4 py-3 rounded-xl bg-danger-soft border border-danger/30">
+              <p className="text-sm text-danger-text">{apiError}</p>
             </div>
           )}
 
@@ -233,7 +233,7 @@ const ContestCreatePage: React.FC = () => {
           <button
             type="submit"
             disabled={createContest.isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent-compile text-white text-sm font-semibold hover:bg-accent-compile/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             {createContest.isPending ? (
               <>

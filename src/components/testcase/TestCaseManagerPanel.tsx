@@ -39,7 +39,7 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-ink/30" />
+        <Loader2 className="w-6 h-6 animate-spin text-fg-subtle" />
       </div>
     );
   }
@@ -49,14 +49,14 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent-syntax/10 flex items-center justify-center">
-            <FlaskConical className="w-4.5 h-4.5 text-accent-syntax" />
+          <div className="w-9 h-9 rounded-xl bg-warning-soft flex items-center justify-center">
+            <FlaskConical className="w-4.5 h-4.5 text-warning-text" />
           </div>
           <div>
-            <h2 className="font-display text-lg font-semibold text-ink">
+            <h2 className="font-display text-lg font-semibold text-fg">
               Test Cases ({adminTestCases.length})
             </h2>
-            <p className="text-xs text-ink/40">
+            <p className="text-xs text-fg-subtle">
               Define inputs and expected outputs for automated grading
             </p>
           </div>
@@ -65,14 +65,14 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowBulkDialog(true)}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-ink/60 border border-hairline hover:border-ink/20 hover:text-ink transition-colors cursor-pointer flex items-center gap-2"
+            className="px-4 py-2 rounded-xl text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer flex items-center gap-2"
           >
             <Upload className="w-3.5 h-3.5" />
             Bulk Upload
           </button>
           <button
             onClick={() => setShowCreateDialog(true)}
-            className="px-4 py-2 rounded-xl bg-accent-compile text-white text-sm font-medium hover:bg-accent-compile-hover transition-colors cursor-pointer flex items-center gap-2"
+            className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer flex items-center gap-2"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Test Case
@@ -82,14 +82,14 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
 
       {/* Table or empty state */}
       {adminTestCases.length === 0 ? (
-        <div className="text-center py-16 bg-surface rounded-2xl border border-hairline">
-          <div className="w-14 h-14 rounded-2xl bg-ink/[0.03] flex items-center justify-center mx-auto mb-4">
-            <FlaskConical className="w-6 h-6 text-ink/20" />
+        <div className="text-center py-16 bg-surface rounded-2xl border border-line">
+          <div className="w-14 h-14 rounded-2xl bg-primary/[0.03] flex items-center justify-center mx-auto mb-4">
+            <FlaskConical className="w-6 h-6 text-fg-subtle" />
           </div>
-          <h3 className="font-display text-base font-semibold text-ink/70 mb-1">
+          <h3 className="font-display text-base font-semibold text-fg-muted mb-1">
             No test cases yet
           </h3>
-          <p className="text-sm text-ink/40 max-w-sm mx-auto">
+          <p className="text-sm text-fg-subtle max-w-sm mx-auto">
             Add at least one hidden test case before this question can be scored.
           </p>
         </div>

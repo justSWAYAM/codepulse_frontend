@@ -34,10 +34,10 @@ export const HowItWorksSection: React.FC = () => {
     <section id="how-it-works" className="py-24 bg-surface" ref={ref}>
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-14">
-          <span className="font-mono text-xs tracking-widest text-accent-compile uppercase mb-3 block">
+          <span className="font-mono text-xs tracking-widest text-primary-text uppercase mb-3 block">
             Simple workflow
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-ink">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-fg">
             How it works
           </h2>
         </div>
@@ -53,21 +53,21 @@ export const HowItWorksSection: React.FC = () => {
             >
               {/* Connector line (hidden on last item) */}
               {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-8 left-[calc(100%+0.5rem)] w-[calc(100%-2rem)] h-px bg-hairline" />
+                <div className="hidden md:block absolute top-8 left-[calc(100%+0.5rem)] w-[calc(100%-2rem)] h-px bg-line" />
               )}
 
               <div className="flex items-start gap-4">
                 <div className="shrink-0">
-                  <div className="w-16 h-16 rounded-xl bg-accent-compile/8 border border-accent-compile/15 flex items-center justify-center">
-                    <step.icon className="w-7 h-7 text-accent-compile" />
+                  <div className="w-16 h-16 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center">
+                    <step.icon className="w-7 h-7 text-primary-text" />
                   </div>
                 </div>
                 <div>
-                  <span className="font-mono text-xs text-accent-syntax font-medium">{step.number}</span>
-                  <h3 className="font-display text-lg font-semibold text-ink mt-0.5 mb-2">
+                  <span className="font-mono text-xs text-warning-text font-medium">{step.number}</span>
+                  <h3 className="font-display text-lg font-semibold text-fg mt-0.5 mb-2">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-ink/55 leading-relaxed">{step.description}</p>
+                  <p className="text-sm text-fg-muted leading-relaxed">{step.description}</p>
                 </div>
               </div>
             </motion.div>

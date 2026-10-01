@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 
 export const FinalCTASection: React.FC = () => {
   return (
-    <section className="py-20 bg-ink">
+    <section className="py-20 bg-primary">
       <div className="max-w-6xl mx-auto px-6 text-center">
         <h2 className="font-display text-3xl sm:text-4xl font-bold text-white mb-4">
           Ready to start coding?
@@ -20,7 +20,7 @@ export const FinalCTASection: React.FC = () => {
         >
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg bg-accent-compile text-white font-semibold text-base hover:bg-accent-compile-hover transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-white font-semibold text-base hover:bg-primary-hover transition-colors"
           >
             Log In to CodePulse
             <ArrowRight className="w-5 h-5" />

@@ -60,7 +60,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-lg" />
+          <div key={i} className="h-20 bg-surface-2 animate-pulse rounded-lg" />
         ))}
       </div>
     );
@@ -69,20 +69,20 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
   // Candidate view restrictions
   if (isCandidate && contestStatus !== 'ONGOING') {
     return (
-      <div className="text-center py-12 bg-white rounded-lg border border-[#E4E2DC]">
-        <FileCode2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900">Questions hidden</h3>
-        <p className="text-gray-500 mt-2">Questions will appear here when the contest starts.</p>
+      <div className="text-center py-12 bg-surface rounded-lg border border-line">
+        <FileCode2 className="mx-auto h-12 w-12 text-fg-subtle mb-4" />
+        <h3 className="text-lg font-medium text-fg">Questions hidden</h3>
+        <p className="text-fg-muted mt-2">Questions will appear here when the contest starts.</p>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg border border-[#E4E2DC]">
-        <FileCode2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900">No questions yet</h3>
-        <p className="text-gray-500 mt-2 max-w-sm mx-auto">
+      <div className="text-center py-12 bg-surface rounded-lg border border-line">
+        <FileCode2 className="mx-auto h-12 w-12 text-fg-subtle mb-4" />
+        <h3 className="text-lg font-medium text-fg">No questions yet</h3>
+        <p className="text-fg-muted mt-2 max-w-sm mx-auto">
           {isAdmin 
             ? "Get started by adding the first programming question to this contest."
             : "No questions have been added to this contest yet."}
@@ -90,7 +90,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
         {isAdmin && (
           <button
             onClick={() => navigate(`/dashboard/contests/${contestId}/questions/new`)}
-            className="mt-6 inline-flex items-center gap-2 bg-[#2F9E6E] text-white px-4 py-2 rounded-md hover:bg-[#25825a] transition-colors"
+            className="mt-6 inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors"
           >
             <Plus size={20} />
             <span>Add Question</span>
@@ -104,10 +104,10 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
     <div className="space-y-4">
       {isAdmin && (
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-medium text-[#1B1E3A]">Questions ({questions.length})</h2>
+          <h2 className="text-lg font-medium text-fg">Questions ({questions.length})</h2>
           <button
             onClick={() => navigate(`/dashboard/contests/${contestId}/questions/new`)}
-            className="inline-flex items-center gap-2 bg-[#1B1E3A] text-white px-4 py-2 rounded-md hover:bg-[#2A2E50] transition-colors text-sm font-medium"
+            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium"
           >
             <Plus size={18} />
             <span>Add Question</span>

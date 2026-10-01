@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ReactLenis } from 'lenis/react';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import AppShell from './layouts/AppShell';
@@ -17,8 +16,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
   return (
-    <ReactLenis root options={{ lerp: 0.1, duration: 1.2, smoothWheel: true }}>
-      <BrowserRouter>
+    <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -87,8 +85,7 @@ const App: React.FC = () => {
           {/* Catch-all → redirect to landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </ReactLenis>
+    </BrowserRouter>
   );
 };
 

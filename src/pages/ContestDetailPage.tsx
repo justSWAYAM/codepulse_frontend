@@ -73,7 +73,7 @@ const ContestDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-ink/40" />
+        <Loader2 className="w-6 h-6 animate-spin text-fg-subtle" />
       </div>
     );
   }
@@ -81,19 +81,19 @@ const ContestDetailPage: React.FC = () => {
   if (isError) {
     const status = (error as { response?: { status?: number } })?.response?.status;
     return (
-      <div className="bg-accent-error/5 border border-accent-error/20 rounded-2xl p-8 text-center max-w-md mx-auto mt-8">
-        <AlertTriangle className="w-8 h-8 text-accent-error mx-auto mb-3" />
-        <p className="font-display text-lg font-bold text-ink mb-1">
+      <div className="bg-danger-soft border border-danger/30 rounded-2xl p-8 text-center max-w-md mx-auto mt-8">
+        <AlertTriangle className="w-8 h-8 text-danger-text mx-auto mb-3" />
+        <p className="font-display text-lg font-bold text-fg mb-1">
           {status === 403 ? "Access Denied" : "Contest Not Found"}
         </p>
-        <p className="text-sm text-ink/50 mb-4">
+        <p className="text-sm text-fg-muted mb-4">
           {status === 403
             ? "You don't have access to this contest."
             : "This contest doesn't exist or has been removed."}
         </p>
         <button
           onClick={() => navigate('/dashboard/contests')}
-          className="text-sm font-medium text-accent-compile hover:underline cursor-pointer"
+          className="text-sm font-medium text-primary-text hover:underline cursor-pointer"
         >
           ← Back to Contests
         </button>
@@ -138,21 +138,21 @@ const ContestDetailPage: React.FC = () => {
       <div className="flex items-start gap-3 mb-6">
         <button
           onClick={() => navigate('/dashboard/contests')}
-          className="p-2 rounded-xl text-ink/40 hover:text-ink hover:bg-ink/5 transition-colors mt-0.5 cursor-pointer"
+          className="p-2 rounded-xl text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors mt-0.5 cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap mb-1">
-            <h1 className="font-display text-2xl font-bold text-ink">{contest.title}</h1>
+            <h1 className="font-display text-2xl font-bold text-fg">{contest.title}</h1>
             <ContestStatusBadge status={contest.status} />
           </div>
-          <p className="font-mono text-[11px] text-ink/30">{contest.id}</p>
+          <p className="font-mono text-[11px] text-fg-subtle">{contest.id}</p>
         </div>
       </div>
 
       {/* Status timeline */}
-      <div className="bg-surface border border-hairline rounded-2xl p-4 mb-6">
+      <div className="bg-surface border border-line rounded-2xl p-4 mb-6">
         <div className="flex items-center gap-0">
           {CONTEST_STATUSES.map((s, i) => {
             const done = i < currentStatusIndex;
@@ -161,19 +161,19 @@ const ContestDetailPage: React.FC = () => {
               <React.Fragment key={s}>
                 <div className="flex flex-col items-center gap-1.5">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition ${
                       active
-                        ? 'bg-accent-compile text-white shadow-md shadow-accent-compile/30'
+                        ? 'bg-primary text-white shadow-md shadow-primary/30'
                         : done
-                        ? 'bg-accent-compile/20 text-accent-compile'
-                        : 'bg-ink/5 text-ink/30'
+                        ? 'bg-primary/20 text-primary-text'
+                        : 'bg-fg/5 text-fg-subtle'
                     }`}
                   >
                     {i + 1}
                   </div>
                   <span
                     className={`text-[10px] font-medium ${
-                      active ? 'text-accent-compile' : done ? 'text-ink/60' : 'text-ink/30'
+                      active ? 'text-primary-text' : done ? 'text-fg-muted' : 'text-fg-subtle'
                     }`}
                   >
                     {s.charAt(0) + s.slice(1).toLowerCase()}
@@ -182,7 +182,7 @@ const ContestDetailPage: React.FC = () => {
                 {i < CONTEST_STATUSES.length - 1 && (
                   <div
                     className={`flex-1 h-px mx-2 mt-[-14px] ${
-                      i < currentStatusIndex ? 'bg-accent-compile/40' : 'bg-hairline'
+                      i < currentStatusIndex ? 'bg-primary/40' : 'bg-line'
                     }`}
                   />
                 )}
@@ -193,13 +193,13 @@ const ContestDetailPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-hairline">
+      <div className="flex gap-1 mb-6 border-b border-line">
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === 'overview'
-              ? 'border-ink text-ink'
-              : 'border-transparent text-ink/50 hover:text-ink'
+              ? 'border-fg text-fg'
+              : 'border-transparent text-fg-muted hover:text-fg'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -210,14 +210,14 @@ const ContestDetailPage: React.FC = () => {
             onClick={() => setActiveTab('candidates')}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
               activeTab === 'candidates'
-                ? 'border-ink text-ink'
-                : 'border-transparent text-ink/50 hover:text-ink'
+                ? 'border-fg text-fg'
+                : 'border-transparent text-fg-muted hover:text-fg'
             }`}
           >
             <Users className="w-4 h-4" />
             Candidates
             {contest.candidateCount > 0 && (
-              <span className="text-[10px] bg-ink/10 text-ink/60 rounded-full px-1.5 py-0.5 font-mono">
+              <span className="text-[10px] bg-fg/10 text-fg-muted rounded-full px-1.5 py-0.5 font-mono">
                 {contest.candidateCount}
               </span>
             )}
@@ -229,8 +229,8 @@ const ContestDetailPage: React.FC = () => {
             onClick={() => setActiveTab('questions')}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
               activeTab === 'questions'
-                ? 'border-ink text-ink'
-                : 'border-transparent text-ink/50 hover:text-ink'
+                ? 'border-fg text-fg'
+                : 'border-transparent text-fg-muted hover:text-fg'
             }`}
           >
             <FileCode2 className="w-4 h-4" />
@@ -250,31 +250,31 @@ const ContestDetailPage: React.FC = () => {
           {/* Candidate exam entry card — Section 6.1 */}
           {isCandidate && <ExamEntryCard contest={contest} />}
           {/* Meta card */}
-          <div className="bg-surface border border-hairline rounded-2xl p-5">
+          <div className="bg-surface border border-line rounded-2xl p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="text-ink/40 text-[11px] uppercase tracking-wider mb-1">Start</p>
-                <p className="font-medium text-ink">{formatDate(contest.startTime)}</p>
+                <p className="text-fg-subtle text-[11px] uppercase tracking-wider mb-1">Start</p>
+                <p className="font-medium text-fg">{formatDate(contest.startTime)}</p>
               </div>
               <div>
-                <p className="text-ink/40 text-[11px] uppercase tracking-wider mb-1">End</p>
-                <p className="font-medium text-ink">{formatDate(contest.endTime)}</p>
+                <p className="text-fg-subtle text-[11px] uppercase tracking-wider mb-1">End</p>
+                <p className="font-medium text-fg">{formatDate(contest.endTime)}</p>
               </div>
               <div>
-                <p className="text-ink/40 text-[11px] uppercase tracking-wider mb-1">Duration</p>
-                <p className="font-medium text-ink">{contest.durationMinutes} minutes</p>
+                <p className="text-fg-subtle text-[11px] uppercase tracking-wider mb-1">Duration</p>
+                <p className="font-medium text-fg">{contest.durationMinutes} minutes</p>
               </div>
             </div>
           </div>
 
           {/* Languages */}
-          <div className="bg-surface border border-hairline rounded-2xl p-5">
-            <p className="text-ink/40 text-[11px] uppercase tracking-wider mb-3">Allowed Languages</p>
+          <div className="bg-surface border border-line rounded-2xl p-5">
+            <p className="text-fg-subtle text-[11px] uppercase tracking-wider mb-3">Allowed Languages</p>
             <div className="flex flex-wrap gap-2">
               {contest.allowedLanguages.map((lang) => (
                 <span
                   key={lang}
-                  className="font-mono text-xs px-3 py-1.5 rounded-lg bg-ink/5 text-ink/70 border border-hairline"
+                  className="font-mono text-xs px-3 py-1.5 rounded-lg bg-fg/5 text-fg-muted border border-line"
                 >
                   {lang}
                 </span>
@@ -284,9 +284,9 @@ const ContestDetailPage: React.FC = () => {
 
           {/* Description */}
           {contest.description && (
-            <div className="bg-surface border border-hairline rounded-2xl p-5">
-              <p className="text-ink/40 text-[11px] uppercase tracking-wider mb-3">Description</p>
-              <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-surface border border-line rounded-2xl p-5">
+              <p className="text-fg-subtle text-[11px] uppercase tracking-wider mb-3">Description</p>
+              <p className="text-sm text-fg-muted leading-relaxed whitespace-pre-wrap">
                 {contest.description}
               </p>
             </div>
@@ -294,11 +294,11 @@ const ContestDetailPage: React.FC = () => {
 
           {/* Admin actions */}
           {isAdmin && contest.status === 'DRAFT' && (
-            <div className="bg-surface border border-hairline rounded-2xl p-5">
+            <div className="bg-surface border border-line rounded-2xl p-5">
               {contest.candidateCount === 0 && (
-                <div className="flex items-start gap-2.5 mb-4 px-3 py-2.5 rounded-xl bg-accent-syntax/10 border border-accent-syntax/20">
-                  <AlertTriangle className="w-4 h-4 text-accent-syntax mt-0.5 shrink-0" />
-                  <p className="text-sm text-ink/70">
+                <div className="flex items-start gap-2.5 mb-4 px-3 py-2.5 rounded-xl bg-warning-soft border border-warning/30">
+                  <AlertTriangle className="w-4 h-4 text-warning-text mt-0.5 shrink-0" />
+                  <p className="text-sm text-fg-muted">
                     Assign candidates before publishing. A contest with no candidates cannot be published.
                   </p>
                 </div>
@@ -307,21 +307,21 @@ const ContestDetailPage: React.FC = () => {
                 <button
                   onClick={() => setShowPublishConfirm(true)}
                   disabled={contest.candidateCount === 0}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-accent-compile text-white rounded-xl text-sm font-semibold hover:bg-accent-compile/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   Publish Contest
                 </button>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-ink font-medium">
+                  <p className="text-sm text-fg font-medium">
                     Publish this contest? Candidates will immediately be able to see it. This cannot be undone.
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={handlePublish}
                       disabled={publishMutation.isPending}
-                      className="flex items-center gap-2 px-4 py-2 bg-accent-compile text-white rounded-xl text-sm font-semibold hover:bg-accent-compile/90 disabled:opacity-60 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors cursor-pointer"
                     >
                       {publishMutation.isPending ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -330,7 +330,7 @@ const ContestDetailPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setShowPublishConfirm(false)}
-                      className="px-4 py-2 rounded-xl text-sm font-medium text-ink/60 border border-hairline hover:border-ink/20 transition-colors cursor-pointer"
+                      className="px-4 py-2 rounded-xl text-sm font-medium text-fg-muted border border-line hover:border-line-strong transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -352,19 +352,19 @@ const ContestDetailPage: React.FC = () => {
         >
           {/* Assignment panel — admin only, not for completed contests */}
           {isAdmin && contest.status !== 'COMPLETED' && (
-            <div className="bg-surface border border-hairline rounded-2xl p-5">
+            <div className="bg-surface border border-line rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display text-base font-bold text-ink">Assign Candidates</h3>
+                <h3 className="font-display text-base font-bold text-fg">Assign Candidates</h3>
                 <div className="flex gap-2">
                   <button
                     onClick={handleSelectAllFiltered}
-                    className="px-3 py-1.5 text-xs font-semibold bg-accent-compile/10 text-accent-compile rounded-lg hover:bg-accent-compile/20 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-semibold bg-primary/10 text-primary-text rounded-lg hover:bg-primary/20 transition-colors cursor-pointer"
                   >
                     Select All Filtered
                   </button>
                   <button
                     onClick={handleDeselectAllFiltered}
-                    className="px-3 py-1.5 text-xs font-semibold bg-ink/5 text-ink/60 rounded-lg hover:bg-ink/10 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-semibold bg-fg/5 text-fg-muted rounded-lg hover:bg-fg/10 transition-colors cursor-pointer"
                   >
                     Deselect All
                   </button>
@@ -381,7 +381,7 @@ const ContestDetailPage: React.FC = () => {
                       setFilterDivision('');
                     }
                   }}
-                  className="w-full px-3 py-2 rounded-lg border border-hairline bg-background text-sm focus:outline-none focus:border-ink/30 transition-colors"
+                  className="w-full px-3 py-2 rounded-lg border border-line bg-canvas text-sm focus:outline-none focus:border-primary transition-colors"
                 >
                   <option value="">All Branches</option>
                   <option value="CSE">CSE</option>
@@ -394,7 +394,7 @@ const ContestDetailPage: React.FC = () => {
                   value={filterDivision}
                   onChange={(e) => setFilterDivision(e.target.value)}
                   disabled={filterBranch === 'MECH' || filterBranch === 'ECS'}
-                  className="w-full px-3 py-2 rounded-lg border border-hairline bg-background text-sm focus:outline-none focus:border-ink/30 transition-colors disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg border border-line bg-canvas text-sm focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
                 >
                   <option value="">All Divisions</option>
                   <option value="A">A</option>
@@ -405,7 +405,7 @@ const ContestDetailPage: React.FC = () => {
                 <select
                   value={filterBatch}
                   onChange={(e) => setFilterBatch(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-hairline bg-background text-sm focus:outline-none focus:border-ink/30 transition-colors"
+                  className="w-full px-3 py-2 rounded-lg border border-line bg-canvas text-sm focus:outline-none focus:border-primary transition-colors"
                 >
                   <option value="">All Batches</option>
                   <option value="A">A</option>
@@ -417,7 +417,7 @@ const ContestDetailPage: React.FC = () => {
 
               <div data-lenis-prevent className="max-h-48 overflow-y-auto space-y-1.5 mb-4 pr-1">
                 {filteredCandidates.length === 0 ? (
-                  <p className="text-sm text-ink/40 text-center py-4">No candidates found for these filters</p>
+                  <p className="text-sm text-fg-subtle text-center py-4">No candidates found for these filters</p>
                 ) : (
                   filteredCandidates.map((c) => {
                     const isAssigned = contest.candidates?.some((cc) => cc.id === c.id);
@@ -429,8 +429,8 @@ const ContestDetailPage: React.FC = () => {
                           isAssigned
                             ? 'opacity-40 cursor-default'
                             : isSelected
-                            ? 'bg-accent-compile/5 border border-accent-compile/20'
-                            : 'hover:bg-ink/3 border border-transparent'
+                            ? 'bg-primary/5 border border-primary/20'
+                            : 'hover:bg-fg/3 border border-transparent'
                         }`}
                       >
                         <input
@@ -438,14 +438,14 @@ const ContestDetailPage: React.FC = () => {
                           checked={isSelected}
                           disabled={!!isAssigned}
                           onChange={() => toggleCandidate(c.id)}
-                          className="accent-accent-compile"
+                          className="accent-primary"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink truncate">{c.fullName}</p>
-                          <p className="text-[11px] text-ink/40 truncate">{c.email}</p>
+                          <p className="text-sm font-medium text-fg truncate">{c.fullName}</p>
+                          <p className="text-[11px] text-fg-subtle truncate">{c.email}</p>
                         </div>
                         {isAssigned && (
-                          <span className="text-[10px] text-accent-compile font-semibold font-mono">
+                          <span className="text-[10px] text-primary-text font-semibold font-mono">
                             ENROLLED
                           </span>
                         )}
@@ -457,7 +457,7 @@ const ContestDetailPage: React.FC = () => {
               <button
                 onClick={handleAssign}
                 disabled={assignMutation.isPending || selectedCandidateIds.length === 0}
-                className="flex items-center gap-2 px-4 py-2.5 bg-ink text-white rounded-xl text-sm font-semibold hover:bg-ink/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 {assignMutation.isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -470,28 +470,28 @@ const ContestDetailPage: React.FC = () => {
           )}
 
           {/* Assigned candidates table */}
-          <div className="bg-surface border border-hairline rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-hairline">
-              <h3 className="font-display text-base font-bold text-ink">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-line">
+              <h3 className="font-display text-base font-bold text-fg">
                 Assigned Candidates ({contest.candidateCount})
               </h3>
             </div>
             {!contest.candidates || contest.candidates.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-ink/40">No candidates assigned yet</p>
+                <p className="text-sm text-fg-subtle">No candidates assigned yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-hairline">
+              <div className="divide-y divide-line">
                 {contest.candidates.map((c) => (
                   <div key={c.id} className="flex items-center gap-3 px-5 py-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-compile to-accent-syntax flex items-center justify-center text-white text-xs font-bold uppercase shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white text-xs font-bold uppercase shrink-0">
                       {c.fullName.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{c.fullName}</p>
-                      <p className="text-[11px] text-ink/40 truncate">{c.email}</p>
+                      <p className="text-sm font-medium text-fg truncate">{c.fullName}</p>
+                      <p className="text-[11px] text-fg-subtle truncate">{c.email}</p>
                     </div>
-                    <span className="text-[10px] font-semibold text-accent-compile font-mono">
+                    <span className="text-[10px] font-semibold text-primary-text font-mono">
                       INVITED
                     </span>
                   </div>

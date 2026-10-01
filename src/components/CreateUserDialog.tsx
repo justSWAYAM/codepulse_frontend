@@ -84,7 +84,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
             onClick={handleClose}
           />
 
@@ -95,23 +95,23 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-surface rounded-2xl border border-hairline shadow-lg w-full max-w-md"
+              className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-md"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-hairline">
+              <div className="flex items-center justify-between p-6 border-b border-line">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-accent-compile/10 flex items-center justify-center">
-                    <UserPlus className="w-4 h-4 text-accent-compile" />
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <UserPlus className="w-4 h-4 text-primary-text" />
                   </div>
                   <div>
-                    <h2 className="font-display text-lg font-semibold text-ink">Create User</h2>
-                    <p className="text-xs text-ink/40">Add a new user to the platform</p>
+                    <h2 className="font-display text-lg font-semibold text-fg">Create User</h2>
+                    <p className="text-xs text-fg-subtle">Add a new user to the platform</p>
                   </div>
                 </div>
                 <button
                   onClick={handleClose}
-                  className="p-1.5 rounded-lg text-ink/30 hover:text-ink hover:bg-ink/5 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -121,42 +121,42 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
               <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Full Name</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Full Name</label>
                   <input
                     type="text"
                     placeholder="John Doe"
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-                      errors.name ? 'border-accent-error' : 'border-hairline'
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+                      errors.name ? 'border-danger' : 'border-line'
                     }`}
                     {...register('name')}
                   />
                   {errors.name && (
-                    <p className="mt-1 text-xs text-accent-error">{errors.name.message}</p>
+                    <p className="mt-1 text-xs text-danger-text">{errors.name.message}</p>
                   )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Email</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Email</label>
                   <input
                     type="email"
                     placeholder="user@institution.edu"
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-                      errors.email ? 'border-accent-error' : 'border-hairline'
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+                      errors.email ? 'border-danger' : 'border-line'
                     }`}
                     {...register('email')}
                   />
                   {errors.email && (
-                    <p className="mt-1 text-xs text-accent-error">{errors.email.message}</p>
+                    <p className="mt-1 text-xs text-danger-text">{errors.email.message}</p>
                   )}
                 </div>
 
                 {/* Role */}
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Role</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Role</label>
                   <select
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-                      errors.role ? 'border-accent-error' : 'border-hairline'
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+                      errors.role ? 'border-danger' : 'border-line'
                     }`}
                     {...register('role')}
                   >
@@ -165,7 +165,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                     <option value="ADMIN">Admin</option>
                   </select>
                   {errors.role && (
-                    <p className="mt-1 text-xs text-accent-error">{errors.role.message}</p>
+                    <p className="mt-1 text-xs text-danger-text">{errors.role.message}</p>
                   )}
                 </div>
 
@@ -174,9 +174,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                     <div className="grid grid-cols-2 gap-4">
                       {/* Year */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Year</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Year</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                           {...register('year', {
                             // valueAsNumber turns the empty "Select" option into NaN, which fails
                             // z.number() and silently blocks submit — map it to undefined instead
@@ -193,9 +193,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
 
                       {/* Branch */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Branch</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Branch</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                           {...register('branch')}
                         >
                           <option value="">Select</option>
@@ -210,9 +210,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                     <div className="grid grid-cols-2 gap-4">
                       {/* Division */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Division</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Division</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline disabled:opacity-50 disabled:cursor-not-allowed`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line disabled:opacity-50 disabled:cursor-not-allowed`}
                           {...register('division')}
                           disabled={selectedBranch === 'MECH' || selectedBranch === 'ECS'}
                         >
@@ -225,9 +225,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
 
                       {/* Batch */}
                       <div>
-                        <label className="block text-sm font-medium text-ink mb-1.5">Batch</label>
+                        <label className="block text-sm font-medium text-fg mb-1.5">Batch</label>
                         <select
-                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
+                          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition border-line`}
                           {...register('batch')}
                         >
                           <option value="">Select</option>
@@ -241,17 +241,17 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
 
                     {/* Roll Number */}
                     <div>
-                      <label className="block text-sm font-medium text-ink mb-1.5">Roll Number</label>
+                      <label className="block text-sm font-medium text-fg mb-1.5">Roll Number</label>
                       <input
                         type="text"
                         placeholder="e.g. 123456"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-                          errors.rollNumber ? 'border-accent-error' : 'border-hairline'
+                        className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+                          errors.rollNumber ? 'border-danger' : 'border-line'
                         }`}
                         {...register('rollNumber')}
                       />
                       {errors.rollNumber && (
-                        <p className="mt-1 text-xs text-accent-error">{errors.rollNumber.message}</p>
+                        <p className="mt-1 text-xs text-danger-text">{errors.rollNumber.message}</p>
                       )}
                     </div>
                   </>
@@ -259,20 +259,20 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
 
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">
+                  <label className="block text-sm font-medium text-fg mb-1.5">
                     Password{' '}
-                    <span className="font-normal text-ink/40">(min 8 characters)</span>
+                    <span className="font-normal text-fg-subtle">(min 8 characters)</span>
                   </label>
                   <input
                     type="password"
                     placeholder="••••••••"
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all ${
-                      errors.password ? 'border-accent-error' : 'border-hairline'
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
+                      errors.password ? 'border-danger' : 'border-line'
                     }`}
                     {...register('password')}
                   />
                   {errors.password && (
-                    <p className="mt-1 text-xs text-accent-error">{errors.password.message}</p>
+                    <p className="mt-1 text-xs text-danger-text">{errors.password.message}</p>
                   )}
                 </div>
 
@@ -281,7 +281,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-ink/60 border border-hairline hover:border-ink/20 hover:text-ink transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -290,7 +290,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                     disabled={createMutation.isPending}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.97 }}
-                    className="px-4 py-2 rounded-lg bg-accent-compile text-white text-sm font-medium hover:bg-accent-compile-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
                   >
                     {createMutation.isPending ? (
                       <>

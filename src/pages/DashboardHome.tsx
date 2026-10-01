@@ -35,9 +35,9 @@ const DashboardHome: React.FC = () => {
             description: 'Create, edit, and manage user accounts. Import users in bulk via CSV.',
             icon: Users,
             path: '/dashboard/users',
-            gradient: 'from-accent-compile/10 to-accent-compile/5',
-            iconBg: 'bg-accent-compile/15',
-            iconColor: 'text-accent-compile',
+            gradient: 'from-primary/10 to-primary/5',
+            iconBg: 'bg-primary/15',
+            iconColor: 'text-primary-text',
           },
         ]
       : []),
@@ -46,9 +46,9 @@ const DashboardHome: React.FC = () => {
       description: 'View and update your personal information and change your password.',
       icon: User,
       path: '/dashboard/profile',
-      gradient: 'from-accent-syntax/10 to-accent-syntax/5',
-      iconBg: 'bg-accent-syntax/15',
-      iconColor: 'text-accent-syntax',
+      gradient: 'from-warning/10 to-warning/5',
+      iconBg: 'bg-warning-soft',
+      iconColor: 'text-warning-text',
     },
   ];
 
@@ -57,17 +57,17 @@ const DashboardHome: React.FC = () => {
       {/* Header */}
       <motion.div variants={item} className="mb-8">
         <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="w-4 h-4 text-accent-syntax" />
-          <span className="text-xs font-mono text-ink/40 uppercase tracking-widest">
+          <Sparkles className="w-4 h-4 text-warning-text" />
+          <span className="text-xs font-mono text-fg-subtle uppercase tracking-widest">
             Dashboard
           </span>
         </div>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-ink mb-2">
+        <h1 className="font-display text-3xl md:text-4xl font-bold text-fg mb-2">
           {getGreeting()}, {user?.fullName?.split(' ')[0] || 'there'}
         </h1>
-        <p className="text-sm text-ink/50">
+        <p className="text-sm text-fg-muted">
           You're signed in as{' '}
-          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-ink/5 text-ink/70">
+          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-fg/5 text-fg-muted">
             {user?.role}
           </span>
         </p>
@@ -81,7 +81,7 @@ const DashboardHome: React.FC = () => {
             <motion.div key={card.path} variants={item}>
               <Link
                 to={card.path}
-                className={`group block p-6 rounded-2xl border border-hairline bg-gradient-to-br ${card.gradient} hover:border-ink/10 transition-all hover:shadow-sm`}
+                className={`group block p-6 rounded-2xl border border-line bg-gradient-to-br ${card.gradient} hover:border-line-strong transition hover:shadow-sm`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -89,12 +89,12 @@ const DashboardHome: React.FC = () => {
                   >
                     <Icon className={`w-5 h-5 ${card.iconColor}`} />
                   </div>
-                  <ArrowRight className="w-4 h-4 text-ink/20 group-hover:text-ink/50 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="w-4 h-4 text-fg-subtle group-hover:text-fg-muted group-hover:translate-x-0.5 transition" />
                 </div>
-                <h3 className="font-display text-lg font-semibold text-ink mb-1">
+                <h3 className="font-display text-lg font-semibold text-fg mb-1">
                   {card.title}
                 </h3>
-                <p className="text-sm text-ink/50 leading-relaxed">
+                <p className="text-sm text-fg-muted leading-relaxed">
                   {card.description}
                 </p>
               </Link>
@@ -106,12 +106,12 @@ const DashboardHome: React.FC = () => {
       {/* Quick info strip */}
       <motion.div
         variants={item}
-        className="mt-8 p-4 rounded-xl bg-surface border border-hairline flex items-center gap-3"
+        className="mt-8 p-4 rounded-xl bg-surface border border-line flex items-center gap-3"
       >
-        <div className="w-8 h-8 rounded-lg bg-ink/5 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-fg/5 flex items-center justify-center">
           <span className="text-base">💡</span>
         </div>
-        <p className="text-xs text-ink/40 leading-relaxed">
+        <p className="text-xs text-fg-subtle leading-relaxed">
           More features — contests, questions, and submissions — will appear here as they're built.
           Stay tuned!
         </p>

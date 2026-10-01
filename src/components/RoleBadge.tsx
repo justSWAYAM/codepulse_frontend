@@ -8,15 +8,15 @@ interface RoleBadgeProps {
 const roleConfig: Record<UserRole, { label: string; classes: string }> = {
   ADMIN: {
     label: 'Admin',
-    classes: 'bg-accent-compile/10 text-accent-compile border-accent-compile/20',
+    classes: 'bg-primary/10 text-primary-text border-primary/20',
   },
   EVALUATOR: {
     label: 'Evaluator',
-    classes: 'bg-accent-syntax/10 text-accent-syntax border-accent-syntax/20',
+    classes: 'bg-warning-soft text-warning-text border-warning/30',
   },
   CANDIDATE: {
     label: 'Candidate',
-    classes: 'bg-ink/5 text-ink/60 border-hairline',
+    classes: 'bg-fg/5 text-fg-muted border-line',
   },
 };
 
