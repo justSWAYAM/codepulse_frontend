@@ -1,227 +1,224 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronsLeft, ChevronsRight, LogOut, Menu as MenuIcon, UserRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLogout } from '../hooks/useAuth';
-import { getNavItemsForRole } from '../config/navigation';
+import { getNavItemsForRole, type NavItem } from '../config/navigation';
+import { cn } from '../lib/cn';
 import {
-  Terminal,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
+  BrandMark,
+  IconButton,
   Menu,
-  X,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+  MenuTrigger,
+  Sheet,
+  ThemeToggle,
+  Tooltip,
+} from '../components/ui';
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Administrator',
+  EVALUATOR: 'Evaluator',
+  CANDIDATE: 'Candidate',
+};
+
+const COLLAPSE_KEY = 'cp:sidebar-collapsed';
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export const Avatar: React.FC<{ name?: string; size?: number; className?: string }> = ({ name, size = 32, className }) => {
+  const initials = (name || 'U')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase();
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full bg-primary-soft font-semibold text-primary-text ring-1 ring-inset ring-primary/15',
+        className,
+      )}
+      style={{ width: size, height: size, fontSize: size * 0.38 }}
+    >
+      {initials}
+    </span>
+  );
+};
+
+/** One nav renderer for desktop, collapsed and mobile. Selection is instant (seen tens of times a day). */
+const NavList: React.FC<{ items: NavItem[]; collapsed?: boolean; isCandidate: boolean; onNavigate?: () => void }> = ({
+  items,
+  collapsed,
+  isCandidate,
+  onNavigate,
+}) => (
+  <nav aria-label="Main" className="flex flex-col gap-0.5">
+    {items.map((item) => {
+      const Icon = item.icon;
+      const label = item.candidateLabel && isCandidate ? item.candidateLabel : item.label;
+      const link = (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          end={item.path === '/dashboard'}
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            cn(
+              'press relative flex h-10 items-center gap-3 rounded-xl px-3 text-[13.5px] font-medium',
+              collapsed && 'justify-center px-0',
+              isActive
+                ? 'bg-primary-soft text-primary-text'
+                : 'text-fg-muted hover-fine:bg-surface-2 hover-fine:text-fg',
+            )
+          }
+        >
+          <Icon className="size-[18px] shrink-0" aria-hidden />
+          {collapsed ? <span className="sr-only">{label}</span> : <span className="truncate">{label}</span>}
+        </NavLink>
+      );
+      return collapsed ? (
+        <Tooltip key={item.path} content={label} side="right">
+          {link}
+        </Tooltip>
+      ) : (
+        <React.Fragment key={item.path}>{link}</React.Fragment>
+      );
+    })}
+  </nav>
+);
 
 const AppShell: React.FC = () => {
   const { user } = useAuth();
   const logoutMutation = useLogout();
   const location = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = user ? getNavItemsForRole(user.role) : [];
+  const isCandidate = user?.role === 'CANDIDATE';
+  const roleLabel = user?.role ? ROLE_LABELS[user.role] ?? user.role : '';
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'Administrator';
-      case 'EVALUATOR':
-        return 'Evaluator';
-      case 'CANDIDATE':
-        return 'Candidate';
-      default:
-        return role;
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+    } catch {
+      // ignore
     }
-  };
+  }, [collapsed]);
+
+  // Close the mobile drawer on navigation
+  useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  const userMenu = (
+    <Menu>
+      <MenuTrigger asChild>
+        <button
+          type="button"
+          className="press flex items-center gap-2.5 rounded-full p-0.5 pr-0.5 sm:rounded-xl sm:py-1 sm:pl-1 sm:pr-3 hover-fine:bg-surface-2"
+          aria-label="Account menu"
+        >
+          <Avatar name={user?.fullName} />
+          <span className="hidden text-left sm:block">
+            <span className="block max-w-40 truncate text-[13px] font-medium leading-4 text-fg">{user?.fullName}</span>
+            <span className="block text-[11px] leading-4 text-fg-subtle">{roleLabel}</span>
+          </span>
+        </button>
+      </MenuTrigger>
+      <MenuContent className="w-56">
+        <MenuLabel>
+          <span className="block truncate text-[13px] font-medium text-fg">{user?.fullName}</span>
+          <span className="block truncate">{user?.email}</span>
+        </MenuLabel>
+        <MenuSeparator />
+        <MenuItem icon={<UserRound />} onSelect={() => navigate('/dashboard/profile')}>
+          Profile
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem
+          icon={<LogOut />}
+          tone="danger"
+          disabled={logoutMutation.isPending}
+          onSelect={() => logoutMutation.mutate()}
+        >
+          Log out
+        </MenuItem>
+      </MenuContent>
+    </Menu>
+  );
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
-      {/* ─── Top Navbar ─── */}
-      <header className="h-16 bg-surface border-b border-line flex items-center justify-between px-4 md:px-6 z-30 sticky top-0">
-        {/* Left: Brand + Mobile toggle */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-fg/5 transition-colors cursor-pointer"
-          >
-            {mobileMenuOpen ? (
-              <X className="w-5 h-5 text-fg" />
-            ) : (
-              <Menu className="w-5 h-5 text-fg" />
-            )}
-          </button>
-          <Link to="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary-hover transition-colors">
-              <Terminal className="w-4 h-4 text-primary-text" />
-            </div>
-            <span className="font-display text-lg font-bold text-fg tracking-tight hidden sm:inline">
-              Code<span className="text-primary-text">Pulse</span>
-            </span>
+    <div className="flex min-h-dvh bg-canvas">
+      {/* ─── Desktop sidebar ─── */}
+      <aside
+        className={cn(
+          'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line bg-surface md:flex',
+          collapsed ? 'w-[72px]' : 'w-60',
+        )}
+      >
+        <div className={cn('flex h-16 items-center', collapsed ? 'justify-center' : 'px-5')}>
+          <Link to="/dashboard" aria-label="CodePulse home" className="rounded-xl">
+            <BrandMark size={30} withWordmark={!collapsed} />
           </Link>
         </div>
-
-        {/* Right: User menu */}
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-fg leading-tight">
-              {user?.fullName}
-            </p>
-            <p className="text-[11px] text-fg-subtle font-mono leading-tight">
-              {user?.role ? getRoleLabel(user.role) : ''}
-            </p>
-          </div>
-          {/* Avatar */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white text-xs font-bold uppercase">
-            {user?.fullName?.charAt(0) || 'U'}
-          </div>
-          <button
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-            className="p-2 rounded-lg text-fg-subtle hover:text-danger-text hover:bg-danger-soft transition-colors cursor-pointer"
-            title="Log out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+        <div className={'flex-1 overflow-y-auto px-3 py-3'}>
+          <NavList items={navItems} collapsed={collapsed} isCandidate={isCandidate} />
         </div>
-      </header>
+        <div className={cn('border-t border-line p-3', collapsed && 'flex justify-center')}>
+          <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} side="right">
+            <IconButton
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={() => setCollapsed((c) => !c)}
+              size="sm"
+            >
+              {collapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
+            </IconButton>
+          </Tooltip>
+        </div>
+      </aside>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* ─── Desktop Sidebar ─── */}
-        <motion.aside
-          animate={{ width: sidebarCollapsed ? 72 : 240 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="hidden md:flex flex-col bg-surface border-r border-line relative z-20 shrink-0"
-        >
-          <nav className="flex-1 py-4 px-3 space-y-1">
-            {navItems.map((item) => {
-              const isActive =
-                item.path === '/dashboard'
-                  ? location.pathname === '/dashboard'
-                  : location.pathname.startsWith(item.path);
-              const Icon = item.icon;
+      {/* ─── Mobile drawer ─── */}
+      <Sheet
+        open={mobileOpen}
+        onOpenChange={setMobileOpen}
+        side="left"
+        width="max-w-[280px]"
+        title={<BrandMark size={28} />}
+      >
+        <div className="p-3">
+          <NavList items={navItems} isCandidate={isCandidate} onNavigate={() => setMobileOpen(false)} />
+        </div>
+      </Sheet>
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition group relative ${
-                    isActive
-                      ? 'bg-primary/10 text-primary-text'
-                      : 'text-fg-muted hover:text-fg hover:bg-fg/5'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="sidebar-active"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-primary"
-                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                  <Icon className="w-[18px] h-[18px] shrink-0" />
-                  <AnimatePresence mode="wait">
-                    {!sidebarCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 'auto' }}
-                        exit={{ opacity: 0, width: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="overflow-hidden whitespace-nowrap"
-                      >
-                        {item.candidateLabel && user?.role === 'CANDIDATE'
-                          ? item.candidateLabel
-                          : item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              );
-            })}
-          </nav>
+      {/* ─── Main column ─── */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-[var(--z-sticky)] flex h-16 items-center gap-3 border-b border-line bg-canvas/85 px-4 backdrop-blur-md md:px-8">
+          <IconButton aria-label="Open navigation" className="md:hidden" onClick={() => setMobileOpen(true)}>
+            <MenuIcon className="size-5" />
+          </IconButton>
+          <Link to="/dashboard" className="md:hidden" aria-label="CodePulse home">
+            <BrandMark size={28} withWordmark={false} />
+          </Link>
+          <div className="flex-1" />
+          <ThemeToggle />
+          <div className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden />
+          {userMenu}
+        </header>
 
-          {/* Collapse toggle */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-surface border border-line flex items-center justify-center text-fg-subtle hover:text-fg hover:border-line-strong transition-colors cursor-pointer shadow-sm z-10"
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="w-3 h-3" />
-            ) : (
-              <ChevronLeft className="w-3 h-3" />
-            )}
-          </button>
-        </motion.aside>
-
-        {/* ─── Mobile Sidebar Overlay ─── */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-40 md:hidden"
-                onClick={() => setMobileMenuOpen(false)}
-              />
-              <motion.aside
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                className="fixed left-0 top-16 bottom-0 w-[260px] bg-surface border-r border-line z-50 md:hidden flex flex-col"
-              >
-                <nav className="flex-1 py-4 px-3 space-y-1">
-                  {navItems.map((item) => {
-                    const isActive =
-                      item.path === '/dashboard'
-                        ? location.pathname === '/dashboard'
-                        : location.pathname.startsWith(item.path);
-                    const Icon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
-                          isActive
-                            ? 'bg-primary/10 text-primary-text'
-                            : 'text-fg-muted hover:text-fg hover:bg-fg/5'
-                        }`}
-                      >
-                        <Icon className="w-[18px] h-[18px]" />
-                        {item.candidateLabel && user?.role === 'CANDIDATE'
-                          ? item.candidateLabel
-                          : item.label}
-                      </Link>
-                    );
-                  })}
-                </nav>
-
-                {/* Mobile user info */}
-                <div className="p-4 border-t border-line">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white font-bold shrink-0 shadow-sm shadow-primary/20">
-                      {user?.fullName?.charAt(0) || 'U'}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-fg">
-                        {user?.fullName}
-                      </p>
-                      <p className="text-[11px] text-fg-subtle font-mono">
-                        {user?.role ? getRoleLabel(user.role) : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* ─── Main Content ─── */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <main className="flex-1">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
             <Outlet />
           </div>
         </main>

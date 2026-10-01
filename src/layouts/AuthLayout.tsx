@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal } from 'lucide-react';
+import { BrandMark, ThemeToggle } from '../components/ui';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -8,19 +8,19 @@ interface AuthLayoutProps {
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-4">
-      {/* Brand mark */}
-      <Link to="/" className="flex items-center gap-2 mb-8 group">
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary-hover transition-colors">
-          <Terminal className="w-5 h-5 text-primary-text" />
-        </div>
-        <span className="font-display text-xl font-bold text-fg tracking-tight">
-          Code<span className="text-primary-text">Pulse</span>
-        </span>
+    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-canvas px-4 py-10">
+      {/* Quiet radial wash behind the card — cheaper than a blurred shape, no banding */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 select-none bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklab,var(--primary)_10%,transparent),transparent)]"
+      />
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+      <Link to="/" className="relative mb-8 rounded-xl" aria-label="CodePulse home">
+        <BrandMark size={36} />
       </Link>
-
-      {/* Card */}
-      {children}
+      <div className="relative w-full max-w-md">{children}</div>
     </div>
   );
 };
