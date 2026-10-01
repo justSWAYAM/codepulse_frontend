@@ -29,55 +29,102 @@ const Meta: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ 
   </span>
 );
 
-/** Editor-style sample input with a copy button (inline check for 2s). */
-const SampleBlock: React.FC<{ index: number; input: string }> = ({ index, input }) => {
+/** Copy-to-clipboard button */
+const CopyButton: React.FC<{ text: string; label: string }> = ({ text, label }) => {
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);
-
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(input);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard unavailable — nothing to do */
+      /* clipboard unavailable */
     }
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-editor-line bg-editor-bg">
-      <div className="flex items-center justify-between gap-2 border-b border-editor-line bg-editor-panel py-1 pr-1 pl-3">
-        <span className="tabular font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">
-          Input {index + 1}
-        </span>
-        <IconButton
-          aria-label="Copy input"
-          size="sm"
-          onClick={copy}
-          className="text-editor-muted hover-fine:bg-editor-line hover-fine:text-editor-fg"
-        >
-          {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
-        </IconButton>
-      </div>
-      <pre className="scroll-thin m-0 overflow-x-auto px-3 py-2.5 font-mono text-[13px] leading-6 whitespace-pre-wrap break-words text-editor-fg">
-        {input}
-      </pre>
-      <span className="sr-only" aria-live="polite">
-        {copied ? 'Input copied' : ''}
-      </span>
-    </div>
+    <>
+      <IconButton
+        aria-label={label}
+        size="sm"
+        onClick={copy}
+        className="text-editor-muted hover-fine:bg-editor-line hover-fine:text-editor-fg"
+      >
+        {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+      </IconButton>
+      <span className="sr-only" aria-live="polite">{copied ? `${label} copied` : ''}</span>
+    </>
   );
 };
 
+/** One panel (Input or Output) inside a sample card */
+const SamplePane: React.FC<{
+  label: string;
+  value: string | null | undefined;
+  placeholder?: string;
+  copyable?: boolean;
+}> = ({ label, value, placeholder, copyable = false }) => (
+  <div className="overflow-hidden rounded-lg border border-editor-line bg-editor-bg">
+    <div className="flex items-center justify-between gap-2 border-b border-editor-line bg-editor-panel py-1 pr-1 pl-3">
+      <span className="tabular font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">
+        {label}
+      </span>
+      {copyable && value ? <CopyButton text={value} label={`Copy ${label}`} /> : <span className="h-7" />}
+    </div>
+    {value ? (
+      <pre className="scroll-thin m-0 min-h-[36px] overflow-x-auto px-3 py-2.5 font-mono text-[13px] leading-6 whitespace-pre-wrap break-words text-editor-fg">
+        {value}
+      </pre>
+    ) : (
+      <p className="px-3 py-2.5 text-[12px] italic text-editor-muted">{placeholder ?? '—'}</p>
+    )}
+  </div>
+);
+
+/** One sample test case shown as Input + Output side by side */
+const SampleCard: React.FC<{
+  index: number;
+  input: string;
+  expectedOutput?: string | null;
+}> = ({ index, input, expectedOutput }) => (
+  <div
+    className="overflow-hidden rounded-xl border border-editor-line bg-editor-bg/40"
+    data-theme="dark"
+  >
+    {/* Card header */}
+    <div className="flex items-center border-b border-editor-line bg-editor-panel px-3 py-1.5">
+      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">
+        Sample {index + 1}
+      </span>
+    </div>
+    <div className="grid gap-2 p-2 sm:grid-cols-2">
+      <SamplePane label="Input" value={input} copyable />
+      <SamplePane
+        label="Expected output"
+        value={expectedOutput ?? null}
+        placeholder="Run your code to see output"
+        copyable={!!expectedOutput}
+      />
+    </div>
+  </div>
+);
+
 export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question }) => {
-  const samples = isCandidateRecord(question)
+  const candidateSamples = isCandidateRecord(question)
     ? [...(question.sampleTestCases ?? [])].sort((a, b) => a.orderIndex - b.orderIndex)
     : [];
+
   const adminCases = isAdminRecord(question) ? question.testCases ?? [] : [];
-  const sampleCount = adminCases.filter((tc) => tc.isSample).length;
+  const adminSamples = adminCases.filter((tc) => tc.isSample).sort((a, b) => a.orderIndex - b.orderIndex);
+  const sampleCount = adminSamples.length;
+
+  // Use admin samples if available (evaluator view), else candidate samples
+  const samples = adminSamples.length > 0 ? adminSamples : candidateSamples;
+  const hasExpectedOutput = adminSamples.length > 0;
 
   return (
     <article className="flex min-h-full flex-col bg-surface">
@@ -117,8 +164,18 @@ export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question
             <span id="sample-tests-heading">Sample test cases</span>
           </Eyebrow>
           {samples.map((tc, index) => (
-            <SampleBlock key={tc.id} index={index} input={tc.input} />
+            <SampleCard
+              key={tc.id}
+              index={index}
+              input={tc.input}
+              expectedOutput={hasExpectedOutput ? (tc as typeof adminSamples[number]).expectedOutput : undefined}
+            />
           ))}
+          {!hasExpectedOutput && (
+            <p className="text-[12px] text-fg-subtle">
+              Expected outputs are hidden — run your code to see what it produces against each input.
+            </p>
+          )}
         </section>
       )}
     </article>

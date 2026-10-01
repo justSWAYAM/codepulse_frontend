@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Code2, FileText, ListOrdered, Send, WifiOff } from 'lucide-react';
+import { Code2, FileText, PanelLeftClose, PanelLeftOpen, Send, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useContest } from '../hooks/useContests';
@@ -26,16 +26,18 @@ import type { QuestionCandidateRecord } from '../api/questionApi';
 
 type Pane = 'problem' | 'code';
 
+const SIDEBAR_WIDTH = 260;      // px — navigator sidebar
+const MIN_PROBLEM_W = 280;      // px — minimum problem panel width
+const MIN_EDITOR_W  = 360;      // px — minimum editor width
+const DEFAULT_SPLIT = 0.42;     // fraction of remaining space for problem panel
+
 /**
  * AssessmentPage — the exam-taking shell (focus mode, outside AppShell).
  *
- * Route: /dashboard/contests/:contestId/assessment   Access: CANDIDATE
- *   - no session / NOT_YET_STARTED → back to the contest page
- *   - IN_PROGRESS → exam
- *   - any ended status → SessionEndedScreen
+ * Layout (xl+):
+ *   [Nav sidebar (collapsible)] | [Problem panel (resizable)] | [drag handle] | [Code editor]
  *
- * Layout: header | navigator | problem | editor (xl+). Below xl, problem and code
- * share the space behind a Problem | Code switch — the editor is never hidden away.
+ * Below xl: Problem | Code switch as before.
  */
 const AssessmentPage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -54,10 +56,8 @@ const AssessmentPage: React.FC = () => {
 
   const sessionIsActive = !!session && session.status === 'IN_PROGRESS';
 
-  // Questions — gated on active session
   const { data: questionsRaw = [] } = useQuestions(contestId!, sessionIsActive);
 
-  // Copy before sorting — .sort() mutates, and this array is the query cache.
   const questions = useMemo(
     () =>
       sessionIsActive
@@ -83,7 +83,6 @@ const AssessmentPage: React.FC = () => {
     } catch (err: unknown) {
       setShowSubmitDialog(false);
       const status = (err as { response?: { status?: number } })?.response?.status;
-      // 409/422 = already ended — not an error; the refetch shows the ended screen
       if (status !== 409 && status !== 422) {
         toast.error(getErrorMessage(err, 'Failed to submit exam'));
       }
@@ -93,7 +92,8 @@ const AssessmentPage: React.FC = () => {
   // ── Question state ──
   const [activeQuestionId, setActiveQuestionId] = useState<string>('');
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [navOpen, setNavOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);       // mobile sheet
+  const [sidebarOpen, setSidebarOpen] = useState(true); // desktop sidebar
   const [pane, setPane] = useState<Pane>('problem');
 
   useEffect(() => {
@@ -132,15 +132,33 @@ const AssessmentPage: React.FC = () => {
     const off = () => setIsOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
-    return () => {
-      window.removeEventListener('online', on);
-      window.removeEventListener('offline', off);
-    };
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
+  // ── Drag-to-resize ──
+  const containerRef = useRef<HTMLDivElement>(null);
+  // problemFraction is the fraction of the resizable area (after sidebar) used by the problem panel
+  const [problemFraction, setProblemFraction] = useState(DEFAULT_SPLIT);
+  const dragging = useRef(false);
+
+  const onDragStart = useCallback((e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragging.current = true;
+  }, []);
+
+  const onDragMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const sidebarW = sidebarOpen ? SIDEBAR_WIDTH : 0;
+    const available = rect.width - sidebarW;
+    const rawProblemW = e.clientX - rect.left - sidebarW;
+    const clampedW = Math.max(MIN_PROBLEM_W, Math.min(rawProblemW, available - MIN_EDITOR_W));
+    setProblemFraction(clampedW / available);
+  }, [sidebarOpen]);
+
+  const onDragEnd = useCallback(() => { dragging.current = false; }, []);
+
   // ── Redirect when there's no session ──
-  // The backend answers GET /session with 200 + NOT_YET_STARTED (not 404) when the
-  // candidate hasn't started; send them back to the contest page to start from there.
   const is404 = sessionError && (sessionErr as { response?: { status?: number } })?.response?.status === 404;
   const notStarted = is404 || session?.status === 'NOT_YET_STARTED';
   useEffect(() => {
@@ -186,10 +204,16 @@ const AssessmentPage: React.FC = () => {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-canvas">
       {/* ── Header ── */}
-      <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
-        <IconButton aria-label="Open question list" className="lg:hidden" onClick={() => setNavOpen(true)}>
-          <ListOrdered className="size-5" />
+      <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:px-4">
+        {/* Sidebar toggle — always visible, controls both mobile sheet and desktop sidebar */}
+        <IconButton
+          aria-label={sidebarOpen ? 'Close question list' : 'Open question list'}
+          onClick={() => { setSidebarOpen((o) => !o); setNavOpen((o) => !o); }}
+          className="shrink-0"
+        >
+          {sidebarOpen ? <PanelLeftClose className="size-5" /> : <PanelLeftOpen className="size-5" />}
         </IconButton>
+
         <BrandMark size={28} withWordmark={false} className="hidden sm:inline-flex" />
         <div className="min-w-0">
           <p className="truncate font-display text-[14px] font-semibold tracking-[-0.015em] text-fg">
@@ -225,23 +249,36 @@ const AssessmentPage: React.FC = () => {
 
       {!isOnline && (
         <div role="status" className="shrink-0 bg-warning-soft px-4 py-1.5 text-center text-[12px] font-medium text-warning-text sm:hidden">
-          You’re offline — reconnecting…
+          You're offline — reconnecting…
         </div>
       )}
 
       {/* ── Body ── */}
-      <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
-          <div className="flex h-11 items-center justify-between border-b border-line px-4">
+      <div
+        ref={containerRef}
+        className="flex min-h-0 flex-1 select-none"
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        onPointerLeave={onDragEnd}
+      >
+        {/* ── Desktop sidebar (collapsible) ── */}
+        <aside
+          className={cn(
+            'hidden lg:flex shrink-0 flex-col border-r border-line bg-surface overflow-hidden transition-[width] duration-200 ease-out',
+            sidebarOpen ? 'w-[260px]' : 'w-0 border-r-0',
+          )}
+          style={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
+          aria-hidden={!sidebarOpen}
+        >
+          <div className="flex h-11 shrink-0 items-center justify-between border-b border-line px-4">
             <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">Questions</span>
-            <span className="tabular text-[12px] text-fg-subtle">
-              {acceptedCount}/{questions.length}
-            </span>
+            <span className="tabular text-[12px] text-fg-subtle">{acceptedCount}/{questions.length}</span>
           </div>
           <div className="flex-1 overflow-y-auto px-2">{questionList}</div>
         </aside>
 
-        <Sheet open={navOpen} onOpenChange={setNavOpen} side="left" width="max-w-[300px]" title="Questions">
+        {/* ── Mobile sheet ── */}
+        <Sheet open={navOpen} onOpenChange={(o) => { setNavOpen(o); if (!o) setSidebarOpen(false); }} side="left" width="max-w-[300px]" title="Questions">
           <div className="px-2">{questionList}</div>
         </Sheet>
 
@@ -260,8 +297,13 @@ const AssessmentPage: React.FC = () => {
             />
           </div>
 
+          {/* ── xl+ resizable split ── */}
           <div className="flex min-h-0 flex-1">
-            <div className={cn('min-w-0 flex-1 bg-surface', pane === 'code' && 'hidden xl:block')}>
+            {/* Problem panel */}
+            <div
+              className={cn('min-w-0 bg-surface', pane === 'code' && 'hidden xl:block')}
+              style={{ flex: `0 0 ${(problemFraction * 100).toFixed(2)}%` }}
+            >
               {activeQuestion ? (
                 <QuestionPanel question={activeQuestion} />
               ) : (
@@ -269,12 +311,27 @@ const AssessmentPage: React.FC = () => {
               )}
             </div>
 
-            {/* Kept mounted when hidden so the editor keeps its state */}
+            {/* Drag handle (xl+ only) */}
             <div
               className={cn(
-                'min-w-0 border-line xl:flex xl:w-[52%] xl:shrink-0 xl:border-l',
-                pane === 'code' ? 'flex flex-1' : 'hidden',
+                'hidden xl:flex items-center justify-center w-[5px] shrink-0 cursor-col-resize bg-transparent group hover:bg-primary/10 active:bg-primary/20 transition-colors duration-150 z-10',
+                pane === 'code' && 'xl:hidden',
               )}
+              onPointerDown={onDragStart}
+              role="separator"
+              aria-label="Drag to resize panels"
+              aria-orientation="vertical"
+            >
+              <div className="h-10 w-[3px] rounded-full bg-line group-hover:bg-primary/50 transition-colors duration-150" />
+            </div>
+
+            {/* Code editor panel — kept mounted to preserve state */}
+            <div
+              className={cn(
+                'min-w-0 border-line',
+                pane === 'code' ? 'flex flex-1' : 'hidden xl:flex',
+              )}
+              style={{ flex: `1 1 0%` }}
             >
               {activeQuestion && contestId && (
                 <CodeEditorPanel
