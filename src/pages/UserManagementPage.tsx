@@ -221,7 +221,8 @@ const UserManagementPage: React.FC = () => {
   const [editUser, setEditUser] = useState<UserRecord | null>(null);
   const [confirmUser, setConfirmUser] = useState<UserRecord | null>(null);
 
-  const { data, isLoading, isError, refetch } = useUsers();
+  // The table pages/sorts client-side, so load everything (Spring caps size at 2000)
+  const { data, isLoading, isError, refetch } = useUsers({ pageSize: 2000 });
   const deactivateMutation = useDeactivateUser();
   const reactivateMutation = useReactivateUser();
 
@@ -249,7 +250,7 @@ const UserManagementPage: React.FC = () => {
 
   const columns: ColumnDef<UserRecord, unknown>[] = [
     {
-      accessorKey: 'name',
+      accessorKey: 'fullName',
       header: 'Name',
       cell: ({ row }) => (
         <div>
@@ -271,7 +272,7 @@ const UserManagementPage: React.FC = () => {
       enableSorting: true,
     },
     {
-      accessorKey: 'active',
+      accessorKey: 'isActive',
       header: 'Status',
       cell: ({ row }) => <StatusBadge active={row.original.isActive} />,
       enableSorting: true,

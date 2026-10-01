@@ -43,10 +43,12 @@ const ContestDetailPage: React.FC = () => {
   const publishMutation = usePublishContest(id!);
   const assignMutation = useAssignCandidates(id!);
 
-  // Candidate picker — fetch all candidates for admin assignment
+  // Candidate picker — fetch all candidates for admin assignment.
+  // GET /users is admin-only, so don't fire it for other roles.
+  // Page size is large because the picker filters client-side (Spring caps size at 2000).
   const { data: candidatesData } = useUsers(
-    { role: 'CANDIDATE' },
-    isAdmin || isEvaluator
+    { role: 'CANDIDATE', pageSize: 2000 },
+    isAdmin
   );
   const allCandidates = (candidatesData as unknown as { users?: { id: string; fullName: string; email: string; rollNumber?: string; branch?: string; division?: string; batch?: string }[] })?.users ?? [];
 

@@ -41,15 +41,10 @@ export const TestCaseBulkUploadResultReport: React.FC<TestCaseBulkUploadResultRe
             >
               <XCircle className="w-4 h-4 text-accent-error shrink-0" />
               <span className="font-mono text-ink/60 w-10 shrink-0">
-                Row {err.row}
+                Row {err.rowNumber}
               </span>
-              {err.field && (
-                <span className="text-ink/50 font-medium shrink-0">
-                  {err.field}
-                </span>
-              )}
-              <span className="text-accent-error/70 text-[11px] truncate flex-1">
-                {err.message}
+              <span className="text-accent-error/70 text-[11px] truncate flex-1" title={err.reason}>
+                {err.reason}
               </span>
             </div>
           ))}

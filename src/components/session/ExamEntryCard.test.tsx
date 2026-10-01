@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExamEntryCard } from './ExamEntryCard';
@@ -41,9 +42,11 @@ describe('ExamEntryCard session states', () => {
     } as any);
 
     render(
-      <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
         <ExamEntryCard contest={contest} />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     expect(mockUseAssessmentSession).toHaveBeenCalledWith('contest-1', true);
@@ -52,7 +55,8 @@ describe('ExamEntryCard session states', () => {
 
   it('shows the scheduled state before the assessment window without a session lookup', () => {
     render(
-      <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
         <ExamEntryCard
           contest={{
             ...contest,
@@ -62,6 +66,7 @@ describe('ExamEntryCard session states', () => {
           }}
         />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     expect(screen.getByText(/exam opens on/i)).toBeInTheDocument();
@@ -77,9 +82,11 @@ describe('ExamEntryCard session states', () => {
     } as any);
 
     render(
-      <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
         <ExamEntryCard contest={contest} />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     expect(screen.getByRole('button', { name: /start exam/i })).toBeInTheDocument();
@@ -91,9 +98,11 @@ describe('ExamEntryCard session states', () => {
     } as any);
 
     render(
-      <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
         <ExamEntryCard contest={contest} />
       </MemoryRouter>
+      </QueryClientProvider>
     );
 
     expect(screen.getByText(/already submitted/i)).toBeInTheDocument();

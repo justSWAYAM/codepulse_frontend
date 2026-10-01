@@ -99,19 +99,19 @@ export const BulkUploadTestCasesDialog: React.FC<BulkUploadTestCasesDialogProps>
             return;
           }
 
-          // Validate is_sample is boolean-like
+          // Validate is_sample — backend accepts only true/false
           if (isSampleIdx >= 0 && row[isSampleIdx] !== undefined) {
             const val = row[isSampleIdx].trim().toLowerCase();
-            if (!['true', 'false', '1', '0', 'yes', 'no'].includes(val)) {
-              errors.push(`Row ${i + 2}: is_sample "${row[isSampleIdx]}" is not a valid boolean`);
+            if (!['true', 'false'].includes(val)) {
+              errors.push(`Row ${i + 2}: is_sample "${row[isSampleIdx]}" must be true or false`);
             }
           }
 
-          // Validate weight is numeric
+          // Validate weight — backend parses it with Integer.parseInt and rejects negatives
           if (weightIdx >= 0 && row[weightIdx] !== undefined) {
             const val = row[weightIdx].trim();
-            if (val && isNaN(Number(val))) {
-              errors.push(`Row ${i + 2}: weight "${row[weightIdx]}" is not a valid number`);
+            if (!/^\d+$/.test(val)) {
+              errors.push(`Row ${i + 2}: weight "${row[weightIdx]}" must be a non-negative whole number`);
             }
           }
         });

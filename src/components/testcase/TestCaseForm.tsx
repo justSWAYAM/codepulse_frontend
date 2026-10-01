@@ -9,7 +9,8 @@ const testCaseSchema = z.object({
   expectedOutput: z.string().min(1, 'Expected output is required'),
   isSample: z.boolean(),
   weight: z
-    .number()
+    .number({ message: 'Weight is required' })
+    .int('Weight must be a whole number')
     .min(0, 'Weight cannot be negative'),
 });
 
@@ -112,7 +113,7 @@ export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending,
           <input
             id="testcase-weight"
             type="number"
-            step="any"
+            step={1}
             {...register('weight', { valueAsNumber: true })}
             className={`w-full px-3 py-2 rounded-lg border text-sm font-mono ${
               errors.weight ? 'border-accent-error' : 'border-hairline'

@@ -14,6 +14,7 @@ interface SessionStatusBadgeProps {
  * EXPIRED (reserved) → neutral fallback
  */
 const STATUS_CONFIG: Record<SessionStatus, { label: string; color: string; bg: string; dot?: boolean }> = {
+  NOT_YET_STARTED: { label: 'Not Started',      color: '#6B7280', bg: '#F3F4F6' },
   IN_PROGRESS:    { label: 'In Progress',      color: '#2F9E6E', bg: '#EFFAF5', dot: true },
   SUBMITTED:      { label: 'Submitted',        color: '#6B7280', bg: '#F3F4F6' },
   AUTO_SUBMITTED: { label: 'Auto-Submitted',   color: '#E8A33D', bg: '#FFF9F0' },

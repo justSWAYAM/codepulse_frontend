@@ -13,6 +13,15 @@ interface ApiWrapper<T> {
   traceId: string;
 }
 
+// Mirrors backend common/dto/PagedResponse
+interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export interface UserRecord {
   id: string;
   email: string;
@@ -102,12 +111,16 @@ export const userApi = {
     search?: string;
     role?: UserRole;
   }): Promise<UsersResponse> => {
-    const { data } = await apiClient.get<ApiWrapper<any>>('/users', { params });
+    // Spring's Pageable expects `page` and `size` (not pageSize)
+    const { pageSize, ...rest } = params ?? {};
+    const { data } = await apiClient.get<ApiWrapper<PagedResponse<UserRecord>>>('/users', {
+      params: { ...rest, ...(pageSize !== undefined ? { size: pageSize } : {}) },
+    });
     return {
       users: data.data.content,
       total: data.data.totalElements,
-      page: data.data.pageNumber,
-      pageSize: data.data.pageSize,
+      page: data.data.page,
+      pageSize: data.data.size,
     };
   },
 
@@ -173,6 +186,6 @@ export const userApi = {
   },
 
   changePassword: async (payload: ChangePasswordPayload): Promise<void> => {
-    await apiClient.put('/users/me/password', payload);
+    await apiClient.patch('/users/me/password', payload);
   },
 };

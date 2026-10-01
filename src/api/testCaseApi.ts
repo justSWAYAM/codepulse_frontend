@@ -26,10 +26,10 @@ export interface CreateTestCasePayload {
   weight: number;
 }
 
+// Mirrors backend common/dto/RowError
 export interface RowError {
-  row: number;
-  field?: string;
-  message: string;
+  rowNumber: number;
+  reason: string;
 }
 
 export interface TestCaseBulkUploadResult {

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
@@ -9,6 +9,15 @@ export const setAccessToken = (token: string | null) => {
 };
 
 export const getAccessToken = () => accessToken;
+
+// AuthContext registers this so a failed refresh clears React auth state.
+// ProtectedRoute then redirects to /login via the router — no hard page reload,
+// so public pages (landing) stay put and in-memory state isn't thrown away.
+let onSessionExpired: (() => void) | null = null;
+
+export const setSessionExpiredHandler = (handler: (() => void) | null) => {
+  onSessionExpired = handler;
+};
 
 const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -25,66 +34,46 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 — attempt refresh once, then redirect
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
+// Single in-flight refresh shared by every caller. The backend rotates the refresh
+// cookie on each use, so two parallel refreshes (StrictMode double-mount, several
+// requests 401-ing at once) would make the loser fail with an already-revoked token.
+let refreshPromise: Promise<string> | null = null;
 
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token!);
-    }
-  });
-  failedQueue = [];
+export const refreshAccessToken = (): Promise<string> => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${API_BASE_URL}/api/auth/refresh`, {}, { withCredentials: true })
+      .then(({ data }) => {
+        const newToken: string = data.data.accessToken;
+        setAccessToken(newToken);
+        return newToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
 };
 
+type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+
+// Handle 401 — attempt refresh once, then sign out
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as RetriableConfig | undefined;
+    const isAuthEndpoint = originalRequest?.url?.startsWith('/auth/');
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(apiClient(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
-
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
-      isRefreshing = true;
-
       try {
-        const { data } = await axios.post(
-          `${API_BASE_URL}/api/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        const newToken = data.data.accessToken;
-        setAccessToken(newToken);
-        processQueue(null, newToken);
+        const newToken = await refreshAccessToken();
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
         setAccessToken(null);
-        // Only redirect if not already on login page
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        onSessionExpired?.();
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 

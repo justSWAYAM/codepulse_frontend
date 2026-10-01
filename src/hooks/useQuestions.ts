@@ -15,11 +15,11 @@ export const questionKeys = {
 };
 
 // List
-export const useQuestions = (contestId: string) =>
+export const useQuestions = (contestId: string, enabled = true) =>
   useQuery({
     queryKey: questionKeys.all(contestId),
     queryFn: () => questionApi.getQuestions(contestId),
-    enabled: !!contestId,
+    enabled: !!contestId && enabled,
   });
 
 // Single

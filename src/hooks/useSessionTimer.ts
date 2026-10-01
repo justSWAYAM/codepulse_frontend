@@ -18,7 +18,27 @@ interface SessionTimerResult {
  * 4. When remaining reaches 0, fire ONE refetch (the server lazily auto-submits on GET).
  * 5. The timer NEVER calls submit. Auto-submit is the server's job.
  */
-export function useSessionTimer(session: SessionStatusResponse | undefined): SessionTimerResult {
+// Announced to screen readers as the timer crosses each threshold (Section 3.2)
+const THRESHOLDS = [
+  { seconds: 600, text: '10 minutes remaining' },
+  { seconds: 120, text: '2 minutes remaining' },
+  { seconds: 30, text: '30 seconds remaining' },
+  { seconds: 0, text: 'Time is up' },
+];
+
+// If the server still says IN_PROGRESS at our 0:00 (client clock slightly ahead),
+// wait this long before asking again instead of re-fetching every tick.
+const EXPIRY_REFETCH_BACKOFF_MS = 3_000;
+
+/**
+ * @param receivedAtMs client time at which `session` was received (TanStack's
+ *   `dataUpdatedAt`). The offset must be measured against the moment the response
+ *   arrived: a cached response rendered later would otherwise inflate the time left.
+ */
+export function useSessionTimer(
+  session: SessionStatusResponse | undefined,
+  receivedAtMs?: number
+): SessionTimerResult {
   const queryClient = useQueryClient();
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
@@ -27,6 +47,7 @@ export function useSessionTimer(session: SessionStatusResponse | undefined): Ses
   const offsetMsRef = useRef(0);
   const endsAtMsRef = useRef(0);
   const hasTriggeredExpiryRef = useRef(false);
+  const lastExpiryRefetchAtRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Screen-reader threshold announcements (Section 3.2)
@@ -80,7 +101,7 @@ export function useSessionTimer(session: SessionStatusResponse | undefined): Ses
 
     // Step 1: recompute offset on every response
     const serverNowMs = Date.parse(session.serverTime);
-    const clientNowMs = Date.now();
+    const clientNowMs = receivedAtMs || Date.now();
     offsetMsRef.current = serverNowMs - clientNowMs;
     endsAtMsRef.current = Date.parse(session.endsAt);
     hasTriggeredExpiryRef.current = false;
@@ -91,8 +112,16 @@ export function useSessionTimer(session: SessionStatusResponse | undefined): Ses
       return Math.max(0, Math.ceil((endsAtMsRef.current - now) / 1000));
     };
 
-    setRemainingSeconds(computeRemaining());
+    const initialRemaining = computeRemaining();
+    setRemainingSeconds(initialRemaining);
     setIsExpired(false);
+
+    // On resume, thresholds already behind us shouldn't all fire at once
+    for (const t of THRESHOLDS) {
+      if (initialRemaining < t.seconds) {
+        announcedThresholdsRef.current.add(t.seconds);
+      }
+    }
 
     // Step 2: tick once per second
     if (intervalRef.current) {
@@ -103,15 +132,7 @@ export function useSessionTimer(session: SessionStatusResponse | undefined): Ses
       const remaining = computeRemaining();
       setRemainingSeconds(remaining);
 
-      // Threshold announcements (Section 3.2): 10min, 2min, 30sec, 0
-      const thresholds = [
-        { seconds: 600, text: '10 minutes remaining' },
-        { seconds: 120, text: '2 minutes remaining' },
-        { seconds: 30, text: '30 seconds remaining' },
-        { seconds: 0, text: 'Time is up' },
-      ];
-
-      for (const t of thresholds) {
+      for (const t of THRESHOLDS) {
         if (remaining <= t.seconds && !announcedThresholdsRef.current.has(t.seconds)) {
           announcedThresholdsRef.current.add(t.seconds);
           announce(t.text);
@@ -119,8 +140,13 @@ export function useSessionTimer(session: SessionStatusResponse | undefined): Ses
       }
 
       // Step 4: when remaining reaches 0, fire ONE refetch
-      if (remaining === 0 && !hasTriggeredExpiryRef.current) {
+      if (
+        remaining === 0 &&
+        !hasTriggeredExpiryRef.current &&
+        Date.now() - lastExpiryRefetchAtRef.current >= EXPIRY_REFETCH_BACKOFF_MS
+      ) {
         hasTriggeredExpiryRef.current = true;
+        lastExpiryRefetchAtRef.current = Date.now();
         setIsExpired(true);
         // Clear the interval — no more ticking needed
         if (intervalRef.current) {
@@ -141,7 +167,7 @@ export function useSessionTimer(session: SessionStatusResponse | undefined): Ses
         intervalRef.current = null;
       }
     };
-  }, [session, queryClient, announce]);
+  }, [session, receivedAtMs, queryClient, announce]);
 
   return { remainingSeconds, isExpired };
 }

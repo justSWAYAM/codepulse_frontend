@@ -34,7 +34,7 @@ export const useAssessmentSession = (contestId: string, enabled = true) =>
     refetchInterval: (query) =>
       query.state.data?.status === 'IN_PROGRESS' ? 30_000 : false,  // periodic re-sync
     refetchOnMount: 'always',
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,  // re-sync the timer when the candidate returns to the tab
     staleTime: 0,
   });
 
@@ -56,14 +56,11 @@ export const useSubmitSession = (contestId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => sessionApi.submit(contestId),
-    onSuccess: async (data) => {
+    // The submit response is already the canonical session. Don't await a follow-up
+    // GET here: if it failed, the mutation would reject and the UI would report
+    // "Failed to submit" for an exam the server has already finalized.
+    onSuccess: (data) => {
       queryClient.setQueryData(sessionKeys.detail(contestId), data);
-      const canonicalSession = await queryClient.fetchQuery({
-        queryKey: sessionKeys.detail(contestId),
-        queryFn: () => sessionApi.getStatus(contestId),
-        retry: false,
-      });
-      queryClient.setQueryData(sessionKeys.detail(contestId), canonicalSession);
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(contestId) });
     },
   });

@@ -45,6 +45,7 @@ const AssessmentPage: React.FC = () => {
     isLoading: sessionLoading,
     isError: sessionError,
     error: sessionErr,
+    dataUpdatedAt: sessionReceivedAt,
   } = useAssessmentSession(contestId!);
 
   const { data: contest } = useContest(contestId!);
@@ -52,13 +53,14 @@ const AssessmentPage: React.FC = () => {
   const sessionIsActive = !!session && session.status === 'IN_PROGRESS';
 
   // Questions — gated on active session (Section 4.3)
-  const { data: questionsRaw = [] } = useQuestions(contestId!);
+  const { data: questionsRaw = [] } = useQuestions(contestId!, sessionIsActive);
 
-  // Cast to candidate records since we're in candidate context
+  // Cast to candidate records since we're in candidate context.
+  // Copy before sorting — .sort() mutates, and this array is the query cache.
   const questions = useMemo(
     () =>
       sessionIsActive
-        ? (questionsRaw as QuestionCandidateRecord[]).sort(
+        ? [...(questionsRaw as QuestionCandidateRecord[])].sort(
             (a, b) => a.orderIndex - b.orderIndex
           )
         : [],
@@ -66,7 +68,7 @@ const AssessmentPage: React.FC = () => {
   );
 
   // ── Timer ──
-  const { remainingSeconds, isExpired } = useSessionTimer(session);
+  const { remainingSeconds, isExpired } = useSessionTimer(session, sessionReceivedAt);
 
   // ── Submit ──
   const submitMutation = useSubmitSession(contestId!);
@@ -78,7 +80,7 @@ const AssessmentPage: React.FC = () => {
       await submitMutation.mutateAsync();
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 409) {
+      if (status === 409 || status === 422) {
         // Already ended — not an error, just show ended screen
         // The query will refetch and show the correct state
       } else {
@@ -137,16 +139,19 @@ const AssessmentPage: React.FC = () => {
     };
   }, []);
 
-  // ── Redirect on 404 (no session) ──
+  // ── Redirect when there's no session ──
+  // The backend answers GET /session with 200 + NOT_YET_STARTED (not 404) when the
+  // candidate hasn't started; send them back to the contest page to start from there.
   const is404 = sessionError && (sessionErr as { response?: { status?: number } })?.response?.status === 404;
+  const notStarted = is404 || session?.status === 'NOT_YET_STARTED';
   useEffect(() => {
-    if (is404) {
+    if (notStarted) {
       navigate(`/dashboard/contests/${contestId}`, { replace: true });
     }
-  }, [is404, navigate, contestId]);
+  }, [notStarted, navigate, contestId]);
 
   // ── Loading state ──
-  if (sessionLoading) {
+  if (sessionLoading || notStarted) {
     return <LoadingState message="Loading your exam session..." />;
   }
 

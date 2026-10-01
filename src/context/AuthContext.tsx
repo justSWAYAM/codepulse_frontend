@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { setAccessToken, getAccessToken } from '../lib/apiClient';
+import { setAccessToken, getAccessToken, setSessionExpiredHandler } from '../lib/apiClient';
 import { authApi, type LoginPayload } from '../api/auth';
 
 interface User {
@@ -22,6 +22,13 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // When a token refresh fails mid-session, drop to logged-out state;
+  // ProtectedRoute handles the redirect to /login.
+  useEffect(() => {
+    setSessionExpiredHandler(() => setUser(null));
+    return () => setSessionExpiredHandler(null);
+  }, []);
 
   // On mount, try to refresh if we had a session
   useEffect(() => {
@@ -47,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           fullName: payload.fullName || payload.name || payload.sub || '',
           role: payload.role,
         });
-      } catch (err) {
+      } catch {
         setAccessToken(null);
         setUser(null);
       } finally {

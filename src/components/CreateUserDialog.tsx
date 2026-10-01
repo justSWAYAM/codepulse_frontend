@@ -11,8 +11,15 @@ const createUserSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
   name: z.string().min(1, 'Full name is required').min(2, 'Name must be at least 2 characters'),
   role: z.enum(['CANDIDATE', 'EVALUATOR', 'ADMIN'] as const),
-  password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
-  rollNumber: z.string().optional(),
+  // Backend CreateUserRequest.password is @NotBlank, 8–64 chars
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(64, 'Password must be at most 64 characters'),
+  rollNumber: z
+    .string()
+    .regex(/^\d*$/, 'Roll number must be numeric')
+    .optional(),
   year: z.number().optional(),
   branch: z.enum(['CSE', 'CE', 'ECS', 'MECH', '']).optional(),
   division: z.enum(['A', 'B', 'C', '']).optional(),
@@ -48,7 +55,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
       email: data.email,
       fullName: data.name,
       role: data.role as UserRole,
-      ...(data.password ? { password: data.password } : {}),
+      password: data.password,
       ...(data.role === 'CANDIDATE' && data.rollNumber ? { rollNumber: data.rollNumber } : {}),
       ...(data.role === 'CANDIDATE' && data.year ? { year: data.year } : {}),
       ...(data.role === 'CANDIDATE' && data.branch ? { branch: data.branch } : {}),
@@ -170,7 +177,11 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                         <label className="block text-sm font-medium text-ink mb-1.5">Year</label>
                         <select
                           className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent-compile/30 focus:border-accent-compile transition-all border-hairline`}
-                          {...register('year', { valueAsNumber: true })}
+                          {...register('year', {
+                            // valueAsNumber turns the empty "Select" option into NaN, which fails
+                            // z.number() and silently blocks submit — map it to undefined instead
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                          })}
                         >
                           <option value="">Select</option>
                           <option value="1">1st Year</option>
@@ -250,7 +261,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
                 <div>
                   <label className="block text-sm font-medium text-ink mb-1.5">
                     Password{' '}
-                    <span className="font-normal text-ink/40">(optional — auto-generated if empty)</span>
+                    <span className="font-normal text-ink/40">(min 8 characters)</span>
                   </label>
                   <input
                     type="password"

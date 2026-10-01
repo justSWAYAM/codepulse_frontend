@@ -1,4 +1,4 @@
-import apiClient from '../lib/apiClient';
+import apiClient, { refreshAccessToken } from '../lib/apiClient';
 
 export interface LoginPayload {
   email: string;
@@ -39,8 +39,9 @@ export const authApi = {
     await apiClient.post('/auth/logout');
   },
 
+  // Goes through the shared in-flight refresh so it never races the 401 interceptor
   refresh: async (): Promise<{ accessToken: string }> => {
-    const { data } = await apiClient.post<ApiWrapper<{ accessToken: string }>>('/auth/refresh');
-    return data.data;
+    const accessToken = await refreshAccessToken();
+    return { accessToken };
   },
 };

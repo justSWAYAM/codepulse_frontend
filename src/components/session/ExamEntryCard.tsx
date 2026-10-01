@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Clock, AlertTriangle, CheckCircle2, Timer, Lock, Loader2, RotateCw, RefreshCw } from 'lucide-react';
 import type { ContestDetailRecord } from '../../api/contestApi';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAssessmentSession, useStartSession } from '../../hooks/useAssessmentSession';
+import { contestKeys } from '../../hooks/useContests';
 import { toast } from 'sonner';
 
 interface ExamEntryCardProps {
@@ -20,9 +22,8 @@ function formatDateTime(isoString: string): string {
   });
 }
 
-function isAssessmentWindowOpen(contest: ContestDetailRecord): boolean {
-  const now = Date.now();
-  return now >= new Date(contest.startTime).getTime() && now < new Date(contest.endTime).getTime();
+function hasStartTimePassed(contest: ContestDetailRecord): boolean {
+  return Date.now() >= new Date(contest.startTime).getTime();
 }
 
 /**
@@ -35,7 +36,20 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const startMutation = useStartSession(contest.id);
-  const assessmentOpen = contest.status === 'ONGOING' || isAssessmentWindowOpen(contest);
+  const queryClient = useQueryClient();
+  // Only the server's status decides whether starting is allowed. The client clock can be
+  // skewed, and the backend scheduler flips PUBLISHED -> ONGOING up to ~60s after startTime.
+  const assessmentOpen = contest.status === 'ONGOING';
+  const awaitingOpen = contest.status === 'PUBLISHED' && hasStartTimePassed(contest);
+
+  // While waiting for the scheduler to open the contest, poll its status
+  useEffect(() => {
+    if (!awaitingOpen) return;
+    const id = window.setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: contestKeys.detail(contest.id) });
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [awaitingOpen, contest.id, queryClient]);
   const {
     data: session,
     isLoading: sessionLoading,
@@ -75,7 +89,11 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
           <div className="w-10 h-10 rounded-xl bg-ink/5 flex items-center justify-center shrink-0"><Lock className="w-5 h-5 text-ink/40" /></div>
           <div className="flex-1">
             <h3 className="font-display text-base font-bold text-ink mb-1">Assessment</h3>
-            <p className="text-sm text-ink/60">Exam opens on <span className="font-medium text-ink">{formatDateTime(contest.startTime)}</span></p>
+            {awaitingOpen ? (
+              <p className="text-sm text-ink/60">The exam is opening — this updates automatically in a few seconds.</p>
+            ) : (
+              <p className="text-sm text-ink/60">Exam opens on <span className="font-medium text-ink">{formatDateTime(contest.startTime)}</span></p>
+            )}
             <p className="text-xs text-ink/40 mt-2">Duration: {contest.durationMinutes} minutes</p>
           </div>
         </div>
@@ -83,7 +101,8 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
     );
   }
 
-  if (sessionLoading || sessionFetching) {
+  // Only block on the first load — background re-syncs (every 30s) shouldn't flash a spinner
+  if (sessionLoading) {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-hairline rounded-2xl p-6">
         <div className="flex items-center gap-3 text-sm text-ink/60"><Loader2 className="w-4 h-4 animate-spin" />Checking your assessment status…</div>
