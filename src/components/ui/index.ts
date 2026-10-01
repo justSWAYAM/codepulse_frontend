@@ -1,4 +1,4 @@
-export { Button, IconButton } from './Button';
+export { Button, IconButton, ButtonLink, buttonClass } from './Button';
 export type { ButtonProps } from './Button';
 export { Spinner } from './Spinner';
 export { Input, Textarea, Select, Label, Field, controlClass } from './Field';

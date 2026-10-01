@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, type LinkProps } from 'react-router-dom';
 import { cn } from '../../lib/cn';
 import { Spinner } from './Spinner';
 
@@ -72,6 +73,25 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
     </button>
   );
 });
+
+/** Same look as Button, rendered as a router Link — never nest a <button> in an <a>. */
+export const buttonClass = (variant: Variant = 'primary', size: Size = 'md', className?: string) =>
+  cn(
+    'press relative inline-flex shrink-0 select-none items-center justify-center font-medium whitespace-nowrap',
+    variants[variant],
+    sizes[size],
+    className,
+  );
+
+export const ButtonLink: React.FC<
+  LinkProps & { variant?: Variant; size?: Size; leadingIcon?: React.ReactNode; trailingIcon?: React.ReactNode }
+> = ({ variant, size, leadingIcon, trailingIcon, className, children, ...rest }) => (
+  <Link className={buttonClass(variant, size, typeof className === 'string' ? className : undefined)} {...rest}>
+    {leadingIcon}
+    {children}
+    {trailingIcon}
+  </Link>
+);
 
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   'aria-label': string;

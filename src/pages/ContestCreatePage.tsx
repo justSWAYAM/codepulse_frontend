@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Check, Plus } from 'lucide-react';
+import { Button, Card, Field, Input, PageHeader, Textarea } from '../components/ui';
+import { LANGUAGES as LANGUAGE_META } from '../lib/languages';
+import { getErrorMessage } from '../lib/apiError';
+import { cn } from '../lib/cn';
 import { useCreateContest } from '../hooks/useContests';
 
 const LANGUAGES = ['JAVA', 'PYTHON', 'CPP', 'C', 'JAVASCRIPT'] as const;
@@ -81,171 +85,124 @@ const ContestCreatePage: React.FC = () => {
       });
       navigate(`/dashboard/contests/${result.id}`);
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Failed to create contest. Please try again.';
-      setApiError(msg);
+      setApiError(getErrorMessage(err, 'Failed to create contest. Please try again.'));
     }
   };
 
   const selectedLangs = watch('allowedLanguages');
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => navigate('/dashboard/contests')}
-          className="p-2 rounded-xl text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div>
+        <Link
+          to="/dashboard/contests"
+          className="mb-3 inline-flex items-center gap-1.5 rounded-lg text-[13px] text-fg-muted hover-fine:text-fg"
         >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="font-display text-2xl font-bold text-fg">Create Contest</h1>
-          <p className="text-sm text-fg-muted">Set up a new coding contest</p>
-        </div>
+          <ArrowLeft className="size-4" />
+          Contests
+        </Link>
+        <PageHeader title="Create contest" description="Set the schedule and languages. You’ll add questions and candidates next." />
       </div>
 
-      {/* Form card */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-surface border border-line rounded-2xl p-6"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-fg mb-1.5">Title *</label>
-            <input
-              {...register('title')}
-              placeholder="e.g. Mid-Semester Coding Exam"
-              className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm placeholder:text-fg-subtle focus:outline-none focus:border-primary transition-colors"
-            />
-            {errors.title && (
-              <p className="mt-1 text-xs text-danger-text">{errors.title.message}</p>
-            )}
-          </div>
+      <Card>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <div className="space-y-5 p-5 sm:p-6">
+            <Field label="Title" required error={errors.title?.message}>
+              {(p) => <Input {...p} {...register('title')} placeholder="e.g. Mid-semester coding exam" />}
+            </Field>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-fg mb-1.5">
-              Description{' '}
-              <span className="text-fg-subtle font-normal">({description.length}/2000)</span>
-            </label>
-            <textarea
-              {...register('description')}
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                setValue('description', e.target.value);
-              }}
-              placeholder="Describe the contest, rules, and objectives..."
-              rows={4}
-              className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm placeholder:text-fg-subtle focus:outline-none focus:border-primary transition-colors resize-none"
-            />
-            {errors.description && (
-              <p className="mt-1 text-xs text-danger-text">{errors.description.message}</p>
-            )}
-          </div>
-
-          {/* Time inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">Start Time *</label>
-              <input
-                {...register('startTime')}
-                type="datetime-local"
-                className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm focus:outline-none focus:border-primary transition-colors"
-              />
-              {errors.startTime && (
-                <p className="mt-1 text-xs text-danger-text">{errors.startTime.message}</p>
+            <Field
+              label={
+                <span className="flex w-full items-center justify-between">
+                  Description
+                  <span className="tabular font-normal text-fg-subtle">{description.length}/2000</span>
+                </span>
+              }
+              error={errors.description?.message}
+            >
+              {(p) => (
+                <Textarea
+                  {...p}
+                  {...register('description')}
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setValue('description', e.target.value);
+                  }}
+                  placeholder="Rules, topics and anything candidates should know…"
+                  rows={4}
+                  className="resize-y"
+                />
               )}
+            </Field>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Starts" required error={errors.startTime?.message}>
+                {(p) => <Input {...p} {...register('startTime')} type="datetime-local" className="tabular" />}
+              </Field>
+              <Field label="Ends" required error={errors.endTime?.message}>
+                {(p) => <Input {...p} {...register('endTime')} type="datetime-local" className="tabular" />}
+              </Field>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">End Time *</label>
-              <input
-                {...register('endTime')}
-                type="datetime-local"
-                className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm focus:outline-none focus:border-primary transition-colors"
-              />
-              {errors.endTime && (
-                <p className="mt-1 text-xs text-danger-text">{errors.endTime.message}</p>
+
+            <Field
+              label="Duration (minutes)"
+              required
+              hint="Each candidate’s timer. Filled in from the window above — you can shorten it."
+              error={errors.durationMinutes?.message}
+            >
+              {(p) => <Input {...p} {...register('durationMinutes', { valueAsNumber: true })} type="number" min={1} className="tabular sm:w-40" />}
+            </Field>
+
+            <fieldset>
+              <legend className="mb-2 text-[13px] font-medium text-fg">
+                Allowed languages<span className="ml-0.5 text-danger-text" aria-hidden>*</span>
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGES.map((lang) => {
+                  const selected = selectedLangs.includes(lang);
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={selected}
+                      onClick={() => toggleLanguage(lang)}
+                      className={cn(
+                        'press inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-medium',
+                        selected
+                          ? 'border-primary/40 bg-primary-soft text-primary-text'
+                          : 'border-line bg-surface text-fg-muted hover-fine:border-line-strong hover-fine:text-fg',
+                      )}
+                    >
+                      {selected ? <Check className="size-3.5" strokeWidth={2.5} /> : <Plus className="size-3.5" />}
+                      {LANGUAGE_META[lang].label}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.allowedLanguages && (
+                <p className="mt-1.5 text-[12px] text-danger-text">{errors.allowedLanguages.message}</p>
               )}
-            </div>
-          </div>
+            </fieldset>
 
-          {/* Duration */}
-          <div>
-            <label className="block text-sm font-medium text-fg mb-1.5">
-              Duration (minutes) *
-              <span className="text-fg-subtle font-normal ml-1">— auto-computed, can be overridden</span>
-            </label>
-            <input
-              {...register('durationMinutes', { valueAsNumber: true })}
-              type="number"
-              min={1}
-              className="w-full px-4 py-2.5 rounded-xl border border-line bg-canvas text-fg text-sm focus:outline-none focus:border-primary transition-colors"
-            />
-            {errors.durationMinutes && (
-              <p className="mt-1 text-xs text-danger-text">{errors.durationMinutes.message}</p>
+            {apiError && (
+              <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
+                {apiError}
+              </div>
             )}
           </div>
 
-          {/* Languages */}
-          <div>
-            <label className="block text-sm font-medium text-fg mb-2">
-              Allowed Languages *
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {LANGUAGES.map((lang) => {
-                const selected = selectedLangs.includes(lang);
-                return (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => toggleLanguage(lang)}
-                    className={`font-mono text-xs px-3 py-1.5 rounded-lg border transition cursor-pointer ${
-                      selected
-                        ? 'bg-primary text-white border-fg'
-                        : 'bg-canvas text-fg-muted border-line hover:border-line-strong'
-                    }`}
-                  >
-                    {lang}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.allowedLanguages && (
-              <p className="mt-1.5 text-xs text-danger-text">
-                {errors.allowedLanguages.message}
-              </p>
-            )}
+          <div className="flex flex-col-reverse gap-2 border-t border-line bg-surface-2/50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+            <Button variant="secondary" onClick={() => navigate('/dashboard/contests')}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={createContest.isPending}>
+              Create contest
+            </Button>
           </div>
-
-          {/* API error */}
-          {apiError && (
-            <div className="px-4 py-3 rounded-xl bg-danger-soft border border-danger/30">
-              <p className="text-sm text-danger-text">{apiError}</p>
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={createContest.isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          >
-            {createContest.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Creating…
-              </>
-            ) : (
-              'Create Contest'
-            )}
-          </button>
         </form>
-      </motion.div>
+      </Card>
     </div>
   );
 };

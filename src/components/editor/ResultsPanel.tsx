@@ -8,7 +8,8 @@ import { verdictOf } from '../../lib/verdicts';
 import { languageLabel } from '../../lib/languages';
 import type { SampleResult, SubmissionCandidateView, SubmissionSummary } from '../../api/submissionApi';
 import { useSubmissionDetail } from '../../hooks/useSubmissions';
-import { OutputBlock, VerdictBadge, formatKb, formatMs } from './VerdictBadge';
+import { OutputBlock, VerdictBadge } from './VerdictBadge';
+import { formatKb, formatMs } from '../../lib/format';
 
 export type ResultsTab = 'results' | 'history';
 

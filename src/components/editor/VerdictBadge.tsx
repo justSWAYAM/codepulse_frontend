@@ -56,9 +56,10 @@ export const OutputBlock: React.FC<{
     }
   };
   return (
-    <div className={cn('min-w-0', className)}>
+    // Code blocks are dark in both themes; resolve tokens dark so status colours stay legible
+    <div data-theme="dark" className={cn('min-w-0', className)}>
       <div className="mb-1.5 flex h-6 items-center justify-between">
-        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">{label}</span>
+        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">{label}</span>
         {has && (
           <IconButton
             aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
@@ -85,9 +86,3 @@ export const OutputBlock: React.FC<{
     </div>
   );
 };
-
-export const formatMs = (ms: number | null | undefined) =>
-  ms == null ? '—' : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
-
-export const formatKb = (kb: number | null | undefined) =>
-  kb == null ? '—' : kb < 1024 ? `${kb} KB` : `${(kb / 1024).toFixed(1)} MB`;

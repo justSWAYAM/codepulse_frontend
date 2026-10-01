@@ -1,9 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Clock, Users, Calendar, Code2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, Calendar, Clock, Users } from 'lucide-react';
 import { ContestStatusBadge } from './ContestStatusBadge';
 import type { ContestRecord } from '../../api/contestApi';
+import { languageLabel } from '../../lib/languages';
 
 interface ContestCardProps {
   contest: ContestRecord;
@@ -14,74 +14,63 @@ function formatDate(isoString: string): string {
   return new Date(isoString).toLocaleString(undefined, {
     day: '2-digit',
     month: 'short',
-    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
 }
 
-export const ContestCard: React.FC<ContestCardProps> = ({
-  contest,
-  showCandidateCount = false,
-}) => {
-  const navigate = useNavigate();
+export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidateCount = false }) => (
+  <Link
+    to={`/dashboard/contests/${contest.id}`}
+    className="press group flex h-full flex-col rounded-2xl border border-line bg-surface p-5 shadow-card active:scale-[0.98] hover-fine:border-line-strong"
+  >
+    <div className="flex items-start justify-between gap-3">
+      <ContestStatusBadge status={contest.status} />
+      <ArrowUpRight
+        aria-hidden
+        className="size-4 text-fg-subtle opacity-0 transition-opacity duration-150 group-focus-visible:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
+      />
+    </div>
 
-  return (
-    <motion.div
-      whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(27,30,58,0.08)' }}
-      transition={{ duration: 0.15 }}
-      onClick={() => navigate(`/dashboard/contests/${contest.id}`)}
-      className="bg-surface border border-line rounded-2xl p-5 cursor-pointer transition-shadow"
-    >
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-display text-[15px] font-bold text-fg truncate mb-1.5">
-            {contest.title}
-          </h3>
-          <ContestStatusBadge status={contest.status} />
+    <h3 className="mt-3 line-clamp-2 font-display text-[16px] font-semibold leading-6 tracking-[-0.015em] text-fg">
+      {contest.title}
+    </h3>
+    {contest.description && (
+      <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-fg-muted">{contest.description}</p>
+    )}
+
+    <div className="mt-auto pt-5">
+      <dl className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12.5px] text-fg-muted">
+        <div className="flex items-center gap-1.5">
+          <dt className="sr-only">Starts</dt>
+          <Calendar className="size-3.5 text-fg-subtle" aria-hidden />
+          <dd className="tabular">{formatDate(contest.startTime)}</dd>
         </div>
-      </div>
-
-      {/* Description excerpt */}
-      {contest.description && (
-        <p className="text-sm text-fg-muted leading-relaxed line-clamp-2 mb-4">
-          {contest.description}
-        </p>
-      )}
-
-      {/* Meta row */}
-      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-fg-muted mb-3">
-        <span className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5" />
-          {formatDate(contest.startTime)}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5" />
-          {contest.durationMinutes} min
-        </span>
+        <div className="flex items-center gap-1.5">
+          <dt className="sr-only">Duration</dt>
+          <Clock className="size-3.5 text-fg-subtle" aria-hidden />
+          <dd className="tabular">{contest.durationMinutes} min</dd>
+        </div>
         {showCandidateCount && (
-          <span className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" />
-            {contest.candidateCount} candidate{contest.candidateCount !== 1 ? 's' : ''}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <dt className="sr-only">Candidates</dt>
+            <Users className="size-3.5 text-fg-subtle" aria-hidden />
+            <dd className="tabular">
+              {contest.candidateCount} candidate{contest.candidateCount !== 1 ? 's' : ''}
+            </dd>
+          </div>
         )}
-      </div>
+      </dl>
 
-      {/* Language tags */}
       {contest.allowedLanguages.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Code2 className="w-3.5 h-3.5 text-fg-subtle" />
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-3">
           {contest.allowedLanguages.map((lang) => (
-            <span
-              key={lang}
-              className="font-mono text-[10px] px-2 py-0.5 rounded bg-fg/5 text-fg-muted tracking-tight"
-            >
-              {lang}
+            <span key={lang} className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-fg-muted">
+              {languageLabel(lang)}
             </span>
           ))}
         </div>
       )}
-    </motion.div>
-  );
-};
+    </div>
+  </Link>
+);

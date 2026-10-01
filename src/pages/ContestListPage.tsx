@@ -1,124 +1,116 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Trophy } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useContests } from '../hooks/useContests';
 import { useAuth } from '../context/AuthContext';
 import { ContestCard } from '../components/contest/ContestCard';
+import { EmptyState } from '../components/states/EmptyState';
+import { ErrorState } from '../components/states/ErrorState';
+import { Button, ButtonLink, PageHeader, Segmented, Skeleton } from '../components/ui';
 import type { ContestStatus } from '../api/contestApi';
 
-const STATUS_TABS: { label: string; value: ContestStatus | undefined }[] = [
-  { label: 'All', value: undefined },
-  { label: 'Draft', value: 'DRAFT' },
-  { label: 'Published', value: 'PUBLISHED' },
+type Filter = 'ALL' | ContestStatus;
+
+const FILTERS: { label: string; value: Filter }[] = [
+  { label: 'All', value: 'ALL' },
   { label: 'Live', value: 'ONGOING' },
+  { label: 'Scheduled', value: 'PUBLISHED' },
+  { label: 'Draft', value: 'DRAFT' },
   { label: 'Completed', value: 'COMPLETED' },
 ];
 
 const ContestListPage: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
-  const [activeStatus, setActiveStatus] = useState<ContestStatus | undefined>(undefined);
+  const isCandidate = user?.role === 'CANDIDATE';
 
-  const { data, isLoading, isError } = useContests({ status: activeStatus });
+  // Filter lives in the URL so it survives refresh and Back
+  const [params, setParams] = useSearchParams();
+  const raw = params.get('status') as Filter | null;
+  const filter: Filter = FILTERS.some((f) => f.value === raw) ? raw! : 'ALL';
+  const setFilter = (f: Filter) => setParams(f === 'ALL' ? {} : { status: f }, { replace: true });
+
+  const { data, isLoading, isError, refetch } = useContests({ status: filter === 'ALL' ? undefined : filter });
   const contests = data?.content ?? [];
+  // Candidates never see drafts
+  const filters = isCandidate ? FILTERS.filter((f) => f.value !== 'DRAFT') : FILTERS;
 
   return (
-    <div>
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-fg">
-            {user?.role === 'CANDIDATE' ? 'My Contests' : 'Contests'}
-          </h1>
-          <p className="text-sm text-fg-muted mt-0.5">
-            {user?.role === 'CANDIDATE'
-              ? 'Contests you are enrolled in'
-              : 'Manage and monitor all contests'}
-          </p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => navigate('/dashboard/contests/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Create Contest
-          </button>
-        )}
+    <div className="space-y-6">
+      <PageHeader
+        title={isCandidate ? 'My contests' : 'Contests'}
+        description={isCandidate ? 'Contests you’re enrolled in.' : 'Create, schedule and monitor coding contests.'}
+        actions={
+          isAdmin && (
+            <ButtonLink to="/dashboard/contests/new" leadingIcon={<Plus className="size-4" />}>
+              Create contest
+            </ButtonLink>
+          )
+        }
+      />
+
+      <div className="overflow-x-auto [scrollbar-width:none]">
+        <Segmented<Filter>
+          aria-label="Filter contests by status"
+          value={filter}
+          onChange={setFilter}
+          options={filters.map((f) => ({ value: f.value, label: f.label }))}
+          className="min-w-max"
+        />
       </div>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-1 mb-6 bg-fg/5 p-1 rounded-xl w-fit">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.label}
-            onClick={() => setActiveStatus(tab.value)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-              activeStatus === tab.value
-                ? 'bg-surface text-fg shadow-sm'
-                : 'text-fg-muted hover:text-fg'
-            }`}
-          >
-            {tab.label}
-            {tab.value === 'ONGOING' && (
-              <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse align-middle" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-44 bg-surface border border-line rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="h-[188px] rounded-2xl border border-line bg-surface p-5">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="mt-4 h-5 w-3/4" />
+              <Skeleton className="mt-2 h-4 w-full" />
+              <Skeleton className="mt-8 h-4 w-1/2" />
+            </div>
           ))}
         </div>
       ) : isError ? (
-        <div className="bg-danger-soft border border-danger/30 rounded-2xl p-6 text-center">
-          <p className="text-danger-text font-medium">Failed to load contests</p>
-          <p className="text-sm text-fg-muted mt-1">Check your connection and try again</p>
+        <div className="rounded-2xl border border-line bg-surface">
+          <ErrorState message="Couldn’t load contests. Check your connection and try again." onRetry={() => refetch()} />
         </div>
       ) : contests.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-surface border border-line rounded-2xl p-12 text-center"
-        >
-          <div className="w-12 h-12 rounded-xl bg-fg/5 flex items-center justify-center mx-auto mb-4">
-            <Trophy className="w-6 h-6 text-fg-subtle" />
-          </div>
-          <p className="font-display text-lg font-semibold text-fg mb-1">
-            {user?.role === 'CANDIDATE' ? "You haven't been assigned any contests yet" : 'No contests yet'}
-          </p>
-          <p className="text-sm text-fg-muted">
-            {isAdmin
-              ? 'Create your first contest to get started.'
-              : 'Contact your admin to get enrolled.'}
-          </p>
-        </motion.div>
+        <div className="rounded-2xl border border-dashed border-line-strong bg-surface">
+          <EmptyState
+            icon={<Trophy className="size-5" />}
+            title={
+              filter !== 'ALL'
+                ? 'No contests match this filter'
+                : isCandidate
+                ? 'You haven’t been assigned any contests yet'
+                : 'No contests yet'
+            }
+            message={
+              filter !== 'ALL'
+                ? 'Try another status.'
+                : isAdmin
+                ? 'Create your first contest to get started.'
+                : 'Ask your administrator to enrol you.'
+            }
+            action={
+              filter !== 'ALL' ? (
+                <Button variant="secondary" size="sm" onClick={() => setFilter('ALL')}>
+                  Show all contests
+                </Button>
+              ) : isAdmin ? (
+                <ButtonLink to="/dashboard/contests/new" size="sm" leadingIcon={<Plus className="size-4" />}>
+                  Create contest
+                </ButtonLink>
+              ) : undefined
+            }
+          />
+        </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-        >
-          {contests.map((contest, i) => (
-            <motion.div
-              key={contest.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <ContestCard
-                contest={contest}
-                showCandidateCount={user?.role !== 'CANDIDATE'}
-              />
-            </motion.div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {contests.map((contest) => (
+            <ContestCard key={contest.id} contest={contest} showCandidateCount={!isCandidate} />
           ))}
-        </motion.div>
+        </div>
       )}
     </div>
   );
