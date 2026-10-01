@@ -128,7 +128,7 @@ export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question
     : candidateSamples.map((tc) => ({ id: tc.id, input: tc.input, expectedOutput: tc.expectedOutput }));
 
   return (
-    <article className="flex min-h-full flex-col bg-surface">
+    <article className="flex flex-col bg-surface">
       <header className="border-b border-line px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="min-w-0 font-display text-[20px] font-semibold leading-7 tracking-[-0.02em] text-fg">
