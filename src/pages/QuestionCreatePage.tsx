@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FlaskConical, Plus } from 'lucide-react';
 import { QuestionForm } from '../components/question/QuestionForm';
 import type { QuestionFormData } from '../components/question/QuestionForm';
@@ -8,6 +8,8 @@ import type { TestCaseFormData } from '../components/testcase/TestCaseForm';
 import { TestCaseTable } from '../components/testcase/TestCaseTable';
 import type { TestCaseAdminRecord } from '../api/testCaseApi';
 import { useCreateQuestion } from '../hooks/useQuestions';
+import { Button, Card, CardBody, CardHeader, PageHeader } from '../components/ui';
+import { EmptyState } from '../components/states/EmptyState';
 
 export const QuestionCreatePage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -63,103 +65,69 @@ export const QuestionCreatePage: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="bg-surface border-b border-line px-8 py-6 shrink-0">
-        <button
-          onClick={() => navigate(`/dashboard/contests/${contestId}`)}
-          className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg mb-4 transition-colors"
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <Link
+          to={`/dashboard/contests/${contestId}`}
+          className="inline-flex items-center gap-1.5 text-[13px] text-fg-muted transition-colors duration-150 hover-fine:text-fg"
         >
-          <ArrowLeft size={16} />
-          Back to Contest
-        </button>
-        <h1 className="text-3xl font-display font-bold text-fg">
-          Add Question
-        </h1>
-        <p className="text-fg-muted mt-1">
-          Create a new programming question for this contest.
-        </p>
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Back to contest
+        </Link>
+        <PageHeader title="Add question" description="Create a new programming question for this contest." />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <QuestionForm onSubmit={handleSubmit} isPending={createMutation.isPending} />
+      <QuestionForm onSubmit={handleSubmit} isPending={createMutation.isPending} />
 
-        <div className="mt-8 rounded-2xl border border-line bg-surface p-6">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary-soft flex items-center justify-center">
-                <FlaskConical className="w-4.5 h-4.5 text-primary-text" />
-              </div>
-              <div>
-                <h2 className="font-display text-lg font-semibold text-fg">
-                  Test Cases ({draftTestCases.length})
-                </h2>
-                <p className="text-xs text-fg-subtle">
-                  Add inputs and expected outputs before saving this question.
-                </p>
-              </div>
-            </div>
+      <Card>
+        <CardHeader
+          icon={<FlaskConical className="size-4" />}
+          title={
+            <>
+              Test cases <span className="tabular text-fg-subtle">({draftTestCases.length})</span>
+            </>
+          }
+          description="Add inputs and expected outputs. They're saved together with the question."
+          actions={
+            !showTestCaseForm && (
+              <Button size="sm" onClick={() => setShowTestCaseForm(true)} leadingIcon={<Plus className="size-4" />}>
+                Add test case
+              </Button>
+            )
+          }
+        />
 
-            {!showTestCaseForm && (
-              <button
-                type="button"
-                onClick={() => setShowTestCaseForm(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Test Case
-              </button>
-            )}
-          </div>
-
+        <CardBody className="space-y-4">
           {showTestCaseForm && (
-            <div className="mb-5 rounded-xl border border-line bg-surface-2 p-4">
-              <div className="flex items-center justify-between mb-3">
+            <div className="rounded-xl border border-line bg-surface-2/60 p-4">
+              <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-medium text-fg">New test case</p>
-                <button
-                  type="button"
-                  onClick={() => setShowTestCaseForm(false)}
-                  className="text-sm text-fg-muted hover:text-fg"
-                >
+                <Button variant="ghost" size="sm" onClick={() => setShowTestCaseForm(false)}>
                   Cancel
-                </button>
+                </Button>
               </div>
-              <TestCaseForm
-                onSubmit={handleAddTestCase}
-                isPending={false}
-                submitLabel="Save Test Case"
-              />
+              <TestCaseForm onSubmit={handleAddTestCase} isPending={false} submitLabel="Save test case" />
             </div>
           )}
 
           {draftTestCases.length === 0 ? (
-            <div className="text-center py-12 bg-surface-2 rounded-2xl border border-line">
-              <div className="w-14 h-14 rounded-2xl bg-primary/[0.03] flex items-center justify-center mx-auto mb-4">
-                <FlaskConical className="w-6 h-6 text-fg-subtle" />
+            !showTestCaseForm && (
+              <div className="rounded-xl border border-dashed border-line-strong">
+                <EmptyState
+                  icon={<FlaskConical className="size-5" />}
+                  title="No test cases added yet"
+                  message="Add at least one hidden test case before publishing this question."
+                />
               </div>
-              <h3 className="font-display text-base font-semibold text-fg-muted mb-1">
-                No test cases added yet
-              </h3>
-              <p className="text-sm text-fg-subtle max-w-sm mx-auto">
-                Add at least one hidden test case for the question before publishing it.
-              </p>
-            </div>
+            )
           ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-fg-subtle">
-                <span>{draftTestCases.length} test case{draftTestCases.length !== 1 ? 's' : ''}</span>
-                <span>Total weight: {totalWeight}</span>
-              </div>
-              <TestCaseTable
-                testCases={draftTestCases}
-                onDelete={handleDeleteTestCase}
-                isDeleting={false}
-              />
+            <div className="space-y-2">
+              <p className="tabular text-[12px] text-fg-subtle">Total weight {totalWeight}</p>
+              <TestCaseTable testCases={draftTestCases} onDelete={handleDeleteTestCase} isDeleting={false} />
             </div>
           )}
-        </div>
-      </div>
+        </CardBody>
+      </Card>
     </div>
   );
 };

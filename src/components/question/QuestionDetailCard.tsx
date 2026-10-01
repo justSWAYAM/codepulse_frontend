@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Check, Clock, Copy, FlaskConical, MemoryStick, Trophy } from 'lucide-react';
 import { DifficultyBadge } from '../DifficultyBadge';
+import { Eyebrow, IconButton } from '../ui';
 import type { QuestionRecord, QuestionAdminRecord, QuestionCandidateRecord } from '../../api/questionApi';
-import { Clock, MemoryStick, Trophy, FlaskConical, Eye } from 'lucide-react';
 
 interface QuestionDetailCardProps {
   question: QuestionRecord;
@@ -19,84 +20,107 @@ function isCandidateRecord(q: QuestionRecord): q is QuestionCandidateRecord {
   return 'sampleTestCases' in q;
 }
 
-export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question }) => {
+const Meta: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+  <span className="inline-flex items-center gap-1.5">
+    <span className="text-fg-subtle [&>svg]:size-3.5" aria-hidden>
+      {icon}
+    </span>
+    <span className="tabular">{children}</span>
+  </span>
+);
+
+/** Editor-style sample input with a copy button (inline check for 2s). */
+const SampleBlock: React.FC<{ index: number; input: string }> = ({ index, input }) => {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(input);
+      setCopied(true);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — nothing to do */
+    }
+  };
+
   return (
-    <div className="bg-surface rounded-lg border border-line shadow-sm overflow-hidden flex flex-col h-full">
-      <div className="p-6 border-b border-line bg-canvas">
-        <div className="flex items-start justify-between">
-          <h2 className="text-2xl font-display text-fg font-bold">{question.title}</h2>
-          <DifficultyBadge difficulty={question.difficulty} />
-        </div>
-        <div className="flex items-center gap-6 mt-4 text-sm text-fg-muted font-mono">
-          <div className="flex items-center gap-1.5">
-            <Trophy className="w-4 h-4 text-fg-subtle" />
-            <span>{question.points} pts</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-fg-subtle" />
-            <span>{question.timeLimitMs} ms</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <MemoryStick className="w-4 h-4 text-fg-subtle" />
-            <span>{Math.round(question.memoryLimitKb / 1024)} MB</span>
-          </div>
-        </div>
+    <div className="overflow-hidden rounded-xl border border-editor-line bg-editor-bg">
+      <div className="flex items-center justify-between gap-2 border-b border-editor-line bg-editor-panel py-1 pr-1 pl-3">
+        <span className="tabular font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">
+          Input {index + 1}
+        </span>
+        <IconButton
+          aria-label="Copy input"
+          size="sm"
+          onClick={copy}
+          className="text-editor-muted hover-fine:bg-editor-line hover-fine:text-editor-fg"
+        >
+          {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+        </IconButton>
       </div>
-
-      {/* Admin / Evaluator: test case count summary */}
-      {isAdminRecord(question) && question.testCases && question.testCases.length > 0 && (
-        <div className="px-6 py-3 border-b border-line bg-surface-2">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-fg-subtle" />
-            <span className="text-sm text-fg-muted">
-              {question.testCases.length} test case{question.testCases.length !== 1 ? 's' : ''}
-              {' '}
-              <span className="text-fg-subtle">
-                ({question.testCases.filter(tc => tc.isSample).length} sample,{' '}
-                {question.testCases.filter(tc => !tc.isSample).length} hidden)
-              </span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      <div className="p-6 overflow-y-auto prose prose-slate max-w-none prose-pre:font-mono prose-pre:bg-surface-2 prose-pre:text-fg prose-pre:border prose-pre:border-line">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {question.description}
-        </ReactMarkdown>
-      </div>
-
-      {/* Candidate: sample test cases section (input only, no expectedOutput or weight) */}
-      {isCandidateRecord(question) && question.sampleTestCases && question.sampleTestCases.length > 0 && (
-        <div className="px-6 py-4 border-t border-line bg-surface-2">
-          <div className="flex items-center gap-2 mb-3">
-            <Eye className="w-4 h-4 text-fg-subtle" />
-            <h3 className="text-sm font-semibold text-fg">Sample Test Cases</h3>
-          </div>
-          <div className="space-y-3">
-            {question.sampleTestCases
-              .sort((a, b) => a.orderIndex - b.orderIndex)
-              .map((tc, index) => (
-                <div
-                  key={tc.id}
-                  className="rounded-lg border border-line overflow-hidden"
-                >
-                  <div className="px-3 py-1.5 bg-surface-2 border-b border-line">
-                    <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
-                      Sample Input {index + 1}
-                    </span>
-                  </div>
-                  <div className="px-3 py-2 bg-surface">
-                    <pre className="font-mono text-sm text-fg whitespace-pre-wrap break-words m-0">
-                      {tc.input}
-                    </pre>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+      <pre className="scroll-thin m-0 overflow-x-auto px-3 py-2.5 font-mono text-[13px] leading-6 whitespace-pre-wrap break-words text-editor-fg">
+        {input}
+      </pre>
+      <span className="sr-only" aria-live="polite">
+        {copied ? 'Input copied' : ''}
+      </span>
     </div>
   );
 };
 
+export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question }) => {
+  const samples = isCandidateRecord(question)
+    ? [...(question.sampleTestCases ?? [])].sort((a, b) => a.orderIndex - b.orderIndex)
+    : [];
+  const adminCases = isAdminRecord(question) ? question.testCases ?? [] : [];
+  const sampleCount = adminCases.filter((tc) => tc.isSample).length;
+
+  return (
+    <article className="flex min-h-full flex-col bg-surface">
+      <header className="border-b border-line px-5 py-5 sm:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h2 className="min-w-0 font-display text-[20px] font-semibold leading-7 tracking-[-0.02em] text-fg">
+            {question.title}
+          </h2>
+          <DifficultyBadge difficulty={question.difficulty} className="mt-1" />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-fg-muted">
+          <Meta icon={<Trophy />}>{question.points} pts</Meta>
+          <Meta icon={<Clock />}>{question.timeLimitMs} ms</Meta>
+          <Meta icon={<MemoryStick />}>{Math.round(question.memoryLimitKb / 1024)} MB</Meta>
+        </div>
+      </header>
+
+      {adminCases.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-line bg-surface-2/60 px-5 py-2.5 text-[13px] text-fg-muted sm:px-6">
+          <FlaskConical className="size-4 text-fg-subtle" aria-hidden />
+          <span className="tabular">
+            {adminCases.length} test case{adminCases.length !== 1 ? 's' : ''}{' '}
+            <span className="text-fg-subtle">
+              ({sampleCount} sample, {adminCases.length - sampleCount} hidden)
+            </span>
+          </span>
+        </div>
+      )}
+
+      <div className="prose-cp max-w-[72ch] px-5 py-5 sm:px-6">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{question.description}</ReactMarkdown>
+      </div>
+
+      {samples.length > 0 && (
+        <section className="space-y-3 border-t border-line px-5 py-5 sm:px-6" aria-labelledby="sample-tests-heading">
+          <Eyebrow>
+            <span id="sample-tests-heading">Sample test cases</span>
+          </Eyebrow>
+          {samples.map((tc, index) => (
+            <SampleBlock key={tc.id} index={index} input={tc.input} />
+          ))}
+        </section>
+      )}
+    </article>
+  );
+};

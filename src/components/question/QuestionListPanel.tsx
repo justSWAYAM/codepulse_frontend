@@ -3,6 +3,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import { FileCode2, Plus } from 'lucide-react';
+import { Button, Card, Skeleton } from '../ui';
+import { EmptyState } from '../states/EmptyState';
 import { QuestionCard } from './QuestionCard';
 import { DeleteQuestionDialog } from './DeleteQuestionDialog';
 import { useQuestions, useReorderQuestions, useDeleteQuestion } from '../../hooks/useQuestions';
@@ -56,11 +58,21 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
     }
   };
 
+  const addButton = (
+    <Button
+      size="sm"
+      onClick={() => navigate(`/dashboard/contests/${contestId}/questions/new`)}
+      leadingIcon={<Plus className="size-4" />}
+    >
+      Add question
+    </Button>
+  );
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3" aria-busy="true">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-surface-2 animate-pulse rounded-lg" />
+          <Skeleton key={i} className="h-[66px] rounded-xl" />
         ))}
       </div>
     );
@@ -69,49 +81,41 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
   // Candidate view restrictions
   if (isCandidate && contestStatus !== 'ONGOING') {
     return (
-      <div className="text-center py-12 bg-surface rounded-lg border border-line">
-        <FileCode2 className="mx-auto h-12 w-12 text-fg-subtle mb-4" />
-        <h3 className="text-lg font-medium text-fg">Questions hidden</h3>
-        <p className="text-fg-muted mt-2">Questions will appear here when the contest starts.</p>
-      </div>
+      <Card>
+        <EmptyState
+          icon={<FileCode2 className="size-5" />}
+          title="Questions hidden"
+          message="Questions appear here when the contest starts. Come back at the start time."
+        />
+      </Card>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="text-center py-12 bg-surface rounded-lg border border-line">
-        <FileCode2 className="mx-auto h-12 w-12 text-fg-subtle mb-4" />
-        <h3 className="text-lg font-medium text-fg">No questions yet</h3>
-        <p className="text-fg-muted mt-2 max-w-sm mx-auto">
-          {isAdmin 
-            ? "Get started by adding the first programming question to this contest."
-            : "No questions have been added to this contest yet."}
-        </p>
-        {isAdmin && (
-          <button
-            onClick={() => navigate(`/dashboard/contests/${contestId}/questions/new`)}
-            className="mt-6 inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors"
-          >
-            <Plus size={20} />
-            <span>Add Question</span>
-          </button>
-        )}
-      </div>
+      <Card>
+        <EmptyState
+          icon={<FileCode2 className="size-5" />}
+          title="No questions yet"
+          message={
+            isAdmin
+              ? 'Add the first programming question to this contest.'
+              : 'No questions have been added to this contest yet.'
+          }
+          action={isAdmin ? addButton : undefined}
+        />
+      </Card>
     );
   }
 
   return (
     <div className="space-y-4">
       {isAdmin && (
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-medium text-fg">Questions ({questions.length})</h2>
-          <button
-            onClick={() => navigate(`/dashboard/contests/${contestId}/questions/new`)}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium"
-          >
-            <Plus size={18} />
-            <span>Add Question</span>
-          </button>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-[15px] font-semibold tracking-[-0.015em] text-fg">
+            Questions <span className="tabular text-fg-subtle">({questions.length})</span>
+          </h2>
+          {addButton}
         </div>
       )}
 
@@ -119,11 +123,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="questions-list">
             {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="space-y-3"
-              >
+              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
                 {questions.map((question, index) => (
                   <Draggable key={question.id} draggableId={question.id} index={index}>
                     {(provided) => (
@@ -150,7 +150,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
           </Droppable>
         </DragDropContext>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {questions.map((question, index) => (
             <QuestionCard
               key={question.id}

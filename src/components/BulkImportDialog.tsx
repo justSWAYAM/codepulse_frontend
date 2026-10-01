@@ -1,19 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import {
-  X,
-  Upload,
-  FileSpreadsheet,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Loader2,
-  Trash2,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Trash2 } from 'lucide-react';
 import { useBulkImportUsers } from '../hooks/useUsers';
 import type { BulkImportResponse } from '../api/userApi';
+import { Button, Dialog, IconButton, Spinner } from './ui';
+import { cn } from '../lib/cn';
 
 interface ParsedPreview {
   headers: string[];
@@ -28,6 +20,8 @@ interface BulkImportDialogProps {
 }
 
 type Stage = 'upload' | 'preview' | 'importing' | 'results';
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export const BulkImportDialog: React.FC<BulkImportDialogProps> = ({ open, onClose }) => {
   const [stage, setStage] = useState<Stage>('upload');
@@ -126,325 +120,235 @@ export const BulkImportDialog: React.FC<BulkImportDialogProps> = ({ open, onClos
     });
   };
 
+  const totalRows = preview?.totalRows ?? 0;
+  const canImport = !!file && totalRows > 0 && (preview?.errors?.length ?? 0) === 0;
+  const isPending = importMutation.isPending || stage === 'importing';
+
+  const footer =
+    stage === 'preview' || stage === 'importing' ? (
+      <>
+        <Button variant="secondary" onClick={resetState} disabled={isPending}>
+          Choose different file
+        </Button>
+        <Button
+          onClick={handleUpload}
+          disabled={!canImport}
+          loading={isPending}
+          leadingIcon={<Upload className="size-4" />}
+        >
+          Import {plural(totalRows, 'user')}
+        </Button>
+      </>
+    ) : stage === 'results' ? (
+      <Button onClick={handleClose}>Done</Button>
+    ) : (
+      <Button variant="secondary" onClick={handleClose}>
+        Cancel
+      </Button>
+    );
+
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
-            onClick={handleClose}
-          />
-
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && handleClose()}
+      title="Bulk import users"
+      description="Upload a CSV file to create many accounts at once."
+      icon={<FileSpreadsheet className="size-[18px]" />}
+      size="lg"
+      dismissible={!isPending}
+      footer={footer}
+    >
+      {/* ─── Upload Stage ─── */}
+      {stage === 'upload' && (
+        <div className="space-y-4">
+          <div
+            {...getRootProps()}
+            className={cn(
+              'relative cursor-pointer rounded-2xl border-2 border-dashed px-6 py-10 text-center',
+              'transition-[border-color,background-color] duration-150',
+              'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40',
+              'bg-[radial-gradient(circle,var(--line-strong)_1px,transparent_1px)] bg-[length:16px_16px]',
+              isDragActive
+                ? 'border-primary bg-primary-soft'
+                : 'border-line-strong hover-fine:border-primary/60 hover-fine:bg-primary-soft/50',
+            )}
+          >
+            <input {...getInputProps()} />
+            <div
+              className={cn(
+                'mx-auto mb-4 flex size-12 items-center justify-center rounded-xl border transition-colors duration-150',
+                isDragActive
+                  ? 'border-primary/30 bg-primary text-primary-fg'
+                  : 'border-line bg-surface text-primary-text',
+              )}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-line shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-warning-soft flex items-center justify-center">
-                    <FileSpreadsheet className="w-4 h-4 text-warning-text" />
-                  </div>
-                  <div>
-                    <h2 className="font-display text-lg font-semibold text-fg">
-                      Bulk Import Users
-                    </h2>
-                    <p className="text-xs text-fg-subtle">Upload a CSV file to import users</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleClose}
-                  className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <AnimatePresence mode="wait">
-                  {/* ─── Upload Stage ─── */}
-                  {stage === 'upload' && (
-                    <motion.div
-                      key="upload"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                    >
-                      <div
-                        {...getRootProps()}
-                        className={`relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${
-                          isDragActive
-                            ? 'border-primary bg-primary/5'
-                            : 'border-line hover:border-line-strong hover:bg-primary/[0.02]'
-                        }`}
-                      >
-                        {/* Dotted grid background */}
-                        <div
-                          className="absolute inset-0 opacity-[0.04] rounded-2xl"
-                          style={{
-                            backgroundImage:
-                              'radial-gradient(circle, #1B1E3A 1px, transparent 1px)',
-                            backgroundSize: '16px 16px',
-                          }}
-                        />
-                        <input {...getInputProps()} />
-                        <motion.div
-                          animate={isDragActive ? { scale: 1.05 } : { scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                          className="relative z-10"
-                        >
-                          <div className="w-14 h-14 rounded-2xl bg-warning-soft flex items-center justify-center mx-auto mb-4">
-                            <Upload
-                              className={`w-6 h-6 transition-colors ${
-                                isDragActive ? 'text-primary-text' : 'text-warning-text'
-                              }`}
-                            />
-                          </div>
-                          <p className="text-sm font-medium text-fg mb-1">
-                            {isDragActive
-                              ? 'Drop your CSV here'
-                              : 'Drag & drop your CSV file here'}
-                          </p>
-                          <p className="text-xs text-fg-subtle">
-                            or click to browse · CSV format only
-                          </p>
-                        </motion.div>
-                      </div>
-
-                      <div className="mt-4 p-3 rounded-lg bg-primary/[0.03] border border-line">
-                        <p className="text-xs text-fg-muted font-medium mb-1">Expected CSV format:</p>
-                        <code className="text-[11px] font-mono text-fg-subtle block">
-                          email, name, role, password, rollNumber, year, branch, division, batch
-                          <br />
-                          john@example.com, John Doe, CANDIDATE, password123, 12345, 1, CSE, A, B
-                          <br />
-                          jane@example.com, Jane Smith, EVALUATOR, , , , , , 
-                        </code>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* ─── Preview Stage ─── */}
-                  {stage === 'preview' && preview && (
-                    <motion.div
-                      key="preview"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="space-y-4"
-                    >
-                      {/* File info */}
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/10">
-                        <div className="flex items-center gap-3">
-                          <FileSpreadsheet className="w-5 h-5 text-primary-text" />
-                          <div>
-                            <p className="text-sm font-medium text-fg">{file?.name}</p>
-                            <p className="text-xs text-fg-subtle">
-                              {preview.totalRows} row{preview.totalRows !== 1 ? 's' : ''} detected
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={resetState}
-                          className="p-1.5 rounded-lg text-fg-subtle hover:text-danger-text hover:bg-danger-soft transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Errors */}
-                      {preview.errors.length > 0 && (
-                        <div className="p-3 rounded-xl bg-danger-soft border border-danger/30 space-y-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <AlertTriangle className="w-4 h-4 text-danger-text" />
-                            <span className="text-xs font-semibold text-danger-text">
-                              Issues found
-                            </span>
-                          </div>
-                          {preview.errors.map((err, i) => (
-                            <p key={i} className="text-xs text-danger-text pl-6">
-                              • {err}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Preview table */}
-                      {preview.rows.length > 0 && (
-                        <div className="rounded-xl border border-line overflow-hidden">
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="bg-canvas/60 border-b border-line">
-                                  {preview.headers.map((h, i) => (
-                                    <th
-                                      key={i}
-                                      className="px-3 py-2 text-left font-semibold text-fg-muted uppercase tracking-wider"
-                                    >
-                                      {h}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {preview.rows.map((row, ri) => (
-                                  <tr
-                                    key={ri}
-                                    className="border-b border-line last:border-b-0"
-                                  >
-                                    {row.map((cell, ci) => (
-                                      <td key={ci} className="px-3 py-2 text-fg-muted">
-                                        {cell}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                          {preview.totalRows > 5 && (
-                            <div className="px-3 py-2 bg-primary/[0.02] border-t border-line text-center">
-                              <span className="text-[11px] text-fg-subtle">
-                                …and {preview.totalRows - 5} more rows
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* ─── Importing Stage ─── */}
-                  {stage === 'importing' && (
-                    <motion.div
-                      key="importing"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="py-12 text-center"
-                    >
-                      <Loader2 className="w-10 h-10 animate-spin text-primary-text mx-auto mb-4" />
-                      <p className="text-sm font-medium text-fg">Importing users...</p>
-                      <p className="text-xs text-fg-subtle mt-1">
-                        Processing {preview?.totalRows} rows
-                      </p>
-                    </motion.div>
-                  )}
-
-                  {/* ─── Results Stage ─── */}
-                  {stage === 'results' && results && (
-                    <motion.div
-                      key="results"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="space-y-4"
-                    >
-                      {/* Summary */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="p-3 rounded-xl bg-primary/[0.03] text-center">
-                          <p className="text-lg font-bold font-display text-fg">
-                            {results.totalProcessed}
-                          </p>
-                          <p className="text-[11px] text-fg-subtle">Total</p>
-                        </div>
-                        <div className="p-3 rounded-xl bg-primary/5 text-center">
-                          <p className="text-lg font-bold font-display text-primary-text">
-                            {results.successCount}
-                          </p>
-                          <p className="text-[11px] text-primary-text">Succeeded</p>
-                        </div>
-                        <div className="p-3 rounded-xl bg-danger-soft text-center">
-                          <p className="text-lg font-bold font-display text-danger-text">
-                            {results.failureCount}
-                          </p>
-                          <p className="text-[11px] text-danger-text">Failed</p>
-                        </div>
-                      </div>
-
-                      {/* Per-row results */}
-                      <div className="rounded-xl border border-line overflow-hidden max-h-60 overflow-y-auto">
-                        {results.results.map((row, i) => (
-                          <div
-                            key={i}
-                            className={`flex items-center gap-3 px-4 py-2.5 text-xs border-b border-line last:border-b-0 ${
-                              row.success ? '' : 'bg-danger/[0.03]'
-                            }`}
-                          >
-                            {row.success ? (
-                              <CheckCircle2 className="w-4 h-4 text-primary-text shrink-0" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-danger-text shrink-0" />
-                            )}
-                            <span className="font-mono text-fg-muted w-8 shrink-0">
-                              #{row.row}
-                            </span>
-                            <span className="text-fg-muted truncate flex-1">{row.email}</span>
-                            {row.error && (
-                              <span className="text-danger-text text-[11px] truncate max-w-40">
-                                {row.error}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-line shrink-0">
-                {stage === 'preview' && (
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={resetState}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
-                    >
-                      Choose different file
-                    </button>
-                    <motion.button
-                      onClick={handleUpload}
-                      disabled={
-                        !file ||
-                        preview?.totalRows === 0 ||
-                        (preview?.errors?.length ?? 0) > 0
-                      }
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      Import {preview?.totalRows} Users
-                    </motion.button>
-                  </div>
-                )}
-                {stage === 'results' && (
-                  <div className="flex items-center justify-end">
-                    <motion.button
-                      onClick={handleClose}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer"
-                    >
-                      Done
-                    </motion.button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              <Upload className="size-5" />
+            </div>
+            <p className="text-sm font-medium text-fg">
+              {isDragActive ? 'Drop your CSV here' : 'Drag & drop your CSV file here'}
+            </p>
+            <p className="mt-1 text-[13px] text-fg-muted">
+              or <span className="font-medium text-primary-text">click to browse</span> · CSV format only
+            </p>
           </div>
-        </>
+
+          <div className="rounded-xl border border-line bg-surface-2/60 p-3">
+            <p className="mb-1.5 text-[12px] font-medium text-fg-muted">Expected CSV format</p>
+            <pre className="overflow-x-auto font-mono text-[12px] leading-5 text-fg-subtle">
+              {`email, name, role, password, rollNumber, year, branch, division, batch
+john@example.com, John Doe, CANDIDATE, password123, 12345, 1, CSE, A, B
+jane@example.com, Jane Smith, EVALUATOR, , , , , , `}
+            </pre>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+
+      {/* ─── Preview / Importing Stage ─── */}
+      {(stage === 'preview' || stage === 'importing') && preview && (
+        <div className="space-y-4">
+          {/* File info */}
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-text">
+              <FileSpreadsheet className="size-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-fg">{file?.name}</p>
+              <p className="tabular text-[12px] text-fg-subtle">
+                {stage === 'importing' ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Spinner size={12} /> Importing {plural(totalRows, 'row')}…
+                  </span>
+                ) : (
+                  `${plural(totalRows, 'row')} detected`
+                )}
+              </p>
+            </div>
+            <IconButton aria-label="Remove file" size="sm" onClick={resetState} disabled={isPending}>
+              <Trash2 className="size-4" />
+            </IconButton>
+          </div>
+
+          {/* Errors */}
+          {preview.errors.length > 0 && (
+            <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft p-3">
+              <div className="mb-1.5 flex items-center gap-2">
+                <AlertTriangle className="size-4 text-danger-text" aria-hidden />
+                <span className="text-[13px] font-medium text-danger-text">
+                  {plural(preview.errors.length, 'issue')} found — fix the CSV and upload it again
+                </span>
+              </div>
+              <ul className="list-disc space-y-0.5 pl-10 text-[12px] text-danger-text">
+                {preview.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Preview table */}
+          {preview.rows.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-line">
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="border-b border-line bg-surface-2/60">
+                      {preview.headers.map((h, i) => (
+                        <th key={i} scope="col" className="h-9 px-3 text-left font-medium whitespace-nowrap text-fg-subtle">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.rows.map((row, ri) => (
+                      <tr key={ri} className="border-b border-line last:border-b-0">
+                        {row.map((cell, ci) => (
+                          <td key={ci} className="h-9 px-3 whitespace-nowrap text-fg-muted">
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {preview.totalRows > 5 && (
+                <div className="tabular border-t border-line bg-surface-2/60 px-3 py-2 text-center text-[12px] text-fg-subtle">
+                  …and {plural(preview.totalRows - 5, 'more row')}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Results Stage ─── */}
+      {stage === 'results' && results && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-line bg-surface-2/60 p-3">
+              <p className="tabular font-display text-[20px] font-semibold text-fg">{results.totalProcessed}</p>
+              <p className="text-[12px] text-fg-subtle">Processed</p>
+            </div>
+            <div className="rounded-xl border border-success/20 bg-success-soft p-3">
+              <p className="tabular font-display text-[20px] font-semibold text-success-text">{results.successCount}</p>
+              <p className="flex items-center gap-1 text-[12px] text-success-text">
+                <CheckCircle2 className="size-3.5" aria-hidden /> Succeeded
+              </p>
+            </div>
+            <div
+              className={cn(
+                'rounded-xl border p-3',
+                results.failureCount > 0 ? 'border-danger/20 bg-danger-soft' : 'border-line bg-surface-2/60',
+              )}
+            >
+              <p
+                className={cn(
+                  'tabular font-display text-[20px] font-semibold',
+                  results.failureCount > 0 ? 'text-danger-text' : 'text-fg-muted',
+                )}
+              >
+                {results.failureCount}
+              </p>
+              <p
+                className={cn(
+                  'flex items-center gap-1 text-[12px]',
+                  results.failureCount > 0 ? 'text-danger-text' : 'text-fg-subtle',
+                )}
+              >
+                <XCircle className="size-3.5" aria-hidden /> Failed
+              </p>
+            </div>
+          </div>
+
+          <ul className="max-h-60 overflow-y-auto rounded-xl border border-line">
+            {results.results.map((row, i) => (
+              <li
+                key={i}
+                className={cn(
+                  'flex items-center gap-3 border-b border-line px-4 py-2.5 text-[12px] last:border-b-0',
+                  !row.success && 'bg-danger-soft/50',
+                )}
+              >
+                {row.success ? (
+                  <CheckCircle2 className="size-4 shrink-0 text-success-text" aria-hidden />
+                ) : (
+                  <XCircle className="size-4 shrink-0 text-danger-text" aria-hidden />
+                )}
+                <span className="tabular w-10 shrink-0 font-mono text-fg-subtle">#{row.row}</span>
+                <span className="min-w-0 flex-1 truncate text-fg-muted">{row.email}</span>
+                {row.success ? (
+                  <span className="shrink-0 text-success-text">Created</span>
+                ) : (
+                  <span className="max-w-48 shrink-0 truncate text-danger-text" title={row.error ?? undefined}>
+                    {row.error || 'Failed'}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Dialog>
   );
 };

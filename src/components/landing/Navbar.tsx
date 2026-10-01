@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Menu, X } from 'lucide-react';
-import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
+import { useScroll, useMotionValueEvent } from 'framer-motion';
 import { useLenis } from 'lenis/react';
+import { BrandMark, IconButton, ThemeToggle } from '../ui';
+import { cn } from '../../lib/cn';
 
 const navLinks = [
   { label: 'Product', target: 'hero' },
   { label: 'Roles', target: 'roles' },
   { label: 'How it works', target: 'how-it-works' },
 ];
+
+const loginLinkClass =
+  'press inline-flex h-8 items-center justify-center rounded-lg bg-primary px-3 text-[13px] font-medium text-primary-fg hover-fine:bg-primary-hover';
 
 export const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -17,7 +22,7 @@ export const Navbar: React.FC = () => {
   const lenis = useLenis();
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
-    setScrolled(latest > 50);
+    setScrolled(latest > 8);
   });
 
   const scrollTo = (target: string) => {
@@ -29,82 +34,65 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <motion.nav
-      className={`fixed top-0 left-0 right-0 z-50 transition duration-300 ${
-        scrolled
-          ? 'bg-surface/95 backdrop-blur-md border-b border-line shadow-sm'
-          : 'bg-transparent'
-      }`}
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color] duration-200',
+        scrolled || mobileOpen ? 'border-line bg-canvas/85 backdrop-blur-md' : 'border-transparent bg-transparent',
+      )}
     >
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary-hover transition-colors">
-            <Terminal className="w-4 h-4 text-primary-text" />
-          </div>
-          <span className="font-display text-lg font-bold text-fg tracking-tight">
-            Code<span className="text-primary-text">Pulse</span>
-          </span>
+      <nav aria-label="Primary" className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link to="/" aria-label="CodePulse home" className="rounded-xl">
+          <BrandMark size={30} />
         </Link>
 
-        {/* Desktop nav links */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (
             <button
               key={link.target}
+              type="button"
               onClick={() => scrollTo(link.target)}
-              className="text-sm font-medium text-fg-muted hover:text-fg transition-colors cursor-pointer"
+              className="h-8 rounded-lg px-3 text-[13px] font-medium text-fg-muted transition-colors duration-150 hover-fine:bg-surface-2 hover-fine:text-fg"
             >
               {link.label}
             </button>
           ))}
         </div>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:block">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-            <Link
-              to="/login"
-              className="inline-flex items-center px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors"
-            >
-              Log In
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden text-fg p-1 cursor-pointer"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:hidden bg-surface border-b border-line px-6 pb-4 space-y-3"
-        >
-          {navLinks.map((link) => (
-            <button
-              key={link.target}
-              onClick={() => scrollTo(link.target)}
-              className="block w-full text-left text-sm font-medium text-fg-muted hover:text-fg transition-colors py-1 cursor-pointer"
-            >
-              {link.label}
-            </button>
-          ))}
-          <Link
-            to="/login"
-            className="block w-full text-center px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors mt-2"
-          >
-            Log In
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link to="/login" className={cn(loginLinkClass, 'hidden md:inline-flex')}>
+            Log in
           </Link>
-        </motion.div>
+          <IconButton
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            className="md:hidden"
+            onClick={() => setMobileOpen((o) => !o)}
+          >
+            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </IconButton>
+        </div>
+      </nav>
+
+      {mobileOpen && (
+        <div className="border-t border-line px-4 pb-4 pt-2 md:hidden">
+          <div className="flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <button
+                key={link.target}
+                type="button"
+                onClick={() => scrollTo(link.target)}
+                className="h-10 rounded-lg px-3 text-left text-sm font-medium text-fg-muted transition-colors duration-150 hover-fine:bg-surface-2 hover-fine:text-fg"
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+          <Link to="/login" className={cn(loginLinkClass, 'mt-3 h-10 w-full text-sm')}>
+            Log in
+          </Link>
+        </div>
       )}
-    </motion.nav>
+    </header>
   );
 };

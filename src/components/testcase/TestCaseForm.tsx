@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { Button, Field, Input, Textarea } from '../ui';
 
 const testCaseSchema = z.object({
   input: z.string().min(1, 'Input is required'),
@@ -22,7 +23,8 @@ interface TestCaseFormProps {
   submitLabel?: string;
 }
 
-export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending, submitLabel = 'Add Test Case' }) => {
+export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending, submitLabel = 'Add test case' }) => {
+  const switchId = useId();
   const {
     register,
     handleSubmit,
@@ -39,107 +41,92 @@ export const TestCaseForm: React.FC<TestCaseFormProps> = ({ onSubmit, isPending,
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Input */}
-      <div>
-        <label htmlFor="testcase-input" className="block text-sm font-medium text-fg-muted mb-1.5">Input</label>
-        <textarea
-          id="testcase-input"
-          {...register('input')}
-          rows={4}
-          className={`w-full px-4 py-3 rounded-xl border font-mono text-sm bg-canvas resize-y ${
-            errors.input ? 'border-danger' : 'border-line'
-          } focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors`}
-          placeholder="Test case input..."
-        />
-        {errors.input && (
-          <p className="mt-1 text-xs text-danger-text">{errors.input.message}</p>
-        )}
-      </div>
-
-      {/* Expected Output */}
-      <div>
-        <label htmlFor="testcase-expected-output" className="block text-sm font-medium text-fg-muted mb-1.5">Expected Output</label>
-        <textarea
-          id="testcase-expected-output"
-          {...register('expectedOutput')}
-          rows={4}
-          className={`w-full px-4 py-3 rounded-xl border font-mono text-sm bg-canvas resize-y ${
-            errors.expectedOutput ? 'border-danger' : 'border-line'
-          } focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors`}
-          placeholder="Expected output..."
-        />
-        {errors.expectedOutput && (
-          <p className="mt-1 text-xs text-danger-text">{errors.expectedOutput.message}</p>
-        )}
-      </div>
-
-      {/* Is Sample + Weight row */}
-      <div className="flex items-start gap-6">
-        {/* Is Sample switch */}
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <Controller
-              name="isSample"
-              control={control}
-              render={({ field }) => (
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={field.value}
-                  onClick={() => field.onChange(!field.value)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    field.value ? 'bg-primary' : 'bg-fg/10'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform shadow-sm ${
-                      field.value ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              )}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Input" error={errors.input?.message} required>
+          {(p) => (
+            <Textarea
+              {...p}
+              {...register('input')}
+              rows={5}
+              spellCheck={false}
+              className="resize-y font-mono text-[13px]"
+              placeholder="Test case input…"
             />
-            <label className="text-sm font-medium text-fg">Sample Test Case</label>
-          </div>
-          <p className="text-xs text-fg-subtle mt-1.5 ml-14">
-            Visible to candidates before they submit — don't use for cases that reveal the intended approach
-          </p>
-        </div>
-
-        {/* Weight */}
-        <div className="w-32">
-          <label htmlFor="testcase-weight" className="block text-sm font-medium text-fg-muted mb-1.5">Weight</label>
-          <input
-            id="testcase-weight"
-            type="number"
-            step={1}
-            {...register('weight', { valueAsNumber: true })}
-            className={`w-full px-3 py-2 rounded-lg border text-sm font-mono ${
-              errors.weight ? 'border-danger' : 'border-line'
-            } focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors`}
-          />
-          {errors.weight && (
-            <p className="mt-1 text-xs text-danger-text">{errors.weight.message}</p>
           )}
-        </div>
+        </Field>
+        <Field label="Expected output" error={errors.expectedOutput?.message} required>
+          {(p) => (
+            <Textarea
+              {...p}
+              {...register('expectedOutput')}
+              rows={5}
+              spellCheck={false}
+              className="resize-y font-mono text-[13px]"
+              placeholder="Expected output…"
+            />
+          )}
+        </Field>
       </div>
 
-      {/* Footer note (Section 4.1) */}
-      <p className="text-xs text-fg-subtle italic">
-        Test cases can't be edited after creation — delete and re-add if you need to change one.
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex min-w-0 flex-1 items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+          <Controller
+            name="isSample"
+            control={control}
+            render={({ field }) => (
+              <button
+                type="button"
+                role="switch"
+                id={switchId}
+                aria-checked={field.value}
+                aria-describedby={`${switchId}-hint`}
+                onClick={() => field.onChange(!field.value)}
+                className={cn(
+                  'press-sm relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-150',
+                  field.value ? 'bg-primary' : 'bg-line-strong',
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-block size-4 rounded-full bg-surface shadow-card transition-transform duration-150 ease-out',
+                    field.value ? 'translate-x-[18px]' : 'translate-x-0.5',
+                  )}
+                />
+              </button>
+            )}
+          />
+          <div className="min-w-0">
+            <label htmlFor={switchId} className="text-[13px] font-medium text-fg">
+              Sample test case
+            </label>
+            <p id={`${switchId}-hint`} className="mt-0.5 text-[12px] leading-5 text-fg-subtle">
+              Shown to candidates before they submit. Don't use one that reveals the intended approach.
+            </p>
+          </div>
+        </div>
 
-      {/* Submit */}
-      <div className="flex justify-end pt-2">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-        >
-          {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isPending ? 'Adding...' : submitLabel}
-        </button>
+        <Field label="Weight" error={errors.weight?.message} className="sm:w-32">
+          {(p) => (
+            <Input
+              {...p}
+              type="number"
+              step={1}
+              min={0}
+              {...register('weight', { valueAsNumber: true })}
+              className="tabular font-mono"
+            />
+          )}
+        </Field>
+      </div>
+
+      <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[12px] leading-5 text-fg-subtle">
+          Test cases can't be edited after creation. Delete and re-add one to change it.
+        </p>
+        <Button type="submit" loading={isPending}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

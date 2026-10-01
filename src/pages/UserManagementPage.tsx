@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   UserPlus,
@@ -10,6 +10,8 @@ import {
   Users,
   UserCheck2,
   UserMinus,
+  Search,
+  X,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DataTable } from '../components/DataTable';
@@ -19,121 +21,94 @@ import { CreateUserDialog } from '../components/CreateUserDialog';
 import { EditUserDialog } from '../components/EditUserDialog';
 import { BulkImportDialog } from '../components/BulkImportDialog';
 import { useUsers, useDeactivateUser, useReactivateUser } from '../hooks/useUsers';
-import type { UserRecord } from '../api/userApi';
+import type { UserRecord, UserRole } from '../api/userApi';
 import { ErrorState } from '../components/states/ErrorState';
+import {
+  Button,
+  Card,
+  Dialog,
+  IconButton,
+  Input,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+  PageHeader,
+  Select,
+  Skeleton,
+} from '../components/ui';
+import { cn } from '../lib/cn';
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
-  },
+const enter = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] as const },
 };
 
-const item = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
+type StatusFilter = 'all' | 'active' | 'inactive';
 
-// ─── Animated Number Ticker ───
-const NumberTicker: React.FC<{ value: number }> = ({ value }) => {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef<number | null>(null);
+// ─── Stat tile ───
+const Stat: React.FC<{ label: string; value: number; icon: React.ReactNode; loading: boolean; accent?: boolean }> = ({
+  label,
+  value,
+  icon,
+  loading,
+  accent,
+}) => (
+  <Card className="flex items-center gap-3 p-4">
+    <div
+      className={cn(
+        'flex size-9 shrink-0 items-center justify-center rounded-xl',
+        accent ? 'bg-primary-soft text-primary-text' : 'bg-surface-2 text-fg-subtle',
+      )}
+    >
+      {icon}
+    </div>
+    <div className="min-w-0">
+      {loading ? (
+        <Skeleton className="my-1 h-5 w-10" />
+      ) : (
+        <p className="tabular font-display text-[20px] font-semibold leading-7 tracking-[-0.015em] text-fg">{value}</p>
+      )}
+      <p className="truncate text-[12px] text-fg-subtle">{label}</p>
+    </div>
+  </Card>
+);
 
-  useEffect(() => {
-    const start = display;
-    const diff = value - start;
-    if (diff === 0) return;
-
-    const duration = 600;
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(start + diff * eased));
-      if (progress < 1) {
-        ref.current = requestAnimationFrame(animate);
-      }
-    };
-
-    ref.current = requestAnimationFrame(animate);
-    return () => {
-      if (ref.current) cancelAnimationFrame(ref.current);
-    };
-  }, [value]);
-
-  return <span>{display}</span>;
-};
-
-// ─── Row Actions Dropdown ───
+// ─── Row actions menu ───
 const RowActions: React.FC<{
   user: UserRecord;
   onEdit: (user: UserRecord) => void;
   onToggleActive: (user: UserRecord) => void;
-}> = ({ user, onEdit, onToggleActive }) => {
-  const [open, setOpen] = useState(false);
+}> = ({ user, onEdit, onToggleActive }) => (
+  <div className="flex justify-end">
+    <Menu>
+      <MenuTrigger asChild>
+        <IconButton aria-label={`Actions for ${user.fullName}`} size="sm">
+          <MoreHorizontal className="size-4" />
+        </IconButton>
+      </MenuTrigger>
+      <MenuContent className="min-w-44">
+        <MenuItem icon={<Pencil />} onSelect={() => onEdit(user)}>
+          Edit
+        </MenuItem>
+        <MenuSeparator />
+        {user.isActive ? (
+          <MenuItem icon={<UserX />} tone="danger" onSelect={() => onToggleActive(user)}>
+            Deactivate
+          </MenuItem>
+        ) : (
+          <MenuItem icon={<UserCheck />} onSelect={() => onToggleActive(user)}>
+            Reactivate
+          </MenuItem>
+        )}
+      </MenuContent>
+    </Menu>
+  </div>
+);
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.12 }}
-            className="absolute right-0 top-full mt-1 w-44 bg-surface rounded-xl border border-line shadow-lg z-50 py-1"
-          >
-            <button
-              onClick={() => {
-                setOpen(false);
-                onEdit(user);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-fg-muted hover:bg-fg/5 hover:text-fg transition-colors cursor-pointer"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
-            <button
-              onClick={() => {
-                setOpen(false);
-                onToggleActive(user);
-              }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer ${
-                user.isActive
-                  ? 'text-danger-text hover:bg-danger-soft hover:text-danger-text'
-                  : 'text-primary-text hover:bg-primary/5 hover:text-primary-text'
-              }`}
-            >
-              {user.isActive ? (
-                <>
-                  <UserX className="w-3.5 h-3.5" />
-                  Deactivate
-                </>
-              ) : (
-                <>
-                  <UserCheck className="w-3.5 h-3.5" />
-                  Reactivate
-                </>
-              )}
-            </button>
-          </motion.div>
-        </>
-      )}
-    </div>
-  );
-};
-
-// ─── Deactivation Confirm Dialog ───
+// ─── Deactivate / reactivate confirmation ───
 const ConfirmDialog: React.FC<{
   open: boolean;
   user: UserRecord | null;
@@ -141,76 +116,35 @@ const ConfirmDialog: React.FC<{
   onCancel: () => void;
   isPending: boolean;
 }> = ({ open, user, onConfirm, onCancel, isPending }) => {
-  if (!open || !user) return null;
-
-  const isDeactivating = user.isActive;
+  const isDeactivating = user?.isActive ?? true;
 
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
-        onClick={onCancel}
-      />
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-sm p-6"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className={`w-11 h-11 rounded-xl ${
-              isDeactivating ? 'bg-danger-soft' : 'bg-primary/10'
-            } flex items-center justify-center mb-4`}
-          >
-            {isDeactivating ? (
-              <UserX className="w-5 h-5 text-danger-text" />
-            ) : (
-              <UserCheck className="w-5 h-5 text-primary-text" />
-            )}
-          </div>
-          <h3 className="font-display text-lg font-semibold text-fg mb-1">
-            {isDeactivating ? 'Deactivate' : 'Reactivate'} User
-          </h3>
-          <p className="text-sm text-fg-muted mb-6">
-            {isDeactivating
-              ? `Are you sure you want to deactivate ${user.fullName}? They will no longer be able to log in.`
-              : `Reactivate ${user.fullName}? They'll be able to log in again.`}
-          </p>
-          <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <motion.button
-              onClick={onConfirm}
-              disabled={isPending}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.97 }}
-              className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
-                isDeactivating
-                  ? 'bg-danger hover:bg-danger/90'
-                  : 'bg-primary hover:bg-primary-hover'
-              }`}
-            >
-              {isPending
-                ? isDeactivating
-                  ? 'Deactivating...'
-                  : 'Reactivating...'
-                : isDeactivating
-                  ? 'Deactivate'
-                  : 'Reactivate'}
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
-    </>
+    <Dialog
+      open={open && !!user}
+      onOpenChange={(o) => !o && onCancel()}
+      size="sm"
+      tone={isDeactivating ? 'danger' : 'primary'}
+      icon={isDeactivating ? <UserX className="size-[18px]" /> : <UserCheck className="size-[18px]" />}
+      title={isDeactivating ? 'Deactivate user' : 'Reactivate user'}
+      description={
+        user
+          ? isDeactivating
+            ? `${user.fullName} will no longer be able to sign in. You can reactivate them later.`
+            : `${user.fullName} will be able to sign in again.`
+          : undefined
+      }
+      dismissible={!isPending}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button variant={isDeactivating ? 'danger' : 'primary'} onClick={onConfirm} loading={isPending}>
+            {isDeactivating ? 'Deactivate' : 'Reactivate'}
+          </Button>
+        </>
+      }
+    />
   );
 };
 
@@ -220,16 +154,43 @@ const UserManagementPage: React.FC = () => {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserRecord | null>(null);
   const [confirmUser, setConfirmUser] = useState<UserRecord | null>(null);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // The table pages/sorts client-side, so load everything (Spring caps size at 2000)
   const { data, isLoading, isError, refetch } = useUsers({ pageSize: 2000 });
   const deactivateMutation = useDeactivateUser();
   const reactivateMutation = useReactivateUser();
 
-  const users = data?.users ?? [];
+  const users = useMemo(() => data?.users ?? [], [data]);
   const totalUsers = data?.total ?? users.length;
   const activeUsers = users.filter((u) => u.isActive).length;
   const inactiveUsers = users.filter((u) => !u.isActive).length;
+
+  const q = search.trim().toLowerCase();
+  const hasFilters = q !== '' || roleFilter !== 'all' || statusFilter !== 'all';
+
+  // Client-side narrowing of the already-loaded list (no extra request)
+  const filteredUsers = useMemo(
+    () =>
+      users.filter(
+        (u) =>
+          (roleFilter === 'all' || u.role === roleFilter) &&
+          (statusFilter === 'all' || (statusFilter === 'active' ? u.isActive : !u.isActive)) &&
+          (!q ||
+            u.fullName.toLowerCase().includes(q) ||
+            u.email.toLowerCase().includes(q) ||
+            (u.rollNumber ?? '').toLowerCase().includes(q)),
+      ),
+    [users, roleFilter, statusFilter, q],
+  );
+
+  const clearFilters = () => {
+    setSearch('');
+    setRoleFilter('all');
+    setStatusFilter('all');
+  };
 
   const handleToggleActive = (user: UserRecord) => {
     setConfirmUser(user);
@@ -253,17 +214,21 @@ const UserManagementPage: React.FC = () => {
       accessorKey: 'fullName',
       header: 'Name',
       cell: ({ row }) => (
-        <div>
-          <p className="font-medium text-fg text-sm">{row.original.fullName}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-[12px] font-medium text-fg-muted ring-1 ring-inset ring-line"
+          >
+            {row.original.fullName.trim().charAt(0).toUpperCase() || '?'}
+          </span>
+          <span className="truncate font-medium text-fg">{row.original.fullName}</span>
         </div>
       ),
     },
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-fg-muted">{row.original.email}</span>
-      ),
+      cell: ({ row }) => <span className="font-mono text-[12px] text-fg-muted">{row.original.email}</span>,
     },
     {
       accessorKey: 'role',
@@ -281,7 +246,7 @@ const UserManagementPage: React.FC = () => {
       accessorKey: 'createdAt',
       header: 'Created',
       cell: ({ row }) => (
-        <span className="text-xs text-fg-subtle">
+        <span className="tabular whitespace-nowrap text-[13px] text-fg-subtle">
           {new Date(row.original.createdAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -293,121 +258,108 @@ const UserManagementPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: '',
+      header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
-        <RowActions
-          user={row.original}
-          onEdit={setEditUser}
-          onToggleActive={handleToggleActive}
-        />
+        <RowActions user={row.original} onEdit={setEditUser} onToggleActive={handleToggleActive} />
       ),
       enableSorting: false,
     },
   ];
 
   if (isError) {
-    return <ErrorState message="Failed to load users." onRetry={() => refetch()} />;
+    return <ErrorState message="Couldn't load users. Check your connection and try again." onRetry={() => refetch()} />;
   }
 
   return (
     <>
-      <motion.div variants={container} initial="hidden" animate="show">
-        {/* Page Header */}
-        <motion.div
-          variants={item}
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
-        >
-          <div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-fg mb-1">
-              User Management
-            </h1>
-            <p className="text-sm text-fg-muted">Create, manage, and import user accounts</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <motion.button
-              onClick={() => setBulkOpen(true)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              className="px-4 py-2.5 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer flex items-center gap-2"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span className="hidden sm:inline">Bulk Import</span>
-            </motion.button>
-            <motion.button
-              onClick={() => setCreateOpen(true)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              className="px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer flex items-center gap-2 relative overflow-hidden group"
-            >
-              {/* shimmer effect */}
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <UserPlus className="w-4 h-4 relative z-10" />
-              <span className="relative z-10 hidden sm:inline">Create User</span>
-            </motion.button>
-          </div>
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Admin"
+          title="User management"
+          description="Create, manage and import user accounts."
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setBulkOpen(true)} leadingIcon={<FileSpreadsheet className="size-4" />}>
+                Bulk import
+              </Button>
+              <Button onClick={() => setCreateOpen(true)} leadingIcon={<UserPlus className="size-4" />}>
+                Add user
+              </Button>
+            </>
+          }
+        />
+
+        <motion.div {...enter} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Stat label="Total users" value={totalUsers} loading={isLoading} icon={<Users className="size-4" />} />
+          <Stat label="Active" value={activeUsers} loading={isLoading} accent icon={<UserCheck2 className="size-4" />} />
+          <Stat label="Inactive" value={inactiveUsers} loading={isLoading} icon={<UserMinus className="size-4" />} />
         </motion.div>
 
-        {/* Stats */}
-        <motion.div variants={item} className="grid grid-cols-3 gap-3 mb-6">
-          <div className="p-4 rounded-xl bg-surface border border-line">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-fg/5 flex items-center justify-center">
-                <Users className="w-4 h-4 text-fg-subtle" />
-              </div>
-              <div>
-                <p className="text-xl font-bold font-display text-fg">
-                  <NumberTicker value={totalUsers} />
-                </p>
-                <p className="text-[11px] text-fg-subtle">Total Users</p>
-              </div>
+        <div className="space-y-3">
+          <Card className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" aria-hidden />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, email or roll number…"
+                aria-label="Search users"
+                className="pl-9"
+              />
             </div>
-          </div>
-          <div className="p-4 rounded-xl bg-surface border border-line">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <UserCheck2 className="w-4 h-4 text-primary-text" />
-              </div>
-              <div>
-                <p className="text-xl font-bold font-display text-primary-text">
-                  <NumberTicker value={activeUsers} />
-                </p>
-                <p className="text-[11px] text-fg-subtle">Active</p>
-              </div>
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+              <Select
+                aria-label="Filter by role"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as UserRole | 'all')}
+                className="sm:w-40"
+              >
+                <option value="all">All roles</option>
+                <option value="CANDIDATE">Candidate</option>
+                <option value="EVALUATOR">Evaluator</option>
+                <option value="ADMIN">Admin</option>
+              </Select>
+              <Select
+                aria-label="Filter by status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                className="sm:w-36"
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
             </div>
-          </div>
-          <div className="p-4 rounded-xl bg-surface border border-line">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-fg/5 flex items-center justify-center">
-                <UserMinus className="w-4 h-4 text-fg-subtle" />
-              </div>
-              <div>
-                <p className="text-xl font-bold font-display text-fg-muted">
-                  <NumberTicker value={inactiveUsers} />
-                </p>
-                <p className="text-[11px] text-fg-subtle">Inactive</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} leadingIcon={<X className="size-3.5" />}>
+                Clear
+              </Button>
+            )}
+          </Card>
 
-        {/* Table */}
-        <motion.div variants={item}>
+          {hasFilters && !isLoading && (
+            <p className="tabular px-1 text-[12px] text-fg-subtle" aria-live="polite">
+              Showing {filteredUsers.length} of {users.length} users
+            </p>
+          )}
+
           <DataTable
             columns={columns}
-            data={users}
+            data={filteredUsers}
             isLoading={isLoading}
-            emptyMessage="No users found. Create one to get started."
+            emptyMessage={
+              hasFilters
+                ? 'No users match these filters. Try a different search or clear the filters.'
+                : 'No users yet. Add one or bulk import a CSV to get started.'
+            }
           />
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <CreateUserDialog open={createOpen} onClose={() => setCreateOpen(false)} />
-      <EditUserDialog
-        open={!!editUser}
-        user={editUser}
-        onClose={() => setEditUser(null)}
-      />
+      <EditUserDialog open={!!editUser} user={editUser} onClose={() => setEditUser(null)} />
       <BulkImportDialog open={bulkOpen} onClose={() => setBulkOpen(false)} />
       <ConfirmDialog
         open={!!confirmUser}

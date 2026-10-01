@@ -1,68 +1,51 @@
 import React from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { cn } from '../../lib/cn';
 import type { TestCaseBulkUploadResult } from '../../api/testCaseApi';
 
 interface TestCaseBulkUploadResultReportProps {
   result: TestCaseBulkUploadResult;
 }
 
-export const TestCaseBulkUploadResultReport: React.FC<TestCaseBulkUploadResultReportProps> = ({
-  result,
-}) => {
-  return (
-    <div className="space-y-4">
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="p-3 rounded-xl bg-primary/[0.03] text-center">
-          <p className="text-lg font-bold font-display text-fg">{result.totalRows}</p>
-          <p className="text-[11px] text-fg-subtle">Total</p>
-        </div>
-        <div className="p-3 rounded-xl bg-primary/5 text-center">
-          <p className="text-lg font-bold font-display text-primary-text">
-            {result.succeededCount}
+const Stat: React.FC<{ label: string; value: number; className?: string }> = ({ label, value, className }) => (
+  <div className={cn('rounded-xl border px-3 py-3 text-center', className)}>
+    <p className="tabular font-display text-[20px] font-semibold leading-7 tracking-[-0.015em]">{value}</p>
+    <p className="text-[12px]">{label}</p>
+  </div>
+);
+
+export const TestCaseBulkUploadResultReport: React.FC<TestCaseBulkUploadResultReportProps> = ({ result }) => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-3 gap-3">
+      <Stat label="Total" value={result.totalRows} className="border-line bg-surface-2 text-fg [&>p:last-child]:text-fg-muted" />
+      <Stat label="Succeeded" value={result.succeededCount} className="border-success/20 bg-success-soft text-success-text" />
+      <Stat label="Failed" value={result.failedCount} className="border-danger/20 bg-danger-soft text-danger-text" />
+    </div>
+
+    {result.errors.length > 0 && (
+      <ul className="scroll-thin max-h-60 overflow-y-auto rounded-xl border border-line">
+        {result.errors.map((err, i) => (
+          <li key={i} className="flex items-center gap-3 border-b border-line px-4 py-2.5 text-[13px] last:border-b-0">
+            <XCircle className="size-4 shrink-0 text-danger-text" aria-hidden />
+            <span className="tabular w-16 shrink-0 font-mono text-[12px] text-fg-muted">Row {err.rowNumber}</span>
+            <span className="min-w-0 flex-1 truncate text-danger-text" title={err.reason}>
+              {err.reason}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    {result.errors.length === 0 && result.succeededCount > 0 && (
+      <div className="flex items-center gap-3 rounded-xl border border-success/20 bg-success-soft p-4">
+        <CheckCircle2 className="size-5 shrink-0 text-success-text" aria-hidden />
+        <div>
+          <p className="text-sm font-medium text-fg">All test cases imported</p>
+          <p className="tabular mt-0.5 text-[13px] text-fg-muted">
+            {result.succeededCount} test case{result.succeededCount !== 1 ? 's' : ''} added
           </p>
-          <p className="text-[11px] text-primary-text">Succeeded</p>
-        </div>
-        <div className="p-3 rounded-xl bg-danger-soft text-center">
-          <p className="text-lg font-bold font-display text-danger-text">
-            {result.failedCount}
-          </p>
-          <p className="text-[11px] text-danger-text">Failed</p>
         </div>
       </div>
-
-      {/* Per-row error report (only shown if there are errors) */}
-      {result.errors.length > 0 && (
-        <div className="rounded-xl border border-line overflow-hidden max-h-60 overflow-y-auto">
-          {result.errors.map((err, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 px-4 py-2.5 text-xs border-b border-line last:border-b-0 bg-danger/[0.03]"
-            >
-              <XCircle className="w-4 h-4 text-danger-text shrink-0" />
-              <span className="font-mono text-fg-muted w-10 shrink-0">
-                Row {err.rowNumber}
-              </span>
-              <span className="text-danger-text text-[11px] truncate flex-1" title={err.reason}>
-                {err.reason}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* All succeeded message */}
-      {result.errors.length === 0 && result.succeededCount > 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
-          <CheckCircle2 className="w-5 h-5 text-primary-text shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-fg">All test cases imported successfully</p>
-            <p className="text-xs text-fg-subtle mt-0.5">
-              {result.succeededCount} test case{result.succeededCount !== 1 ? 's' : ''} added
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+    )}
+  </div>
+);

@@ -1,12 +1,16 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useLenis } from 'lenis/react';
+import { Badge, Button } from '../ui';
 import { CodePanel } from './CodePanel';
+
+const EASE = [0.23, 1, 0.32, 1] as const;
 
 export const Hero: React.FC = () => {
   const lenis = useLenis();
+  const navigate = useNavigate();
 
   const scrollToHowItWorks = () => {
     const el = document.getElementById('how-it-works');
@@ -16,64 +20,55 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section id="hero" className="min-h-screen flex items-center pt-16">
-      <div className="max-w-6xl mx-auto px-6 w-full py-20">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left — Pitch */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary-text text-xs font-mono font-medium mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              NOW IN BETA
-            </div>
+    <section id="hero" className="relative isolate overflow-hidden pt-16">
+      {/* Quiet radial wash, same treatment as the auth layout */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 select-none bg-[radial-gradient(60%_55%_at_70%_0%,color-mix(in_oklab,var(--primary)_10%,transparent),transparent)]"
+      />
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:py-32">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: EASE }}
+          className="min-w-0"
+        >
+          <Badge tone="primary" dot className="mb-6 font-mono uppercase tracking-[0.06em]">
+            Now in beta
+          </Badge>
 
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.4rem] font-bold text-fg leading-[1.1] tracking-tight mb-5">
-              Where code meets{' '}
-              <span className="text-primary-text">evaluation</span>
-            </h1>
+          <h1 className="font-display text-[40px] font-semibold leading-[1.05] tracking-[-0.035em] text-fg sm:text-[56px] lg:text-[64px]">
+            Where code meets <span className="text-primary-text">evaluation</span>
+          </h1>
 
-            <p className="text-lg text-fg-muted leading-relaxed max-w-lg mb-8">
-              Run coding contests, auto-grade submissions, and deliver instant feedback — 
-              built for classrooms and competitive programming alike.
-            </p>
+          <p className="mt-6 max-w-[48ch] text-base leading-7 text-fg-muted sm:text-[17px]">
+            Run coding contests, auto-grade submissions and give instant feedback. Built for classrooms and
+            competitive programming alike.
+          </p>
 
-            {/* CTA Group */}
-            <div className="flex flex-wrap items-center gap-4">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover transition-colors"
-                >
-                  Log In
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </motion.div>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button size="lg" onClick={() => navigate('/login')} trailingIcon={<ArrowRight className="size-4" />}>
+              Log in
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={scrollToHowItWorks}
+              trailingIcon={<ChevronDown className="size-4" />}
+            >
+              See how it works
+            </Button>
+          </div>
+        </motion.div>
 
-              <motion.button
-                onClick={scrollToHowItWorks}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-line text-fg-muted font-medium hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
-              >
-                See how it works
-                <ChevronDown className="w-4 h-4" />
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Right — Code panel */}
-          <motion.div
-            initial={{ opacity: 0, x: 32 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
-            className="flex justify-center lg:justify-end"
-          >
-            <CodePanel />
-          </motion.div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.04, ease: EASE }}
+          className="flex min-w-0 justify-center lg:justify-end"
+        >
+          <CodePanel />
+        </motion.div>
       </div>
     </section>
   );

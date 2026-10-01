@@ -58,33 +58,32 @@ export const CodePanel: React.FC = () => {
   }, [prefersReducedMotion]);
 
   return (
-    <div className="w-full max-w-lg">
-      {/* Editor chrome */}
-      <div className="bg-[#1E1E2E] rounded-xl overflow-hidden shadow-2xl border border-white/5">
+    <div className="w-full min-w-0 max-w-xl">
+      <div className="overflow-hidden rounded-2xl border border-editor-line bg-editor-bg shadow-pop">
         {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-[#181825] border-b border-white/5">
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-danger/80" />
-            <div className="w-3 h-3 rounded-full bg-warning/80" />
-            <div className="w-3 h-3 rounded-full bg-primary/80" />
+        <div className="flex items-center gap-3 border-b border-editor-line bg-editor-panel px-4 py-3">
+          <div className="flex gap-1.5" aria-hidden>
+            <span className="size-2.5 rounded-full bg-editor-line" />
+            <span className="size-2.5 rounded-full bg-editor-line" />
+            <span className="size-2.5 rounded-full bg-editor-line" />
           </div>
-          <span className="text-xs text-white/30 font-mono ml-2">solution.js</span>
+          <span className="font-mono text-[12px] text-editor-muted">solution.js</span>
         </div>
 
-        {/* Code area */}
-        <div className="p-5 font-mono text-sm leading-relaxed min-h-[300px]">
+        {/* Code area: fixed height so typing never shifts layout */}
+        <div className="scroll-thin min-h-[296px] overflow-x-auto p-4 font-mono text-[13px] leading-6 sm:p-5">
           {CODE_LINES.map((_line, index) => (
-            <div key={index} className="flex">
-              <span className="w-6 text-right text-white/15 text-xs mr-4 select-none shrink-0 pt-0.5">
+            <div key={index} className="flex whitespace-pre">
+              <span className="mr-4 w-6 shrink-0 select-none text-right text-editor-muted/60 tabular" aria-hidden>
                 {index + 1}
               </span>
-              <span className="text-white/80">
+              <span className={index === 0 ? 'text-editor-muted' : 'text-editor-fg'}>
                 {typedLines[index] || ''}
                 {cursorLine === index && !prefersReducedMotion && (
                   <motion.span
                     animate={{ opacity: [1, 0] }}
                     transition={{ repeat: Infinity, duration: 0.8 }}
-                    className="inline-block w-[2px] h-[14px] bg-primary ml-0.5 align-text-bottom"
+                    className="ml-0.5 inline-block h-[14px] w-[2px] bg-primary align-text-bottom"
                   />
                 )}
               </span>
@@ -92,20 +91,18 @@ export const CodePanel: React.FC = () => {
           ))}
         </div>
 
-        {/* Status bar with submitted */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#181825] border-t border-white/5">
-          <span className="text-xs text-white/25 font-mono">JavaScript</span>
+        {/* Status bar */}
+        <div className="flex h-10 items-center justify-between border-t border-editor-line bg-editor-panel px-4">
+          <span className="font-mono text-[12px] text-editor-muted">JavaScript</span>
           {showSubmitted && (
             <motion.div
-              initial={prefersReducedMotion ? {} : { opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center gap-1.5"
+              initial={prefersReducedMotion ? {} : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+              className="flex items-center gap-1.5 text-[12px] font-medium text-success"
             >
-              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                <Check className="w-3 h-3 text-primary-text" />
-              </div>
-              <span className="text-xs font-medium text-primary-text">Submitted</span>
+              <Check className="size-3.5" aria-hidden />
+              Submitted · 10/10 tests passed
             </motion.div>
           )}
         </div>

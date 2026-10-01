@@ -1,72 +1,34 @@
 import React from 'react';
 import { Timer } from 'lucide-react';
-
-interface CountdownTimerProps {
-  remainingSeconds: number;
-}
+import { cn } from '../../lib/cn';
 
 /**
- * CountdownTimer — presentational only.
- * Renders HH:MM:SS from `remainingSeconds`. Contains no timing logic.
- *
- * Color states (Section 3.1):
- * - More than 10 minutes: `ink` text on `surface` (calm)
- * - 10 minutes or less:  `accent-syntax` amber (caution)
- * - 2 minutes or less:   `accent-error` red (danger)
- *
- * Typography: JetBrains Mono with tabular numerals, no bounce/pulse/scale.
- * Honors prefers-reduced-motion by not having any animation at all.
+ * Presentational only: renders HH:MM:SS from `remainingSeconds`.
+ * Calm above 10 min, warning at ≤10 min, danger at ≤2 min. Tabular digits, no animation.
  */
-export const CountdownTimer: React.FC<CountdownTimerProps> = ({ remainingSeconds }) => {
-  if (remainingSeconds <= 0) {
-    return (
-      <div className="flex items-center gap-2">
-        <Timer className="w-4 h-4 text-danger-text" />
-        <span
-          className="font-mono text-sm font-bold text-danger-text"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
-        >
-          Time's up
-        </span>
-      </div>
-    );
-  }
-
-  const hours = Math.floor(remainingSeconds / 3600);
-  const minutes = Math.floor((remainingSeconds % 3600) / 60);
-  const seconds = remainingSeconds % 60;
-
+export const CountdownTimer: React.FC<{ remainingSeconds: number }> = ({ remainingSeconds }) => {
   const pad = (n: number) => String(n).padStart(2, '0');
-  const display = hours > 0
-    ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
-    : `${pad(minutes)}:${pad(seconds)}`;
+  const h = Math.floor(remainingSeconds / 3600);
+  const m = Math.floor((remainingSeconds % 3600) / 60);
+  const s = remainingSeconds % 60;
+  const done = remainingSeconds <= 0;
+  const display = done ? 'Time’s up' : h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 
-  // Determine color state
-  let colorClass: string;
-  let iconColorClass: string;
-  if (remainingSeconds <= 120) {
-    // ≤ 2 minutes — danger red
-    colorClass = 'text-danger-text';
-    iconColorClass = 'text-danger-text';
-  } else if (remainingSeconds <= 600) {
-    // ≤ 10 minutes — caution amber
-    colorClass = 'text-warning-text';
-    iconColorClass = 'text-warning-text';
-  } else {
-    // Calm — default ink
-    colorClass = 'text-fg';
-    iconColorClass = 'text-fg-muted';
-  }
+  const tone = done || remainingSeconds <= 120 ? 'danger' : remainingSeconds <= 600 ? 'warning' : 'calm';
 
   return (
-    <div className="flex items-center gap-2">
-      <Timer className={`w-4 h-4 ${iconColorClass}`} />
-      <span
-        className={`font-mono text-sm font-bold ${colorClass}`}
-        style={{ fontVariantNumeric: 'tabular-nums' }}
-      >
-        {display}
-      </span>
+    <div
+      role="timer"
+      aria-label={done ? 'Time is up' : `Time remaining ${display}`}
+      className={cn(
+        'flex h-8 items-center gap-2 rounded-lg border px-2.5',
+        tone === 'calm' && 'border-line bg-surface text-fg',
+        tone === 'warning' && 'border-warning/30 bg-warning-soft text-warning-text',
+        tone === 'danger' && 'border-danger/30 bg-danger-soft text-danger-text',
+      )}
+    >
+      <Timer className={cn('size-4', tone === 'calm' && 'text-fg-subtle')} aria-hidden />
+      <span className="tabular font-mono text-[13px] font-medium">{display}</span>
     </div>
   );
 };

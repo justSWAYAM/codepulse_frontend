@@ -1,33 +1,18 @@
 import React from 'react';
 import type { UserRole } from '../api/userApi';
+import { Badge, type Tone } from './ui';
 
-interface RoleBadgeProps {
-  role: UserRole;
-}
-
-const roleConfig: Record<UserRole, { label: string; classes: string }> = {
-  ADMIN: {
-    label: 'Admin',
-    classes: 'bg-primary/10 text-primary-text border-primary/20',
-  },
-  EVALUATOR: {
-    label: 'Evaluator',
-    classes: 'bg-warning-soft text-warning-text border-warning/30',
-  },
-  CANDIDATE: {
-    label: 'Candidate',
-    classes: 'bg-fg/5 text-fg-muted border-line',
-  },
+const CONFIG: Record<UserRole, { label: string; tone: Tone }> = {
+  ADMIN: { label: 'Admin', tone: 'primary' },
+  EVALUATOR: { label: 'Evaluator', tone: 'info' },
+  CANDIDATE: { label: 'Candidate', tone: 'neutral' },
 };
 
-export const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
-  const config = roleConfig[role] || roleConfig.CANDIDATE;
-
+export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
+  const c = CONFIG[role] ?? CONFIG.CANDIDATE;
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border tracking-wide ${config.classes}`}
-    >
-      {config.label}
-    </span>
+    <Badge tone={c.tone} size="sm">
+      {c.label}
+    </Badge>
   );
 };

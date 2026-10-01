@@ -1,16 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import {
-  X,
-  Upload,
-  FileSpreadsheet,
-  Loader2,
-  Trash2,
-  AlertTriangle,
-  Download,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileSpreadsheet, Trash2, AlertTriangle, Download } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { Button, Dialog, IconButton, Spinner } from '../ui';
 import { useBulkUploadTestCases } from '../../hooks/useTestCases';
 import type { TestCaseBulkUploadResult } from '../../api/testCaseApi';
 import { TestCaseBulkUploadResultReport } from './TestCaseBulkUploadResultReport';
@@ -166,289 +159,159 @@ export const BulkUploadTestCasesDialog: React.FC<BulkUploadTestCasesDialogProps>
     });
   };
 
+  const canUpload = !!file && (preview?.totalRows ?? 0) > 0 && (preview?.errors.length ?? 0) === 0;
+
+  const footer =
+    stage === 'preview' ? (
+      <>
+        <Button variant="secondary" onClick={resetState}>
+          Choose different file
+        </Button>
+        <Button onClick={handleUpload} disabled={!canUpload} leadingIcon={<Upload className="size-4" />}>
+          Upload {preview?.totalRows} test case{preview?.totalRows !== 1 ? 's' : ''}
+        </Button>
+      </>
+    ) : stage === 'results' ? (
+      <Button onClick={handleClose}>Done</Button>
+    ) : undefined;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-50"
-            onClick={handleClose}
-          />
-
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-surface rounded-2xl border border-line shadow-lg w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && handleClose()}
+      title="Bulk upload test cases"
+      description="Import many test cases at once from a CSV file."
+      icon={<FileSpreadsheet className="size-5" />}
+      size="lg"
+      dismissible={stage !== 'uploading'}
+      footer={footer}
+    >
+      {stage === 'upload' && (
+        <div className="space-y-4">
+          <div
+            {...getRootProps()}
+            className={cn(
+              'flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed px-6 py-10 text-center',
+              'transition-[background-color,border-color] duration-150 focus-visible:outline-2 focus-visible:outline-ring',
+              isDragActive
+                ? 'border-primary bg-primary-soft'
+                : 'border-line-strong bg-surface-2/40 hover-fine:border-primary/50 hover-fine:bg-surface-2',
+            )}
+          >
+            <input {...getInputProps()} />
+            <div
+              className={cn(
+                'mb-4 flex size-12 items-center justify-center rounded-2xl transition-colors duration-150',
+                isDragActive ? 'bg-primary text-primary-fg' : 'bg-primary-soft text-primary-text',
+              )}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-line shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-warning-soft flex items-center justify-center">
-                    <FileSpreadsheet className="w-4 h-4 text-warning-text" />
-                  </div>
-                  <div>
-                    <h2 className="font-display text-lg font-semibold text-fg">
-                      Bulk Upload Test Cases
-                    </h2>
-                    <p className="text-xs text-fg-subtle">Upload a CSV file with test case data</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleClose}
-                  className="p-1.5 rounded-lg text-fg-subtle hover:text-fg hover:bg-fg/5 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <AnimatePresence mode="wait">
-                  {/* ─── Upload Stage ─── */}
-                  {stage === 'upload' && (
-                    <motion.div
-                      key="upload"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                    >
-                      <div
-                        {...getRootProps()}
-                        className={`relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${
-                          isDragActive
-                            ? 'border-primary bg-primary/5'
-                            : 'border-line hover:border-line-strong hover:bg-primary/[0.02]'
-                        }`}
-                      >
-                        {/* Dotted grid background */}
-                        <div
-                          className="absolute inset-0 opacity-[0.04] rounded-2xl"
-                          style={{
-                            backgroundImage:
-                              'radial-gradient(circle, #1B1E3A 1px, transparent 1px)',
-                            backgroundSize: '16px 16px',
-                          }}
-                        />
-                        <input {...getInputProps()} />
-                        <motion.div
-                          animate={isDragActive ? { scale: 1.05 } : { scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                          className="relative z-10"
-                        >
-                          <div className="w-14 h-14 rounded-2xl bg-warning-soft flex items-center justify-center mx-auto mb-4">
-                            <Upload
-                              className={`w-6 h-6 transition-colors ${
-                                isDragActive ? 'text-primary-text' : 'text-warning-text'
-                              }`}
-                            />
-                          </div>
-                          <p className="text-sm font-medium text-fg mb-1">
-                            {isDragActive
-                              ? 'Drop your CSV here'
-                              : 'Drag & drop your CSV file here'}
-                          </p>
-                          <p className="text-xs text-fg-subtle">
-                            or click to browse · CSV format only
-                          </p>
-                        </motion.div>
-                      </div>
-
-                      <div className="mt-4 p-3 rounded-lg bg-primary/[0.03] border border-line">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs text-fg-muted font-medium">Expected CSV format:</p>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              downloadTemplate();
-                            }}
-                            className="flex items-center gap-1 text-[11px] text-primary-text hover:underline cursor-pointer"
-                          >
-                            <Download className="w-3 h-3" />
-                            Download template
-                          </button>
-                        </div>
-                        <code className="text-[11px] font-mono text-fg-subtle block">
-                          input, expected_output, is_sample, weight
-                          <br />
-                          &quot;1 2&quot;, &quot;3&quot;, true, 10
-                          <br />
-                          &quot;5 3&quot;, &quot;8&quot;, false, 20
-                        </code>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* ─── Preview Stage ─── */}
-                  {stage === 'preview' && preview && (
-                    <motion.div
-                      key="preview"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="space-y-4"
-                    >
-                      {/* File info */}
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/10">
-                        <div className="flex items-center gap-3">
-                          <FileSpreadsheet className="w-5 h-5 text-primary-text" />
-                          <div>
-                            <p className="text-sm font-medium text-fg">{file?.name}</p>
-                            <p className="text-xs text-fg-subtle">
-                              {preview.totalRows} row{preview.totalRows !== 1 ? 's' : ''} detected
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={resetState}
-                          className="p-1.5 rounded-lg text-fg-subtle hover:text-danger-text hover:bg-danger-soft transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Errors */}
-                      {preview.errors.length > 0 && (
-                        <div className="p-3 rounded-xl bg-danger-soft border border-danger/30 space-y-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <AlertTriangle className="w-4 h-4 text-danger-text" />
-                            <span className="text-xs font-semibold text-danger-text">
-                              Issues found
-                            </span>
-                          </div>
-                          {preview.errors.map((err, i) => (
-                            <p key={i} className="text-xs text-danger-text pl-6">
-                              • {err}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Preview table */}
-                      {preview.rows.length > 0 && (
-                        <div className="rounded-xl border border-line overflow-hidden">
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="bg-canvas/60 border-b border-line">
-                                  {preview.headers.map((h, i) => (
-                                    <th
-                                      key={i}
-                                      className="px-3 py-2 text-left font-semibold text-fg-muted uppercase tracking-wider"
-                                    >
-                                      {h}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {preview.rows.map((row, ri) => (
-                                  <tr
-                                    key={ri}
-                                    className="border-b border-line last:border-b-0"
-                                  >
-                                    {row.map((cell, ci) => (
-                                      <td key={ci} className="px-3 py-2 text-fg-muted font-mono">
-                                        {cell}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                          {preview.totalRows > 5 && (
-                            <div className="px-3 py-2 bg-primary/[0.02] border-t border-line text-center">
-                              <span className="text-[11px] text-fg-subtle">
-                                …and {preview.totalRows - 5} more rows
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* ─── Uploading Stage ─── */}
-                  {stage === 'uploading' && (
-                    <motion.div
-                      key="uploading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="py-12 text-center"
-                    >
-                      <Loader2 className="w-10 h-10 animate-spin text-primary-text mx-auto mb-4" />
-                      <p className="text-sm font-medium text-fg">Uploading test cases...</p>
-                      <p className="text-xs text-fg-subtle mt-1">
-                        Processing {preview?.totalRows} rows
-                      </p>
-                    </motion.div>
-                  )}
-
-                  {/* ─── Results Stage ─── */}
-                  {stage === 'results' && results && (
-                    <motion.div
-                      key="results"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                    >
-                      <TestCaseBulkUploadResultReport result={results} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-line shrink-0">
-                {stage === 'preview' && (
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={resetState}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer"
-                    >
-                      Choose different file
-                    </button>
-                    <motion.button
-                      onClick={handleUpload}
-                      disabled={
-                        !file ||
-                        preview?.totalRows === 0 ||
-                        (preview?.errors?.length ?? 0) > 0
-                      }
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      Upload {preview?.totalRows} Test Cases
-                    </motion.button>
-                  </div>
-                )}
-                {stage === 'results' && (
-                  <div className="flex items-center justify-end">
-                    <motion.button
-                      onClick={handleClose}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer"
-                    >
-                      Done
-                    </motion.button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              <Upload className="size-5" aria-hidden />
+            </div>
+            <p className="text-sm font-medium text-fg">
+              {isDragActive ? 'Drop your CSV to preview it' : 'Drag a CSV file here, or click to browse'}
+            </p>
+            <p className="mt-1 text-[13px] text-fg-subtle">One file, .csv only</p>
           </div>
-        </>
+
+          <div className="rounded-xl border border-line bg-surface-2/60 p-4">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[13px] font-medium text-fg">Expected columns</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-mr-2 text-primary-text"
+                leadingIcon={<Download className="size-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadTemplate();
+                }}
+              >
+                Download template
+              </Button>
+            </div>
+            <pre className="scroll-thin overflow-x-auto font-mono text-[12px] leading-5 text-fg-muted">
+              {'input,expected_output,is_sample,weight\n"1 2","3",true,10\n"5 3","8",false,20'}
+            </pre>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+
+      {stage === 'preview' && preview && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-text">
+              <FileSpreadsheet className="size-4" aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-fg">{file?.name}</p>
+              <p className="tabular text-[12px] text-fg-subtle">
+                {preview.totalRows} row{preview.totalRows !== 1 ? 's' : ''} detected
+              </p>
+            </div>
+            <IconButton aria-label="Remove file" size="sm" onClick={resetState} className="hover-fine:text-danger-text">
+              <Trash2 className="size-4" />
+            </IconButton>
+          </div>
+
+          {preview.errors.length > 0 && (
+            <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft p-3">
+              <div className="mb-1.5 flex items-center gap-2">
+                <AlertTriangle className="size-4 text-danger-text" aria-hidden />
+                <span className="text-[13px] font-medium text-danger-text">Fix these issues and re-upload the file</span>
+              </div>
+              <ul className="list-disc space-y-0.5 pl-10 text-[12px] leading-5 text-danger-text">
+                {preview.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {preview.rows.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-line">
+              <div className="scroll-thin overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="border-b border-line bg-surface-2/60">
+                      {preview.headers.map((h, i) => (
+                        <th key={i} className="px-3 py-2 text-left font-mono font-medium text-fg-subtle">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.rows.map((row, ri) => (
+                      <tr key={ri} className="border-b border-line last:border-b-0">
+                        {row.map((cell, ci) => (
+                          <td key={ci} className="tabular max-w-[180px] truncate px-3 py-2 font-mono text-fg-muted">
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {preview.totalRows > 5 && (
+                <div className="tabular border-t border-line bg-surface-2/60 px-3 py-2 text-center text-[12px] text-fg-subtle">
+                  …and {preview.totalRows - 5} more rows
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {stage === 'uploading' && (
+        <div className="flex flex-col items-center py-12 text-center text-fg-subtle" aria-live="polite">
+          <Spinner size={24} />
+          <p className="mt-4 text-sm font-medium text-fg">Uploading test cases…</p>
+          <p className="tabular mt-1 text-[13px] text-fg-subtle">Processing {preview?.totalRows} rows</p>
+        </div>
+      )}
+
+      {stage === 'results' && results && <TestCaseBulkUploadResultReport result={results} />}
+    </Dialog>
   );
 };

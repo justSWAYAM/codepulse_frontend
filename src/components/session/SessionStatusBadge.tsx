@@ -1,46 +1,20 @@
 import React from 'react';
 import type { SessionStatus } from '../../api/sessionApi';
+import { Badge, type Tone } from '../ui';
 
-interface SessionStatusBadgeProps {
-  status: SessionStatus;
-}
-
-/**
- * SessionStatusBadge — wraps the generic badge pattern from ContestStatusBadge.
- *
- * IN_PROGRESS  → green (active)
- * SUBMITTED    → neutral
- * AUTO_SUBMITTED → amber
- * EXPIRED (reserved) → neutral fallback
- */
-const STATUS_CONFIG: Record<SessionStatus, { label: string; color: string; bg: string; dot?: boolean }> = {
-  NOT_YET_STARTED: { label: 'Not Started',      color: '#6B7280', bg: '#F3F4F6' },
-  IN_PROGRESS:    { label: 'In Progress',      color: '#2F9E6E', bg: '#EFFAF5', dot: true },
-  SUBMITTED:      { label: 'Submitted',        color: '#6B7280', bg: '#F3F4F6' },
-  AUTO_SUBMITTED: { label: 'Auto-Submitted',   color: '#E8A33D', bg: '#FFF9F0' },
-  EXPIRED:        { label: 'Expired',           color: '#6B7280', bg: '#F3F4F6' },
+const CONFIG: Record<SessionStatus, { label: string; tone: Tone; live?: boolean }> = {
+  NOT_YET_STARTED: { label: 'Not started', tone: 'neutral' },
+  IN_PROGRESS: { label: 'In progress', tone: 'success', live: true },
+  SUBMITTED: { label: 'Submitted', tone: 'primary' },
+  AUTO_SUBMITTED: { label: 'Auto-submitted', tone: 'warning' },
+  EXPIRED: { label: 'Expired', tone: 'neutral' },
 };
 
-export const SessionStatusBadge: React.FC<SessionStatusBadgeProps> = ({ status }) => {
-  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.EXPIRED;
-
+export const SessionStatusBadge: React.FC<{ status: SessionStatus }> = ({ status }) => {
+  const c = CONFIG[status] ?? CONFIG.EXPIRED;
   return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide"
-      style={{ color: config.color, backgroundColor: config.bg }}
-    >
-      {config.dot ? (
-        <span
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ backgroundColor: config.color }}
-        />
-      ) : (
-        <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ backgroundColor: config.color }}
-        />
-      )}
-      {config.label}
-    </span>
+    <Badge tone={c.tone} size="sm" dot live={c.live}>
+      {c.label}
+    </Badge>
   );
 };

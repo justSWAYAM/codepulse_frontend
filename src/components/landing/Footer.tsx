@@ -1,32 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal } from 'lucide-react';
+import { BrandMark } from '../ui';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="py-10 border-t border-line">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Brand */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center group-hover:bg-primary-hover transition-colors">
-              <Terminal className="w-3.5 h-3.5 text-primary-text" />
-            </div>
-            <span className="font-display text-sm font-bold text-fg tracking-tight">
-              Code<span className="text-primary-text">Pulse</span>
-            </span>
+    <footer className="border-t border-line py-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
+        <Link to="/" aria-label="CodePulse home" className="rounded-xl">
+          <BrandMark size={24} />
+        </Link>
+        <div className="flex items-center gap-4 text-[13px] text-fg-subtle">
+          <Link to="/login" className="transition-colors duration-150 hover-fine:text-fg">
+            Log in
           </Link>
-
-          {/* Links */}
-          <div className="flex items-center gap-6">
-            <Link to="/login" className="text-sm text-fg-subtle hover:text-fg-muted transition-colors">
-              Log In
-            </Link>
-            <span className="text-sm text-fg-subtle">·</span>
-            <span className="text-sm text-fg-subtle">
-              &copy; {new Date().getFullYear()} CodePulse
-            </span>
-          </div>
+          <span aria-hidden>·</span>
+          <span className="tabular">&copy; {new Date().getFullYear()} CodePulse</span>
         </div>
       </div>
     </footer>

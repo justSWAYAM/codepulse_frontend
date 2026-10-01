@@ -3,10 +3,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, Mail, Lock } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { useLogin } from '../hooks/useAuth';
+import { Button, Card, Field, IconButton, Input } from '../components/ui';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
@@ -18,6 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const LoginPage: React.FC = () => {
   const loginMutation = useLogin();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -34,7 +36,7 @@ const LoginPage: React.FC = () => {
       onError: (error: unknown) => {
         const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
         if (axiosError.response?.status === 401) {
-          setServerError('Invalid email or password. Please try again.');
+          setServerError('Invalid email or password. Check them and try again.');
         } else {
           setServerError(
             axiosError.response?.data?.message || 'Something went wrong. Please try again.'
@@ -47,103 +49,79 @@ const LoginPage: React.FC = () => {
   return (
     <AuthLayout>
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="w-full max-w-[420px]"
+        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
       >
-        <div className="bg-surface rounded-2xl border border-line p-8 shadow-sm">
-          {/* Back to home */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to home
-          </Link>
+        <Card className="p-6 sm:p-8">
+          <h1 className="font-display text-2xl font-semibold tracking-[-0.03em] text-fg">Welcome back</h1>
+          <p className="mt-1 text-sm text-fg-muted">Log in to your CodePulse account.</p>
 
-          <h1 className="font-display text-2xl font-bold text-fg mb-1">Welcome back</h1>
-          <p className="text-sm text-fg-muted mb-8">Log in to your CodePulse account</p>
-
-          {/* Server error */}
           {serverError && (
-            <div className="mb-4 p-3 rounded-lg bg-danger-soft border border-danger/30">
-              <p className="text-sm text-danger-text">{serverError}</p>
+            <div
+              role="alert"
+              className="mt-6 flex items-start gap-2 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2.5 text-[13px] leading-5 text-danger-text"
+            >
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <p>{serverError}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-fg mb-1.5">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
-                <input
-                  id="email"
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 space-y-4">
+            <Field label="Email" error={errors.email?.message}>
+              {(p) => (
+                <Input
+                  {...p}
                   type="email"
                   autoComplete="email"
                   placeholder="you@institution.edu"
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
-                    errors.email ? 'border-danger' : 'border-line'
-                  }`}
                   {...register('email')}
                 />
-              </div>
-              {errors.email && (
-                <p className="mt-1.5 text-xs text-danger-text">{errors.email.message}</p>
               )}
-            </div>
+            </Field>
 
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-fg mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
-                    errors.password ? 'border-danger' : 'border-line'
-                  }`}
-                  {...register('password')}
-                />
-              </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs text-danger-text">{errors.password.message}</p>
+            <Field label="Password" error={errors.password?.message}>
+              {(p) => (
+                <div className="relative">
+                  <Input
+                    {...p}
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="pr-11"
+                    {...register('password')}
+                  />
+                  <IconButton
+                    size="sm"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((s) => !s)}
+                    className="absolute right-1 top-1"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </IconButton>
+                </div>
               )}
-            </div>
+            </Field>
 
-            {/* Submit */}
-            <motion.button
-              type="submit"
-              disabled={loginMutation.isPending}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.97 }}
-              className="w-full py-2.5 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-            >
-              {loginMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                'Log in'
-              )}
-            </motion.button>
+            <Button type="submit" className="w-full" loading={loginMutation.isPending}>
+              Log in
+            </Button>
           </form>
 
-          {/* Account note */}
-          <p className="mt-6 text-xs text-center text-fg-subtle leading-relaxed">
-            Accounts are created by your institution admin.
-            <br />
-            Contact them if you don't have one yet.
+          <p className="mt-6 text-center text-[13px] leading-5 text-fg-subtle">
+            Accounts are created by your institution admin. Contact them if you don't have one yet.
           </p>
+        </Card>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 rounded-lg text-[13px] text-fg-muted transition-colors duration-150 hover-fine:text-fg"
+          >
+            <ArrowLeft className="size-3.5" aria-hidden />
+            Back to home
+          </Link>
         </div>
       </motion.div>
     </AuthLayout>

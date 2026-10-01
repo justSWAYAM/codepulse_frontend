@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Upload, FlaskConical, Loader2 } from 'lucide-react';
+import { Plus, Upload, FlaskConical } from 'lucide-react';
+import { Button, Card, CardHeader } from '../ui';
+import { LoadingState } from '../states/LoadingState';
+import { EmptyState } from '../states/EmptyState';
 import { TestCaseTable } from './TestCaseTable';
 import { CreateTestCaseDialog } from './CreateTestCaseDialog';
 import { BulkUploadTestCasesDialog } from './BulkUploadTestCasesDialog';
@@ -12,10 +15,7 @@ interface TestCaseManagerPanelProps {
   contestId: string;
 }
 
-export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
-  questionId,
-  contestId,
-}) => {
+export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ questionId, contestId }) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
 
@@ -37,71 +37,57 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
   const adminTestCases = (testCases ?? []) as TestCaseAdminRecord[];
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-fg-subtle" />
-      </div>
-    );
+    return <LoadingState message="Loading test cases…" />;
   }
 
+  const addButton = (
+    <Button size="sm" onClick={() => setShowCreateDialog(true)} leadingIcon={<Plus className="size-4" />}>
+      Add test case
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-warning-soft flex items-center justify-center">
-            <FlaskConical className="w-4.5 h-4.5 text-warning-text" />
-          </div>
-          <div>
-            <h2 className="font-display text-lg font-semibold text-fg">
-              Test Cases ({adminTestCases.length})
-            </h2>
-            <p className="text-xs text-fg-subtle">
-              Define inputs and expected outputs for automated grading
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowBulkDialog(true)}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-fg-muted border border-line hover:border-line-strong hover:text-fg transition-colors cursor-pointer flex items-center gap-2"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            Bulk Upload
-          </button>
-          <button
-            onClick={() => setShowCreateDialog(true)}
-            className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer flex items-center gap-2"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Test Case
-          </button>
-        </div>
-      </div>
-
-      {/* Table or empty state */}
-      {adminTestCases.length === 0 ? (
-        <div className="text-center py-16 bg-surface rounded-2xl border border-line">
-          <div className="w-14 h-14 rounded-2xl bg-primary/[0.03] flex items-center justify-center mx-auto mb-4">
-            <FlaskConical className="w-6 h-6 text-fg-subtle" />
-          </div>
-          <h3 className="font-display text-base font-semibold text-fg-muted mb-1">
-            No test cases yet
-          </h3>
-          <p className="text-sm text-fg-subtle max-w-sm mx-auto">
-            Add at least one hidden test case before this question can be scored.
-          </p>
-        </div>
-      ) : (
-        <TestCaseTable
-          testCases={adminTestCases}
-          onDelete={handleDelete}
-          isDeleting={deleteMutation.isPending}
+    <div className="space-y-4">
+      <Card>
+        <CardHeader
+          icon={<FlaskConical className="size-4" />}
+          title={
+            <>
+              Test cases <span className="tabular text-fg-subtle">({adminTestCases.length})</span>
+            </>
+          }
+          description="Inputs and expected outputs used for automated grading."
+          className="flex-wrap"
+          actions={
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowBulkDialog(true)}
+                leadingIcon={<Upload className="size-4" />}
+              >
+                Bulk upload
+              </Button>
+              {addButton}
+            </>
+          }
         />
+        {adminTestCases.length === 0 && (
+          <div className="border-t border-line">
+            <EmptyState
+              icon={<FlaskConical className="size-5" />}
+              title="No test cases yet"
+              message="Add at least one hidden test case before this question can be scored."
+              action={addButton}
+            />
+          </div>
+        )}
+      </Card>
+
+      {adminTestCases.length > 0 && (
+        <TestCaseTable testCases={adminTestCases} onDelete={handleDelete} isDeleting={deleteMutation.isPending} />
       )}
 
-      {/* Dialogs */}
       <CreateTestCaseDialog
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}

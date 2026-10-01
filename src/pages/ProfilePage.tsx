@@ -2,35 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  User,
-  Mail,
-  Shield,
-  Calendar,
-  Lock,
-  Loader2,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCurrentUser, useUpdateProfile, useChangePassword } from '../hooks/useUsers';
 import { RoleBadge } from '../components/RoleBadge';
 import { StatusBadge } from '../components/StatusBadge';
 import { LoadingState } from '../components/states/LoadingState';
+import { Avatar } from '../layouts/AppShell';
+import { Button, Card, CardBody, CardHeader, Field, IconButton, Input, PageHeader } from '../components/ui';
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
-};
+const EASE = [0.23, 1, 0.32, 1] as const;
 
-const item = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+const section = (i: number) => ({
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.25, delay: i * 0.04, ease: EASE },
+});
+
+/** Password input with a show/hide toggle that keeps the field's aria wiring. */
+const PasswordInput = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { visible?: boolean; onToggle?: () => void }
+>(function PasswordInput({ visible = false, onToggle, ...rest }, ref) {
+  return (
+    <div className="relative">
+      <Input ref={ref} type={visible ? 'text' : 'password'} placeholder="••••••••" className={onToggle ? 'pr-11' : undefined} {...rest} />
+      {onToggle && (
+        <IconButton
+          size="sm"
+          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-pressed={visible}
+          onClick={onToggle}
+          className="absolute right-1 top-1"
+        >
+          {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+        </IconButton>
+      )}
+    </div>
+  );
+});
 
 // ── Profile Form ──
 const profileSchema = z.object({
@@ -61,37 +72,14 @@ const ProfileForm: React.FC<{ userName: string }> = ({ userName }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-fg mb-1.5">Full Name</label>
-        <input
-          type="text"
-          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
-            errors.fullName ? 'border-danger' : 'border-line'
-          }`}
-          {...register('fullName')}
-        />
-        {errors.fullName && (
-          <p className="mt-1 text-xs text-danger-text">{errors.fullName.message}</p>
-        )}
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <Field label="Full name" error={errors.fullName?.message}>
+        {(p) => <Input {...p} type="text" autoComplete="name" {...register('fullName')} />}
+      </Field>
       <div className="flex justify-end">
-        <motion.button
-          type="submit"
-          disabled={updateMutation.isPending || !isDirty}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.97 }}
-          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-        >
-          {updateMutation.isPending ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save Changes'
-          )}
-        </motion.button>
+        <Button type="submit" loading={updateMutation.isPending} disabled={!isDirty && !updateMutation.isPending}>
+          Save changes
+        </Button>
       </div>
     </form>
   );
@@ -152,101 +140,51 @@ const ChangePasswordForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       {serverError && (
-        <div className="p-3 rounded-lg bg-danger-soft border border-danger/30">
-          <p className="text-sm text-danger-text">{serverError}</p>
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2.5 text-[13px] leading-5 text-danger-text"
+        >
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>{serverError}</p>
         </div>
       )}
 
-      {/* Current Password */}
-      <div>
-        <label className="block text-sm font-medium text-fg mb-1.5">Current Password</label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
-          <input
-            type={showCurrent ? 'text' : 'password'}
-            placeholder="••••••••"
-            className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
-              errors.currentPassword ? 'border-danger' : 'border-line'
-            }`}
+      <Field label="Current password" error={errors.currentPassword?.message}>
+        {(p) => (
+          <PasswordInput
+            {...p}
+            autoComplete="current-password"
+            visible={showCurrent}
+            onToggle={() => setShowCurrent(!showCurrent)}
             {...register('currentPassword')}
           />
-          <button
-            type="button"
-            onClick={() => setShowCurrent(!showCurrent)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted transition-colors cursor-pointer"
-          >
-            {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-        {errors.currentPassword && (
-          <p className="mt-1 text-xs text-danger-text">{errors.currentPassword.message}</p>
         )}
-      </div>
+      </Field>
 
-      {/* New Password */}
-      <div>
-        <label className="block text-sm font-medium text-fg mb-1.5">New Password</label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
-          <input
-            type={showNew ? 'text' : 'password'}
-            placeholder="••••••••"
-            className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
-              errors.newPassword ? 'border-danger' : 'border-line'
-            }`}
-            {...register('newPassword')}
-          />
-          <button
-            type="button"
-            onClick={() => setShowNew(!showNew)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted transition-colors cursor-pointer"
-          >
-            {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-        {errors.newPassword && (
-          <p className="mt-1 text-xs text-danger-text">{errors.newPassword.message}</p>
-        )}
-      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="New password" hint="8–64 characters." error={errors.newPassword?.message}>
+          {(p) => (
+            <PasswordInput
+              {...p}
+              autoComplete="new-password"
+              visible={showNew}
+              onToggle={() => setShowNew(!showNew)}
+              {...register('newPassword')}
+            />
+          )}
+        </Field>
 
-      {/* Confirm Password */}
-      <div>
-        <label className="block text-sm font-medium text-fg mb-1.5">Confirm New Password</label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle" />
-          <input
-            type="password"
-            placeholder="••••••••"
-            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm bg-canvas placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition ${
-              errors.confirmPassword ? 'border-danger' : 'border-line'
-            }`}
-            {...register('confirmPassword')}
-          />
-        </div>
-        {errors.confirmPassword && (
-          <p className="mt-1 text-xs text-danger-text">{errors.confirmPassword.message}</p>
-        )}
+        <Field label="Confirm new password" error={errors.confirmPassword?.message}>
+          {(p) => <PasswordInput {...p} autoComplete="new-password" {...register('confirmPassword')} />}
+        </Field>
       </div>
 
       <div className="flex justify-end">
-        <motion.button
-          type="submit"
-          disabled={changeMutation.isPending}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.97 }}
-          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-        >
-          {changeMutation.isPending ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Changing...
-            </>
-          ) : (
-            'Change Password'
-          )}
-        </motion.button>
+        <Button type="submit" loading={changeMutation.isPending}>
+          Change password
+        </Button>
       </div>
     </form>
   );
@@ -259,165 +197,81 @@ const ProfilePage: React.FC = () => {
   const displayUser = profile || authUser;
 
   if (isLoading) {
-    return <LoadingState message="Loading profile..." />;
+    return <LoadingState message="Loading profile…" />;
   }
 
+  const details: { label: string; value?: string | number | null; mono?: boolean }[] = [
+    { label: 'Email', value: displayUser?.email, mono: true },
+    {
+      label: 'Member since',
+      value: profile?.createdAt
+        ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        : null,
+    },
+    ...(displayUser?.role === 'CANDIDATE' && profile
+      ? [
+          { label: 'Roll number', value: profile.rollNumber, mono: true },
+          { label: 'Year', value: profile.year },
+          { label: 'Branch', value: profile.branch },
+          { label: 'Division', value: profile.division },
+          { label: 'Batch', value: profile.batch },
+        ]
+      : []),
+  ];
+
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="max-w-2xl">
-      {/* Header */}
-      <motion.div variants={item} className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-fg mb-1">
-          My Profile
-        </h1>
-        <p className="text-sm text-fg-muted">Manage your account information</p>
+    <div className="max-w-3xl space-y-6">
+      <motion.div {...section(0)}>
+        <PageHeader eyebrow="Account" title="My profile" description="Manage your account information and password." />
       </motion.div>
 
-      {/* Profile Overview Card */}
-      <motion.div
-        variants={item}
-        className="p-6 rounded-2xl bg-surface border border-line mb-6"
-      >
-        <div className="flex items-start gap-4 mb-6">
-          {/* Avatar */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-warning flex items-center justify-center text-white text-2xl font-bold uppercase shrink-0">
-            {displayUser?.fullName?.charAt(0) || 'U'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-display text-xl font-semibold text-fg truncate">
-              {displayUser?.fullName}
-            </h2>
-            <div className="flex items-center flex-wrap gap-2 mt-2">
-              <RoleBadge role={displayUser?.role || 'CANDIDATE'} />
-              {profile && <StatusBadge active={profile.isActive} />}
-            </div>
-          </div>
-        </div>
-
-        {/* Info grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
-            <Mail className="w-4 h-4 text-fg-subtle" />
-            <div>
-              <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Email</p>
-              <p className="text-sm text-fg font-mono">{displayUser?.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
-            <Shield className="w-4 h-4 text-fg-subtle" />
-            <div>
-              <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Role</p>
-              <p className="text-sm text-fg">{displayUser?.role}</p>
-            </div>
-          </div>
-          {profile?.createdAt && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas sm:col-span-2">
-              <Calendar className="w-4 h-4 text-fg-subtle" />
-              <div>
-                <p className="text-[11px] text-fg-subtle uppercase tracking-wider">
-                  Member Since
-                </p>
-                <p className="text-sm text-fg">
-                  {new Date(profile.createdAt).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
+      <motion.div {...section(1)}>
+        <Card>
+          <div className="flex items-center gap-4 p-5 sm:p-6">
+            <Avatar name={displayUser?.fullName} size={56} />
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate font-display text-base font-semibold tracking-[-0.015em] text-fg">
+                {displayUser?.fullName}
+              </h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <RoleBadge role={displayUser?.role || 'CANDIDATE'} />
+                {profile && <StatusBadge active={profile.isActive} />}
               </div>
             </div>
-          )}
-          
-          {/* Candidate specific fields */}
-          {displayUser?.role === 'CANDIDATE' && profile && (
-            <>
-              {profile.year && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
-                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">Y</div>
-                  <div>
-                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Year</p>
-                    <p className="text-sm text-fg">{profile.year}</p>
-                  </div>
+          </div>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-4 border-t border-line px-5 py-5 sm:grid-cols-2 sm:px-6">
+            {details
+              .filter((d) => d.value !== null && d.value !== undefined && d.value !== '')
+              .map((d) => (
+                <div key={d.label} className="min-w-0">
+                  <dt className="text-[12px] text-fg-subtle">{d.label}</dt>
+                  <dd className={d.mono ? 'mt-0.5 truncate font-mono text-[13px] text-fg tabular' : 'mt-0.5 truncate text-sm text-fg tabular'}>
+                    {d.value}
+                  </dd>
                 </div>
-              )}
-              {profile.branch && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
-                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">B</div>
-                  <div>
-                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Branch</p>
-                    <p className="text-sm text-fg">{profile.branch}</p>
-                  </div>
-                </div>
-              )}
-              {profile.division && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
-                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">D</div>
-                  <div>
-                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Division</p>
-                    <p className="text-sm text-fg">{profile.division}</p>
-                  </div>
-                </div>
-              )}
-              {profile.batch && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas">
-                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">C</div>
-                  <div>
-                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Batch</p>
-                    <p className="text-sm text-fg">{profile.batch}</p>
-                  </div>
-                </div>
-              )}
-              {profile.rollNumber && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-canvas sm:col-span-2">
-                  <div className="w-4 h-4 text-fg-subtle flex items-center justify-center font-bold text-xs">#</div>
-                  <div>
-                    <p className="text-[11px] text-fg-subtle uppercase tracking-wider">Roll Number</p>
-                    <p className="text-sm text-fg font-mono">{profile.rollNumber}</p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+              ))}
+          </dl>
+        </Card>
       </motion.div>
 
-      {/* Update Name Card */}
-      <motion.div
-        variants={item}
-        className="p-6 rounded-2xl bg-surface border border-line mb-6"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <User className="w-4 h-4 text-primary-text" />
-          </div>
-          <div>
-            <h3 className="font-display text-base font-semibold text-fg">
-              Personal Information
-            </h3>
-            <p className="text-xs text-fg-subtle">Update your display name</p>
-          </div>
-        </div>
-        <ProfileForm userName={displayUser?.fullName || ''} />
+      <motion.div {...section(2)}>
+        <Card>
+          <CardHeader icon={<User className="size-4" />} title="Personal information" description="Update your display name." />
+          <CardBody>
+            <ProfileForm userName={displayUser?.fullName || ''} />
+          </CardBody>
+        </Card>
       </motion.div>
 
-      {/* Change Password Card */}
-      <motion.div
-        variants={item}
-        className="p-6 rounded-2xl bg-surface border border-line"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-fg/5 flex items-center justify-center">
-            <Lock className="w-4 h-4 text-fg-subtle" />
-          </div>
-          <div>
-            <h3 className="font-display text-base font-semibold text-fg">
-              Change Password
-            </h3>
-            <p className="text-xs text-fg-subtle">Update your account password</p>
-          </div>
-        </div>
-        <ChangePasswordForm />
+      <motion.div {...section(3)}>
+        <Card>
+          <CardHeader icon={<Lock className="size-4" />} title="Change password" description="Use at least 8 characters." />
+          <CardBody>
+            <ChangePasswordForm />
+          </CardBody>
+        </Card>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 

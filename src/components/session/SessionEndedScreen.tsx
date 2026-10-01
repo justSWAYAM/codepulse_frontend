@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import type { SessionStatus } from '../../api/sessionApi';
+import { BrandMark, Button, Card } from '../ui';
 
 interface SessionEndedScreenProps {
   status: SessionStatus;
@@ -11,69 +12,50 @@ interface SessionEndedScreenProps {
 }
 
 /**
- * SessionEndedScreen — terminal state shown after SUBMITTED or AUTO_SUBMITTED.
- * Distinguishes: "You submitted your exam" vs. "Time ran out — your exam was submitted automatically."
- * No score mentioned — results are published by an Admin later (Module 9).
+ * Terminal state after SUBMITTED or AUTO_SUBMITTED.
+ * No score is shown — results are published by an admin later (Module 9).
  */
-export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({
-  status,
-  contestId,
-  contestTitle,
-}) => {
+export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ status, contestId, contestTitle }) => {
   const navigate = useNavigate();
-  const isAutoSubmitted = status === 'AUTO_SUBMITTED';
+  const isAuto = status === 'AUTO_SUBMITTED';
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas p-4">
+      <div className="mb-8">
+        <BrandMark size={32} />
+      </div>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="bg-surface border border-line rounded-2xl p-8 max-w-md w-full text-center shadow-lg"
+        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+        className="w-full max-w-md"
       >
-        {/* Icon */}
-        <div
-          className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
-            isAutoSubmitted ? 'bg-warning-soft' : 'bg-primary/10'
-          }`}
-        >
-          {isAutoSubmitted ? (
-            <AlertTriangle className="w-8 h-8 text-warning-text" />
-          ) : (
-            <CheckCircle2 className="w-8 h-8 text-primary-text" />
-          )}
-        </div>
-
-        {/* Title */}
-        <h1 className="font-display text-xl font-bold text-fg mb-2">
-          {isAutoSubmitted ? "Time\u2019s Up" : 'Exam Submitted'}
-        </h1>
-
-        {/* Message */}
-        <p className="text-sm text-fg-muted mb-2 leading-relaxed">
-          {isAutoSubmitted
-            ? 'Time ran out — your exam was submitted automatically.'
-            : 'You submitted your exam.'}
-        </p>
-
-        {contestTitle && (
-          <p className="text-xs text-fg-subtle mb-6 font-mono">{contestTitle}</p>
-        )}
-
-        {!contestTitle && <div className="mb-6" />}
-
-        <p className="text-xs text-fg-subtle mb-6">
-          Results will be available once published by the administrator.
-        </p>
-
-        {/* Action */}
-        <button
-          onClick={() => navigate(`/dashboard/contests/${contestId}`)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-hover transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Contest
-        </button>
+        <Card className="p-8 text-center">
+          <div
+            className={`mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl ${
+              isAuto ? 'bg-warning-soft text-warning-text' : 'bg-success-soft text-success-text'
+            }`}
+          >
+            {isAuto ? <AlertTriangle className="size-7" /> : <CheckCircle2 className="size-7" />}
+          </div>
+          <h1 className="font-display text-[22px] font-semibold tracking-[-0.025em] text-fg">
+            {isAuto ? 'Time’s up' : 'Exam submitted'}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-fg-muted">
+            {isAuto ? 'Time ran out — your exam was submitted automatically.' : 'You submitted your exam.'}
+          </p>
+          {contestTitle && <p className="mt-1 font-mono text-[12px] text-fg-subtle">{contestTitle}</p>}
+          <p className="mt-5 rounded-xl bg-surface-2 px-4 py-3 text-[13px] leading-5 text-fg-muted">
+            Your best submission for each question counts. Results appear once the administrator publishes them.
+          </p>
+          <Button
+            className="mt-6"
+            onClick={() => navigate(`/dashboard/contests/${contestId}`)}
+            leadingIcon={<ArrowLeft className="size-4" />}
+          >
+            Back to contest
+          </Button>
+        </Card>
       </motion.div>
     </div>
   );
