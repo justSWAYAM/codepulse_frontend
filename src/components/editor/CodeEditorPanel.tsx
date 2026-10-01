@@ -237,6 +237,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
         lastAction={lastAction}
         questionId={questionId}
         points={question.points}
+        sampleCount={question.sampleTestCases?.length ?? 0}
         history={history}
         historyLoading={historyLoading}
         onLoadCode={loadCode}

@@ -26,6 +26,8 @@ interface ResultsPanelProps {
   lastAction: LastAction;
   questionId: string;
   points: number;
+  /** Number of sample test cases on this question — used as fallback when backend omits sampleResults. */
+  sampleCount: number;
   history: SubmissionSummary[] | undefined;
   historyLoading: boolean;
   onLoadCode: (code: string, language: string) => void;
@@ -131,17 +133,25 @@ const Waiting: React.FC<{ label: string; sub?: string }> = ({ label, sub }) => (
 );
 
 /** Full candidate view of a run or submission: verdict, compile output, samples, hidden summary. */
-const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; points: number }> = ({ detail, points }) => {
+const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; points: number; sampleCount?: number }> = ({ detail, points, sampleCount }) => {
   const samples = detail.sampleResults ?? [];
   const firstFailing = samples.findIndex((s) => s.status !== 'PASSED');
   const samplesPassed = samples.filter((s) => s.status === 'PASSED').length;
   const isRun = detail.type === 'RUN';
 
+  // When the backend returns no per-test details (sampleResults empty) but status is ACCEPTED
+  // and we know the question's sample count, we can confidently display N / N.
+  const knownTotal = samples.length > 0 ? samples.length : (sampleCount ?? null);
+  const knownPassed = samples.length > 0 ? samplesPassed : (detail.status === 'ACCEPTED' && knownTotal != null ? knownTotal : null);
+  const sampleLabel = knownTotal != null
+    ? `${knownPassed ?? 0} / ${knownTotal}`
+    : `${samplesPassed} / ${samples.length}`;
+
   return (
     <div className="space-y-4">
       <VerdictHeader status={detail.status} title={isRun ? 'Run · sample tests' : 'Submission · all tests'}>
         {isRun ? (
-          <Stat label="Samples passed" value={`${samplesPassed} / ${samples.length}`} />
+          <Stat label="Samples passed" value={sampleLabel} />
         ) : (
           <>
             <Stat label="Tests passed" value={`${detail.passedCount ?? 0} / ${detail.totalCount ?? 0}`} />
@@ -277,6 +287,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
   lastAction,
   questionId,
   points,
+  sampleCount,
   history,
   historyLoading,
   onLoadCode,
@@ -299,7 +310,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
     results = lastAction.pending || !lastAction.detail ? (
       <Waiting label="Running sample tests…" />
     ) : (
-      <SubmissionBody detail={lastAction.detail} points={points} />
+      <SubmissionBody detail={lastAction.detail} points={points} sampleCount={sampleCount} />
     );
   } else {
     results =
