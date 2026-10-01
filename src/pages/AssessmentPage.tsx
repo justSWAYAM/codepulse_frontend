@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Code2, FileText, PanelLeftClose, PanelLeftOpen, Send, WifiOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Code2, FileText, Send, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useContest } from '../hooks/useContests';
@@ -18,7 +18,7 @@ import { CodeEditorPanel } from '../components/editor/CodeEditorPanel';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
 import { EmptyState } from '../components/states/EmptyState';
-import { Badge, BrandMark, Button, IconButton, Segmented, Sheet, ThemeToggle } from '../components/ui';
+import { Badge, BrandMark, Button, Segmented, ThemeToggle } from '../components/ui';
 import { getErrorMessage } from '../lib/apiError';
 import { cn } from '../lib/cn';
 
@@ -92,8 +92,7 @@ const AssessmentPage: React.FC = () => {
   // ── Question state ──
   const [activeQuestionId, setActiveQuestionId] = useState<string>('');
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [navOpen, setNavOpen] = useState(false);       // mobile sheet
-  const [sidebarOpen, setSidebarOpen] = useState(true); // desktop sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [pane, setPane] = useState<Pane>('problem');
 
   useEffect(() => {
@@ -106,7 +105,6 @@ const AssessmentPage: React.FC = () => {
   const handleSelectQuestion = useCallback((id: string) => {
     setActiveQuestionId(id);
     setVisitedIds((prev) => new Set([...prev, id]));
-    setNavOpen(false);
     setPane('problem');
   }, []);
 
@@ -205,16 +203,9 @@ const AssessmentPage: React.FC = () => {
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-canvas">
       {/* ── Header ── */}
       <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:px-4">
-        {/* Sidebar toggle — always visible, controls both mobile sheet and desktop sidebar */}
-        <IconButton
-          aria-label={sidebarOpen ? 'Close question list' : 'Open question list'}
-          onClick={() => { setSidebarOpen((o) => !o); setNavOpen((o) => !o); }}
-          className="shrink-0"
-        >
-          {sidebarOpen ? <PanelLeftClose className="size-5" /> : <PanelLeftOpen className="size-5" />}
-        </IconButton>
+        <BrandMark size={28} withWordmark={false} />
 
-        <BrandMark size={28} withWordmark={false} className="hidden sm:inline-flex" />
+
         <div className="min-w-0">
           <p className="truncate font-display text-[14px] font-semibold tracking-[-0.015em] text-fg">
             {contest?.title ?? 'Assessment'}
@@ -261,26 +252,39 @@ const AssessmentPage: React.FC = () => {
         onPointerUp={onDragEnd}
         onPointerLeave={onDragEnd}
       >
-        {/* ── Desktop sidebar (collapsible) ── */}
-        <aside
-          className={cn(
-            'hidden lg:flex shrink-0 flex-col border-r border-line bg-surface overflow-hidden transition-[width] duration-200 ease-out',
-            sidebarOpen ? 'w-[260px]' : 'w-0 border-r-0',
-          )}
-          style={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
-          aria-hidden={!sidebarOpen}
-        >
-          <div className="flex h-11 shrink-0 items-center justify-between border-b border-line px-4">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">Questions</span>
-            <span className="tabular text-[12px] text-fg-subtle">{acceptedCount}/{questions.length}</span>
-          </div>
-          <div className="flex-1 overflow-y-auto px-2">{questionList}</div>
-        </aside>
+        {/* ── Collapsible sidebar (all breakpoints) ── */}
+        <div className="relative flex shrink-0">
+          <aside
+            className={cn(
+              'flex flex-col border-r border-line bg-surface overflow-hidden transition-[width] duration-200 ease-out',
+              sidebarOpen ? 'w-[260px]' : 'w-0 border-r-0',
+            )}
+            aria-hidden={!sidebarOpen}
+          >
+            <div className="flex h-11 shrink-0 items-center justify-between border-b border-line px-4">
+              <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">Questions</span>
+              <span className="tabular text-[12px] text-fg-subtle">{acceptedCount}/{questions.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto px-2">{questionList}</div>
+          </aside>
 
-        {/* ── Mobile sheet ── */}
-        <Sheet open={navOpen} onOpenChange={(o) => { setNavOpen(o); if (!o) setSidebarOpen(false); }} side="left" width="max-w-[300px]" title="Questions">
-          <div className="px-2">{questionList}</div>
-        </Sheet>
+          {/* Edge toggle tab */}
+          <button
+            type="button"
+            aria-label={sidebarOpen ? 'Collapse question list' : 'Expand question list'}
+            onClick={() => setSidebarOpen((o) => !o)}
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center',
+              'h-12 w-4 rounded-r-md border border-l-0 border-line bg-surface',
+              'text-fg-subtle hover:text-fg hover:bg-canvas transition-colors duration-150 cursor-pointer shadow-sm',
+              sidebarOpen ? 'right-0 translate-x-full' : 'right-0 translate-x-full',
+            )}
+          >
+            {sidebarOpen
+              ? <ChevronLeft className="size-3" />
+              : <ChevronRight className="size-3" />}
+          </button>
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Problem | Code switch below xl */}
