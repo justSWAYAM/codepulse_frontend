@@ -202,7 +202,7 @@ const AssessmentPage: React.FC = () => {
   const acceptedCount = questionIds.filter((id) => progress[id] === 'accepted').length;
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-canvas">
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-canvas">
       {/* ── Header ── */}
       <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:px-4">
         {/* Sidebar toggle — always visible, controls both mobile sheet and desktop sidebar */}
