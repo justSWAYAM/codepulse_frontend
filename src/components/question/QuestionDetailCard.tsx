@@ -122,9 +122,10 @@ export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question
   const adminSamples = adminCases.filter((tc) => tc.isSample).sort((a, b) => a.orderIndex - b.orderIndex);
   const sampleCount = adminSamples.length;
 
-  // Use admin samples if available (evaluator view), else candidate samples
-  const samples = adminSamples.length > 0 ? adminSamples : candidateSamples;
-  const hasExpectedOutput = adminSamples.length > 0;
+  // Admin view has full test case data; candidate view has sample cases with expected output
+  const samples = adminSamples.length > 0
+    ? adminSamples.map((tc) => ({ id: tc.id, input: tc.input, expectedOutput: tc.expectedOutput }))
+    : candidateSamples.map((tc) => ({ id: tc.id, input: tc.input, expectedOutput: tc.expectedOutput }));
 
   return (
     <article className="flex min-h-full flex-col bg-surface">
@@ -168,14 +169,9 @@ export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question
               key={tc.id}
               index={index}
               input={tc.input}
-              expectedOutput={hasExpectedOutput ? (tc as typeof adminSamples[number]).expectedOutput : undefined}
+              expectedOutput={tc.expectedOutput}
             />
           ))}
-          {!hasExpectedOutput && (
-            <p className="text-[12px] text-fg-subtle">
-              Expected outputs are hidden — run your code to see what it produces against each input.
-            </p>
-          )}
         </section>
       )}
     </article>

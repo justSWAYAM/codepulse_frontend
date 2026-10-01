@@ -12,10 +12,11 @@ export interface TestCaseAdminRecord {
   orderIndex: number;
 }
 
-// Candidate view — no expectedOutput, no weight (Section 4.2)
+// Candidate view — expectedOutput IS visible for sample cases (they're public by design)
 export interface TestCaseSampleRecord {
   id: string;
   input: string;
+  expectedOutput: string;
   orderIndex: number;
 }
 
