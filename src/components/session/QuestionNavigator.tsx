@@ -1,27 +1,30 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { Check, Loader2 } from 'lucide-react';
 import { DifficultyBadge } from '../DifficultyBadge';
 import type { QuestionCandidateRecord } from '../../api/questionApi';
+import type { QuestionProgress } from '../../hooks/useSubmissions';
+import { cn } from '../../lib/cn';
 
 interface QuestionNavigatorProps {
   questions: QuestionCandidateRecord[];
   activeId: string;
   visitedIds: Set<string>;
   onSelect: (id: string) => void;
+  /** Per-question submission progress (Module 8). */
+  progress?: Record<string, QuestionProgress | undefined>;
 }
 
+const PROGRESS_LABEL: Record<QuestionProgress, string> = {
+  accepted: 'Accepted',
+  attempted: 'Attempted',
+  pending: 'Judging',
+};
+
 /**
- * QuestionNavigator — sidebar list of the contest's questions in orderIndex order.
- * Row shows: number, title, DifficultyBadge, points.
- * Status: "current" and "visited" only (client-side). A status slot is left
- * for Module 8 to add the real "attempted/unattempted" indicator.
+ * Sidebar list of the contest's questions. Selection is instant — it's switched
+ * constantly during an exam, so it costs no animation frames.
  */
-export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
-  questions,
-  activeId,
-  visitedIds,
-  onSelect,
-}) => {
+export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({ questions, activeId, visitedIds, onSelect, progress = {} }) => {
   const sorted = [...questions].sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
@@ -29,65 +32,59 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
       {sorted.map((q, index) => {
         const isCurrent = q.id === activeId;
         const isVisited = visitedIds.has(q.id);
+        const state = progress[q.id];
 
         return (
-          <motion.button
+          <button
             key={q.id}
+            type="button"
             onClick={() => onSelect(q.id)}
-            initial={false}
-            animate={{
-              backgroundColor: isCurrent
-                ? 'rgba(47, 158, 110, 0.08)'
-                : 'transparent',
-            }}
-            className={`relative flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-colors cursor-pointer group ${
-              isCurrent
-                ? 'ring-1 ring-ring'
-                : 'hover:bg-fg/3'
-            }`}
+            aria-current={isCurrent ? 'true' : undefined}
+            className={cn(
+              'press relative flex items-start gap-3 rounded-xl px-3 py-2.5 text-left',
+              isCurrent ? 'bg-primary-soft' : 'hover-fine:bg-surface-2',
+            )}
           >
-            {/* Active indicator */}
-            {isCurrent && (
-              <motion.div
-                layoutId="question-active"
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-primary"
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              />
-            )}
-
-            {/* Number circle */}
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
-                isCurrent
-                  ? 'bg-primary text-white'
+            <span
+              aria-hidden
+              className={cn(
+                'tabular mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold',
+                state === 'accepted'
+                  ? 'bg-success text-white'
+                  : isCurrent
+                  ? 'bg-primary text-primary-fg'
                   : isVisited
-                  ? 'bg-primary/15 text-primary-text'
-                  : 'bg-fg/8 text-fg-subtle'
-              }`}
+                  ? 'bg-surface-3 text-fg-muted'
+                  : 'bg-surface-2 text-fg-subtle',
+              )}
             >
-              {index + 1}
-            </div>
+              {state === 'accepted' ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
+            </span>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <p
-                className={`text-sm font-medium truncate ${
-                  isCurrent ? 'text-fg' : 'text-fg-muted group-hover:text-fg'
-                }`}
-              >
+            <span className="min-w-0 flex-1">
+              <span className={cn('block truncate text-[13.5px] font-medium', isCurrent ? 'text-fg' : 'text-fg-muted')}>
                 {q.title}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <DifficultyBadge difficulty={q.difficulty} className="!text-[9px] !px-1.5 !py-0" />
-                <span className="text-[11px] font-mono text-fg-subtle">{q.points} pts</span>
-              </div>
-            </div>
+              </span>
+              <span className="mt-1 flex items-center gap-2">
+                <DifficultyBadge difficulty={q.difficulty} />
+                <span className="tabular text-[12px] text-fg-subtle">{q.points} pts</span>
+              </span>
+            </span>
 
-            {/* Status slot — Module 8 will replace this with attempted/unattempted indicator */}
-            {isVisited && !isCurrent && (
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-2 shrink-0" />
+            {state && (
+              <span
+                className={cn(
+                  'mt-1 flex shrink-0 items-center gap-1 text-[11px] font-medium',
+                  state === 'accepted' && 'sr-only',
+                  state === 'attempted' && 'text-warning-text',
+                  state === 'pending' && 'text-info-text',
+                )}
+              >
+                {state === 'pending' && <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden />}
+                {PROGRESS_LABEL[state]}
+              </span>
             )}
-          </motion.button>
+          </button>
         );
       })}
     </nav>

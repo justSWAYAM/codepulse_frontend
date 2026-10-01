@@ -1,39 +1,41 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Send, Loader2, AlertTriangle, Menu, X, WifiOff } from 'lucide-react';
+import { Code2, FileText, ListOrdered, Send, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useContest } from '../hooks/useContests';
 import { useAssessmentSession, useSubmitSession } from '../hooks/useAssessmentSession';
 import { useSessionTimer } from '../hooks/useSessionTimer';
 import { useQuestions } from '../hooks/useQuestions';
+import { useQuestionProgress } from '../hooks/useSubmissions';
 
 import { CountdownTimer } from '../components/session/CountdownTimer';
-import { SessionStatusBadge } from '../components/session/SessionStatusBadge';
 import { QuestionNavigator } from '../components/session/QuestionNavigator';
 import { QuestionPanel } from '../components/session/QuestionPanel';
-import { EditorSlot } from '../components/session/EditorSlot';
 import { SubmitExamDialog } from '../components/session/SubmitExamDialog';
 import { SessionEndedScreen } from '../components/session/SessionEndedScreen';
+import { CodeEditorPanel } from '../components/editor/CodeEditorPanel';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
+import { EmptyState } from '../components/states/EmptyState';
+import { Badge, BrandMark, Button, IconButton, Segmented, Sheet, ThemeToggle } from '../components/ui';
+import { getErrorMessage } from '../lib/apiError';
+import { cn } from '../lib/cn';
 
 import type { QuestionCandidateRecord } from '../api/questionApi';
 
+type Pane = 'problem' | 'code';
+
 /**
- * AssessmentPage — the exam-taking shell.
+ * AssessmentPage — the exam-taking shell (focus mode, outside AppShell).
  *
- * Route: /dashboard/contests/:contestId/assessment
- * Access: Candidate only (via ProtectedRoute roles={['CANDIDATE']})
+ * Route: /dashboard/contests/:contestId/assessment   Access: CANDIDATE
+ *   - no session / NOT_YET_STARTED → back to the contest page
+ *   - IN_PROGRESS → exam
+ *   - any ended status → SessionEndedScreen
  *
- * On load: useAssessmentSession(contestId).
- *   - 404 → redirect to contest page
- *   - IN_PROGRESS → render exam
- *   - Any ended status → render SessionEndedScreen
- *
- * Layout: three-region, full-viewport (Section 3.3)
- *   Header | QuestionNavigator (sidebar) | QuestionPanel (center) | EditorSlot (right)
+ * Layout: header | navigator | problem | editor (xl+). Below xl, problem and code
+ * share the space behind a Problem | Code switch — the editor is never hidden away.
  */
 const AssessmentPage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -52,42 +54,38 @@ const AssessmentPage: React.FC = () => {
 
   const sessionIsActive = !!session && session.status === 'IN_PROGRESS';
 
-  // Questions — gated on active session (Section 4.3)
+  // Questions — gated on active session
   const { data: questionsRaw = [] } = useQuestions(contestId!, sessionIsActive);
 
-  // Cast to candidate records since we're in candidate context.
   // Copy before sorting — .sort() mutates, and this array is the query cache.
   const questions = useMemo(
     () =>
       sessionIsActive
-        ? [...(questionsRaw as QuestionCandidateRecord[])].sort(
-            (a, b) => a.orderIndex - b.orderIndex
-          )
+        ? [...(questionsRaw as QuestionCandidateRecord[])].sort((a, b) => a.orderIndex - b.orderIndex)
         : [],
-    [questionsRaw, sessionIsActive]
+    [questionsRaw, sessionIsActive],
   );
+
+  const questionIds = useMemo(() => questions.map((q) => q.id), [questions]);
+  const progress = useQuestionProgress(questionIds, sessionIsActive);
 
   // ── Timer ──
   const { remainingSeconds, isExpired } = useSessionTimer(session, sessionReceivedAt);
 
-  // ── Submit ──
+  // ── Submit exam ──
   const submitMutation = useSubmitSession(contestId!);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const handleSubmit = async () => {
-    setShowSubmitDialog(false);
     try {
       await submitMutation.mutateAsync();
+      setShowSubmitDialog(false);
     } catch (err: unknown) {
+      setShowSubmitDialog(false);
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 409 || status === 422) {
-        // Already ended — not an error, just show ended screen
-        // The query will refetch and show the correct state
-      } else {
-        const msg =
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          'Failed to submit exam';
-        toast.error(msg);
+      // 409/422 = already ended — not an error; the refetch shows the ended screen
+      if (status !== 409 && status !== 422) {
+        toast.error(getErrorMessage(err, 'Failed to submit exam'));
       }
     }
   };
@@ -95,9 +93,9 @@ const AssessmentPage: React.FC = () => {
   // ── Question state ──
   const [activeQuestionId, setActiveQuestionId] = useState<string>('');
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [pane, setPane] = useState<Pane>('problem');
 
-  // Set initial active question when questions load
   useEffect(() => {
     if (questions.length > 0 && !activeQuestionId) {
       setActiveQuestionId(questions[0].id);
@@ -108,34 +106,35 @@ const AssessmentPage: React.FC = () => {
   const handleSelectQuestion = useCallback((id: string) => {
     setActiveQuestionId(id);
     setVisitedIds((prev) => new Set([...prev, id]));
-    setSidebarOpen(false);
+    setNavOpen(false);
+    setPane('problem');
   }, []);
 
   const activeQuestion = questions.find((q) => q.id === activeQuestionId);
+  const activeIndex = questions.findIndex((q) => q.id === activeQuestionId);
 
-  // ── beforeunload guard (Section 8.3) ──
+  useEffect(() => {
+    document.title = contest?.title ? `${contest.title} · CodePulse` : 'Assessment · CodePulse';
+  }, [contest?.title]);
+
+  // ── beforeunload guard ──
   useEffect(() => {
     if (!sessionIsActive) return;
-
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      // Modern browsers ignore custom messages; the native dialog is shown
-    };
-
+    const handler = (e: BeforeUnloadEvent) => e.preventDefault();
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [sessionIsActive]);
 
-  // ── Network status indicator ──
+  // ── Network status ──
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
     };
   }, []);
 
@@ -145,174 +144,151 @@ const AssessmentPage: React.FC = () => {
   const is404 = sessionError && (sessionErr as { response?: { status?: number } })?.response?.status === 404;
   const notStarted = is404 || session?.status === 'NOT_YET_STARTED';
   useEffect(() => {
-    if (notStarted) {
-      navigate(`/dashboard/contests/${contestId}`, { replace: true });
-    }
+    if (notStarted) navigate(`/dashboard/contests/${contestId}`, { replace: true });
   }, [notStarted, navigate, contestId]);
 
-  // ── Loading state ──
   if (sessionLoading || notStarted) {
-    return <LoadingState message="Loading your exam session..." />;
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-canvas">
+        <LoadingState message="Loading your exam session…" />
+      </div>
+    );
   }
 
-  // ── Error state (non-404) ──
   if (sessionError && !is404) {
     const status = (sessionErr as { response?: { status?: number } })?.response?.status;
-    const message = status === 403
-      ? "You don't have access to this exam"
-      : (sessionErr as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? 'Something went wrong loading your session.';
+    const message =
+      status === 403 ? "You don't have access to this exam" : getErrorMessage(sessionErr, 'Something went wrong loading your session.');
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-4">
         <ErrorState message={message} />
       </div>
     );
   }
 
-  // ── Session ended → show ended screen ──
   if (session && session.status !== 'IN_PROGRESS') {
-    return (
-      <SessionEndedScreen
-        status={session.status}
-        contestId={contestId!}
-        contestTitle={contest?.title}
-      />
-    );
+    return <SessionEndedScreen status={session.status} contestId={contestId!} contestTitle={contest?.title} />;
   }
 
-  // ── Active session: render the exam ──
+  const questionList =
+    questions.length > 0 ? (
+      <QuestionNavigator
+        questions={questions}
+        activeId={activeQuestionId}
+        visitedIds={visitedIds}
+        onSelect={handleSelectQuestion}
+        progress={progress}
+      />
+    ) : null;
+
+  const acceptedCount = questionIds.filter((id) => progress[id] === 'accepted').length;
+
   return (
-    <div className="h-screen flex flex-col bg-canvas overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-hidden bg-canvas">
       {/* ── Header ── */}
-      <header className="h-14 bg-surface border-b border-line flex items-center justify-between px-4 shrink-0 z-30">
-        {/* Left: brand + title */}
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Mobile sidebar toggle */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-fg/5 transition-colors cursor-pointer"
-          >
-            {sidebarOpen ? <X className="w-4 h-4 text-fg" /> : <Menu className="w-4 h-4 text-fg" />}
-          </button>
-
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <Terminal className="w-3.5 h-3.5 text-primary-text" />
-          </div>
-          <div className="min-w-0 hidden sm:block">
-            <p className="text-sm font-display font-bold text-fg truncate">
-              {contest?.title ?? 'Assessment'}
+      <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
+        <IconButton aria-label="Open question list" className="lg:hidden" onClick={() => setNavOpen(true)}>
+          <ListOrdered className="size-5" />
+        </IconButton>
+        <BrandMark size={28} withWordmark={false} className="hidden sm:inline-flex" />
+        <div className="min-w-0">
+          <p className="truncate font-display text-[14px] font-semibold tracking-[-0.015em] text-fg">
+            {contest?.title ?? 'Assessment'}
+          </p>
+          {questions.length > 0 && (
+            <p className="tabular hidden text-[12px] text-fg-subtle sm:block">
+              Question {activeIndex + 1} of {questions.length} · {acceptedCount} accepted
             </p>
-          </div>
-        </div>
-
-        {/* Center: status + timer */}
-        <div className="flex items-center gap-4">
-          {!isOnline && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning-soft text-warning-text">
-              <WifiOff className="w-3 h-3" />
-              <span className="text-[11px] font-semibold">Reconnecting…</span>
-            </div>
           )}
-          <SessionStatusBadge status="IN_PROGRESS" />
-          <CountdownTimer remainingSeconds={remainingSeconds} />
         </div>
 
-        {/* Right: submit button */}
-        <button
+        <div className="flex-1" />
+
+        {!isOnline && (
+          <Badge tone="warning" icon={<WifiOff className="size-3" />} className="hidden sm:inline-flex">
+            Reconnecting…
+          </Badge>
+        )}
+        <CountdownTimer remainingSeconds={remainingSeconds} />
+        <ThemeToggle className="hidden sm:inline-flex" />
+        <Button
+          size="sm"
           onClick={() => setShowSubmitDialog(true)}
-          disabled={isExpired || submitMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          disabled={isExpired}
+          loading={submitMutation.isPending}
+          leadingIcon={<Send className="size-3.5" />}
         >
-          {submitMutation.isPending ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Send className="w-3.5 h-3.5" />
-          )}
-          <span className="hidden sm:inline">Submit Exam</span>
-        </button>
+          <span className="hidden sm:inline">Submit exam</span>
+          <span className="sm:hidden">Finish</span>
+        </Button>
       </header>
 
-      {/* ── Body: three-region layout ── */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar — Question Navigator */}
-        {/* Desktop: always visible */}
-        <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-surface border-r border-line overflow-y-auto" data-lenis-prevent>
-          <div className="px-4 py-3 border-b border-line">
-            <p className="text-[11px] font-semibold text-fg-subtle uppercase tracking-wider">
-              Questions ({questions.length})
-            </p>
+      {!isOnline && (
+        <div role="status" className="shrink-0 bg-warning-soft px-4 py-1.5 text-center text-[12px] font-medium text-warning-text sm:hidden">
+          You’re offline — reconnecting…
+        </div>
+      )}
+
+      {/* ── Body ── */}
+      <div className="flex min-h-0 flex-1">
+        <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
+          <div className="flex h-11 items-center justify-between border-b border-line px-4">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">Questions</span>
+            <span className="tabular text-[12px] text-fg-subtle">
+              {acceptedCount}/{questions.length}
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto px-2">
-            {questions.length > 0 && (
-              <QuestionNavigator
-                questions={questions}
-                activeId={activeQuestionId}
-                visitedIds={visitedIds}
-                onSelect={handleSelectQuestion}
-              />
-            )}
-          </div>
+          <div className="flex-1 overflow-y-auto px-2">{questionList}</div>
         </aside>
 
-        {/* Mobile sidebar overlay */}
-        <AnimatePresence>
-          {sidebarOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-fg/20 backdrop-blur-sm z-40 lg:hidden"
-                onClick={() => setSidebarOpen(false)}
-              />
-              <motion.aside
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                className="fixed left-0 top-14 bottom-0 w-[260px] bg-surface border-r border-line z-50 lg:hidden flex flex-col overflow-y-auto"
-              >
-                <div className="px-4 py-3 border-b border-line">
-                  <p className="text-[11px] font-semibold text-fg-subtle uppercase tracking-wider">
-                    Questions ({questions.length})
-                  </p>
-                </div>
-                <div className="flex-1 overflow-y-auto px-2">
-                  {questions.length > 0 && (
-                    <QuestionNavigator
-                      questions={questions}
-                      activeId={activeQuestionId}
-                      visitedIds={visitedIds}
-                      onSelect={handleSelectQuestion}
-                    />
-                  )}
-                </div>
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
+        <Sheet open={navOpen} onOpenChange={setNavOpen} side="left" width="max-w-[300px]" title="Questions">
+          <div className="px-2">{questionList}</div>
+        </Sheet>
 
-        {/* Center — Question Panel */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          {activeQuestion ? (
-            <QuestionPanel question={activeQuestion} />
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <AlertTriangle className="w-8 h-8 text-fg-subtle mx-auto mb-3" />
-                <p className="text-sm text-fg-subtle">Select a question to get started</p>
-              </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Problem | Code switch below xl */}
+          <div className="flex shrink-0 items-center border-b border-line bg-surface px-3 py-2 xl:hidden">
+            <Segmented<Pane>
+              aria-label="Show problem or code"
+              value={pane}
+              onChange={setPane}
+              className="w-full sm:w-72"
+              options={[
+                { value: 'problem', label: <span className="inline-flex items-center gap-1.5"><FileText className="size-3.5" />Problem</span> },
+                { value: 'code', label: <span className="inline-flex items-center gap-1.5"><Code2 className="size-3.5" />Code</span> },
+              ]}
+            />
+          </div>
+
+          <div className="flex min-h-0 flex-1">
+            <div className={cn('min-w-0 flex-1 bg-surface', pane === 'code' && 'hidden xl:block')}>
+              {activeQuestion ? (
+                <QuestionPanel question={activeQuestion} />
+              ) : (
+                <EmptyState title="No questions yet" message="This contest has no questions to show. Tell your invigilator." />
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Right — Editor Slot (Module 8 placeholder) */}
-        <div className="hidden xl:flex w-[45%] shrink-0">
-          <EditorSlot />
+            {/* Kept mounted when hidden so the editor keeps its state */}
+            <div
+              className={cn(
+                'min-w-0 border-line xl:flex xl:w-[52%] xl:shrink-0 xl:border-l',
+                pane === 'code' ? 'flex flex-1' : 'hidden',
+              )}
+            >
+              {activeQuestion && contestId && (
+                <CodeEditorPanel
+                  contestId={contestId}
+                  question={activeQuestion}
+                  allowedLanguages={contest?.allowedLanguages ?? []}
+                  disabled={isExpired}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Submit Dialog ── */}
       <SubmitExamDialog
         isOpen={showSubmitDialog}
         onClose={() => setShowSubmitDialog(false)}

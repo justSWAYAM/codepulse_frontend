@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Clock, AlertTriangle, CheckCircle2, Timer, Lock, Loader2, RotateCw, RefreshCw } from 'lucide-react';
-import type { ContestDetailRecord } from '../../api/contestApi';
+import { AlertTriangle, CheckCircle2, Clock, Code2, Lock, Play, RefreshCw, RotateCw, ShieldCheck, Timer } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import type { ContestDetailRecord } from '../../api/contestApi';
 import { useAssessmentSession, useStartSession } from '../../hooks/useAssessmentSession';
 import { contestKeys } from '../../hooks/useContests';
-import { toast } from 'sonner';
+import { getErrorMessage } from '../../lib/apiError';
+import { languageLabel } from '../../lib/languages';
+import { cn } from '../../lib/cn';
+import { Button, Spinner } from '../ui';
 
 interface ExamEntryCardProps {
   contest: ContestDetailRecord;
@@ -26,10 +29,53 @@ function hasStartTimePassed(contest: ContestDetailRecord): boolean {
   return Date.now() >= new Date(contest.startTime).getTime();
 }
 
+type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
+
+const chip: Record<Tone, string> = {
+  neutral: 'bg-surface-2 text-fg-subtle',
+  primary: 'bg-primary-soft text-primary-text',
+  success: 'bg-success-soft text-success-text',
+  warning: 'bg-warning-soft text-warning-text',
+  danger: 'bg-danger-soft text-danger-text',
+};
+
+const border: Record<Tone, string> = {
+  neutral: 'border-line',
+  primary: 'border-primary/25',
+  success: 'border-success/25',
+  warning: 'border-warning/30',
+  danger: 'border-danger/30',
+};
+
+const Shell: React.FC<{ tone?: Tone; icon: React.ReactNode; title?: string; children: React.ReactNode }> = ({
+  tone = 'neutral',
+  icon,
+  title = 'Assessment',
+  children,
+}) => (
+  <section className={cn('rounded-2xl border bg-surface p-5 shadow-card sm:p-6', border[tone])}>
+    <div className="flex items-start gap-4">
+      <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl [&>svg]:size-5', chip[tone])}>{icon}</div>
+      <div className="min-w-0 flex-1">
+        <h3 className="font-display text-[15px] font-semibold tracking-[-0.015em] text-fg">{title}</h3>
+        <div className="mt-1 text-sm leading-6 text-fg-muted">{children}</div>
+      </div>
+    </div>
+  </section>
+);
+
+const Fact: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+  <li className="flex items-center gap-2 text-[13px] text-fg-muted">
+    <span className="text-fg-subtle [&>svg]:size-3.5" aria-hidden>
+      {icon}
+    </span>
+    {children}
+  </li>
+);
+
 /**
  * ExamEntryCard — the candidate's start/resume entry point.
  * Session status is always read from the server once the assessment window opens.
- * See plan Section 6.2 for the full state table.
  */
 export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
   const navigate = useNavigate();
@@ -50,6 +96,7 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
     }, 10_000);
     return () => window.clearInterval(id);
   }, [awaitingOpen, contest.id, queryClient]);
+
   const {
     data: session,
     isLoading: sessionLoading,
@@ -62,166 +109,135 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
   const isForbidden = isError && (error as { response?: { status?: number } })?.response?.status === 403;
   const isUnexpectedError = isError && !isNotStarted && !isForbidden;
   const sessionStatus = session?.status;
-  const noSession = isNotStarted
-    || sessionStatus === 'NOT_YET_STARTED'
-    || (!sessionLoading && !sessionFetching && !isError && !session);
+  const noSession =
+    isNotStarted || sessionStatus === 'NOT_YET_STARTED' || (!sessionLoading && !sessionFetching && !isError && !session);
   const hasSession = !!session && !isError;
 
   const handleStartExam = async () => {
-    setShowConfirm(false);
     try {
       await startMutation.mutateAsync();
+      setShowConfirm(false);
       navigate(`/dashboard/contests/${contest.id}/assessment`);
     } catch (err: unknown) {
+      setShowConfirm(false);
       const status = (err as { response?: { status?: number } })?.response?.status;
       const backendMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      const msg = status === 409 || /already completed|already submitted/i.test(backendMessage ?? '')
-        ? 'You have already submitted this assessment.'
-        : backendMessage ?? 'Failed to start exam';
+      const msg =
+        status === 409 || /already completed|already submitted/i.test(backendMessage ?? '')
+          ? 'You have already submitted this assessment.'
+          : getErrorMessage(err, 'Failed to start exam');
       toast.error(msg);
     }
   };
 
   if (!assessmentOpen && contest.status !== 'COMPLETED') {
     return (
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-line rounded-2xl p-6">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-fg/5 flex items-center justify-center shrink-0"><Lock className="w-5 h-5 text-fg-subtle" /></div>
-          <div className="flex-1">
-            <h3 className="font-display text-base font-bold text-fg mb-1">Assessment</h3>
-            {awaitingOpen ? (
-              <p className="text-sm text-fg-muted">The exam is opening — this updates automatically in a few seconds.</p>
-            ) : (
-              <p className="text-sm text-fg-muted">Exam opens on <span className="font-medium text-fg">{formatDateTime(contest.startTime)}</span></p>
-            )}
-            <p className="text-xs text-fg-subtle mt-2">Duration: {contest.durationMinutes} minutes</p>
-          </div>
-        </div>
-      </motion.div>
+      <Shell icon={<Lock />}>
+        {awaitingOpen ? (
+          <p className="flex items-center gap-2">
+            <Spinner size={13} /> The exam is opening — this updates automatically in a few seconds.
+          </p>
+        ) : (
+          <p>
+            Exam opens on <span className="tabular font-medium text-fg">{formatDateTime(contest.startTime)}</span>
+          </p>
+        )}
+        <p className="mt-1 text-[13px] text-fg-subtle">Duration: {contest.durationMinutes} minutes</p>
+      </Shell>
     );
   }
 
   // Only block on the first load — background re-syncs (every 30s) shouldn't flash a spinner
   if (sessionLoading) {
     return (
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-line rounded-2xl p-6">
-        <div className="flex items-center gap-3 text-sm text-fg-muted"><Loader2 className="w-4 h-4 animate-spin" />Checking your assessment status…</div>
-      </motion.div>
+      <Shell icon={<Spinner size={18} />}>
+        <p>Checking your assessment status…</p>
+      </Shell>
     );
   }
 
   if (isForbidden) {
-    const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "You don't have access to this exam.";
-    return <div className="bg-surface border border-danger/30 rounded-2xl p-6"><div className="flex items-start gap-4"><AlertTriangle className="w-5 h-5 text-danger-text mt-1" /><div><h3 className="font-display text-base font-bold text-fg mb-1">Assessment</h3><p className="text-sm text-fg-muted">{message}</p></div></div></div>;
+    const message =
+      (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "You don't have access to this exam.";
+    return (
+      <Shell tone="danger" icon={<AlertTriangle />}>
+        <p>{message}</p>
+      </Shell>
+    );
   }
 
   if (isUnexpectedError) {
-    return <div className="bg-surface border border-warning/30 rounded-2xl p-6"><div className="flex items-start gap-4"><RefreshCw className="w-5 h-5 text-warning-text mt-1" /><div><h3 className="font-display text-base font-bold text-fg mb-1">Assessment</h3><p className="text-sm text-fg-muted">Unable to load your assessment right now.</p><button type="button" onClick={() => refetch()} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-line text-sm font-medium text-fg cursor-pointer"><RefreshCw className="w-3.5 h-3.5" />Retry</button></div></div></div>;
+    return (
+      <Shell tone="warning" icon={<RefreshCw />}>
+        <p>Unable to load your assessment right now.</p>
+        <Button size="sm" variant="secondary" className="mt-4" leadingIcon={<RefreshCw className="size-3.5" />} onClick={() => refetch()}>
+          Retry
+        </Button>
+      </Shell>
+    );
   }
 
   if (hasSession && (session.status === 'SUBMITTED' || session.status === 'AUTO_SUBMITTED')) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-surface border border-line rounded-2xl p-6"
-      >
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-fg/5 flex items-center justify-center shrink-0">
-            <Lock className="w-5 h-5 text-fg-subtle" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1"><h3 className="font-display text-base font-bold text-fg">Assessment</h3><CheckCircle2 className="w-4 h-4 text-primary-text" /></div>
-            <p className="text-sm text-fg-muted">You have already submitted this assessment.</p>
-          </div>
-        </div>
-      </motion.div>
+      <Shell tone="success" icon={<CheckCircle2 />}>
+        <p>You have already submitted this assessment.</p>
+        <p className="mt-1 text-[13px] text-fg-subtle">Results appear here once the administrator publishes them.</p>
+      </Shell>
     );
   }
 
   if (assessmentOpen && hasSession && session.status === 'IN_PROGRESS') {
-    return <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-primary/20 rounded-2xl p-6"><div className="flex items-start gap-4"><Timer className="w-5 h-5 text-primary-text mt-1" /><div><h3 className="font-display text-base font-bold text-fg mb-1">Assessment</h3><p className="text-sm text-fg-muted">Your exam is in progress.</p><button onClick={() => navigate(`/dashboard/contests/${contest.id}/assessment`)} className="mt-4 flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold cursor-pointer"><RotateCw className="w-4 h-4" />Resume Exam</button></div></div></motion.div>;
+    return (
+      <Shell tone="primary" icon={<Timer />}>
+        <p>Your exam is in progress — the timer is still running.</p>
+        <Button
+          className="mt-4"
+          onClick={() => navigate(`/dashboard/contests/${contest.id}/assessment`)}
+          leadingIcon={<RotateCw className="size-4" />}
+        >
+          Resume exam
+        </Button>
+      </Shell>
+    );
   }
 
-  // ── State: assessment window open → POST start/resume ──
+  // ── Assessment window open → POST start ──
   if (assessmentOpen && noSession) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-surface border border-line rounded-2xl p-6"
-      >
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Play className="w-5 h-5 text-primary-text" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-display text-base font-bold text-fg mb-1">Assessment</h3>
-            <div className="space-y-1 mb-4">
-              <p className="text-sm text-fg-muted">
-                <Clock className="w-3.5 h-3.5 inline mr-1 text-fg-subtle" />
-                Duration: <span className="font-medium text-fg">{contest.durationMinutes} minutes</span>
-              </p>
-              <p className="text-sm text-fg-muted">
-                <AlertTriangle className="w-3.5 h-3.5 inline mr-1 text-fg-subtle" />
-                You get one attempt
-              </p>
-            </div>
+      <Shell tone="primary" icon={<Play />}>
+        <ul className="mt-1 space-y-1.5">
+          <Fact icon={<Clock />}>
+            <span>
+              Duration: <span className="tabular font-medium text-fg">{contest.durationMinutes} minutes</span>
+            </span>
+          </Fact>
+          <Fact icon={<ShieldCheck />}>You get one attempt — the timer can’t be paused</Fact>
+          {contest.allowedLanguages?.length > 0 && (
+            <Fact icon={<Code2 />}>{contest.allowedLanguages.map(languageLabel).join(', ')}</Fact>
+          )}
+        </ul>
 
-            <AnimatePresence mode="wait">
-              {!showConfirm ? (
-                <motion.button
-                  key="start-btn"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setShowConfirm(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-hover transition-colors cursor-pointer"
-                >
-                  <Play className="w-4 h-4" />
-                  Start Exam
-                </motion.button>
-              ) : (
-                <motion.div
-                  key="confirm"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-3"
-                >
-                  <div className="px-4 py-3 rounded-xl bg-warning-soft border border-warning/30">
-                    <p className="text-sm text-fg-muted">
-                      Start the exam now? Your{' '}
-                      <span className="font-semibold">{contest.durationMinutes}-minute</span>{' '}
-                      timer begins immediately and cannot be paused. You only get one attempt.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleStartExam}
-                      disabled={startMutation.isPending}
-                      className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-hover disabled:opacity-60 transition-colors cursor-pointer"
-                    >
-                      {startMutation.isPending ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Play className="w-3.5 h-3.5" />
-                      )}
-                      Yes, Start Now
-                    </button>
-                    <button
-                      onClick={() => setShowConfirm(false)}
-                      className="px-4 py-2 rounded-xl text-sm font-medium text-fg-muted border border-line hover:border-line-strong transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {!showConfirm ? (
+          <Button className="mt-5" onClick={() => setShowConfirm(true)} leadingIcon={<Play className="size-4" />}>
+            Start exam
+          </Button>
+        ) : (
+          <div className="mt-5 space-y-3">
+            <div className="rounded-xl border border-warning/30 bg-warning-soft px-4 py-3 text-[13px] leading-5 text-warning-text">
+              Start the exam now? Your <span className="font-semibold">{contest.durationMinutes}-minute</span> timer begins
+              immediately and cannot be paused. You only get one attempt.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleStartExam} loading={startMutation.isPending} leadingIcon={<Play className="size-4" />}>
+                Yes, start now
+              </Button>
+              <Button variant="secondary" onClick={() => setShowConfirm(false)} disabled={startMutation.isPending}>
+                Cancel
+              </Button>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        )}
+      </Shell>
     );
   }
 
