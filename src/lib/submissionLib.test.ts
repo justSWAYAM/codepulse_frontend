@@ -19,6 +19,11 @@ describe('apiError', () => {
     expect(getErrorMessage(err('INVALID_STATE: SESSION_DEADLINE_PASSED'))).toMatch(/time is up/i);
   });
 
+  it('maps the 503 busy limiter and the 429 rate limit to their own copy', () => {
+    expect(getErrorMessage(err('EXECUTION_BUSY: EXECUTION_BUSY', 503))).toMatch(/judge is busy/i);
+    expect(getErrorMessage(err('RATE_LIMITED: Too many requests. Try again in 12 seconds.', 429))).toMatch(/bit fast/i);
+  });
+
   it('handles the 503 queue outage, plain messages, unknown codes and network errors', () => {
     expect(getErrorMessage(err('SUBMISSION_QUEUE_UNAVAILABLE: Submission queue is unavailable', 503))).toMatch(/queue is unavailable/i);
     expect(getErrorMessage(err('NOT_FOUND: Question not found', 404))).toBe('Question not found');

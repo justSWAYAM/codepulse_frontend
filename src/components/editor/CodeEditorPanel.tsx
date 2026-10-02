@@ -173,6 +173,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
 
         <Tooltip content={<span className="flex items-center gap-1.5">Run sample tests <Kbd className="border-white/15 bg-white/10 text-canvas/70">{MOD_KEY} ↵</Kbd></span>}>
           <Button
+            id="run-code-button"
             size="sm"
             variant="secondary"
             onClick={run}

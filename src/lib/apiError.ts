@@ -25,6 +25,7 @@ const FRIENDLY: Record<string, string> = {
   SUBMISSION_NOT_REJUDGEABLE: 'Only finished SUBMIT submissions can be rejudged.',
   SUBMISSION_NOT_FOUND: 'That submission no longer exists or isn’t yours.',
   SUBMISSION_ACCESS_DENIED: 'You don’t have access to that submission.',
+  RATE_LIMITED: 'You’re going a bit fast. Wait a few seconds, then try again.',
 };
 
 export function getErrorCode(error: unknown): string | null {
