@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, BookOpen, Calendar, Check, Clock, X, Code2, FileCode2, Hourglass, ListChecks, Pencil, Send, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BookOpen, Calendar, Check, Clock, X, Code2, FileCode2, Hourglass, ListChecks, Pencil, Send, Trophy, Users } from 'lucide-react';
 import { useContest, usePublishContest, useAssignCandidates, useUnassignCandidates } from '../hooks/useContests';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import { ContestStatusBadge } from '../components/contest/ContestStatusBadge';
 import { QuestionListPanel } from '../components/question/QuestionListPanel';
 import { ExamEntryCard } from '../components/session/ExamEntryCard';
 import { ContestSubmissionsPanel } from '../components/submission/ContestSubmissionsPanel';
+import { ResultsPanel } from '../components/result/ResultsPanel';
 import { LoadingState } from '../components/states/LoadingState';
 import { EmptyState } from '../components/states/EmptyState';
 import { Avatar } from '../layouts/AppShell';
@@ -39,7 +40,7 @@ const STATUS_LABELS: Record<(typeof CONTEST_STATUSES)[number], string> = {
   COMPLETED: 'Completed',
 };
 
-type Tab = 'overview' | 'candidates' | 'questions' | 'submissions';
+type Tab = 'overview' | 'candidates' | 'questions' | 'submissions' | 'results';
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -62,7 +63,15 @@ const ContestDetailPage: React.FC = () => {
   const isStaff = isAdmin || isEvaluator;
 
   // Active tab lives in the URL so it survives refresh and Back
-  const allowedTabs: Tab[] = isStaff ? ['overview', 'candidates', 'questions', 'submissions'] : isCandidate ? ['overview'] : ['overview', 'questions'];
+  const { data: contest, isLoading, isError, error } = useContest(id!);
+
+  // Results exist once a contest has started (Module 9); before that there is nothing to show
+  const hasResults = contest?.status === 'ONGOING' || contest?.status === 'COMPLETED';
+  const allowedTabs: Tab[] = isStaff
+    ? ['overview', 'candidates', 'questions', 'submissions', ...(hasResults ? (['results'] as Tab[]) : [])]
+    : isCandidate
+      ? ['overview']
+      : ['overview', 'questions'];
   const rawTab = params.get('tab') as Tab | null;
   const activeTab: Tab = rawTab && allowedTabs.includes(rawTab) ? rawTab : 'overview';
   const setActiveTab = (t: string) => {
@@ -70,8 +79,6 @@ const ContestDetailPage: React.FC = () => {
     if (t !== 'overview') next.set('tab', t);
     setParams(next, { replace: true });
   };
-
-  const { data: contest, isLoading, isError, error } = useContest(id!);
   const publishMutation = usePublishContest(id!);
   const assignMutation = useAssignCandidates(id!);
   const unassignMutation = useUnassignCandidates(id!);
@@ -193,6 +200,11 @@ const ContestDetailPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-display text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-[28px] sm:leading-9">{contest.title}</h1>
               <ContestStatusBadge status={contest.status} size="md" />
+              {contest.resultsPublished && (
+                <Badge tone="success" icon={<Check className="size-3" />}>
+                  Results published
+                </Badge>
+              )}
             </div>
             <p className="mt-1 font-mono text-[11px] text-fg-subtle">{contest.id}</p>
           </div>
@@ -263,6 +275,11 @@ const ContestDetailPage: React.FC = () => {
             {isStaff && (
               <TabsTrigger value="submissions" icon={<ListChecks />}>
                 Submissions
+              </TabsTrigger>
+            )}
+            {isStaff && hasResults && (
+              <TabsTrigger value="results" icon={<Trophy />}>
+                Results
               </TabsTrigger>
             )}
           </TabsList>
@@ -491,7 +508,19 @@ const ContestDetailPage: React.FC = () => {
         {/* ── Submissions (Module 8) ── */}
         {isStaff && (
           <TabsContent value="submissions" className="pt-6">
-            <ContestSubmissionsPanel contestId={contest.id} candidates={contest.candidates ?? []} canRejudge={isStaff} />
+            <ContestSubmissionsPanel
+              contestId={contest.id}
+              candidates={contest.candidates ?? []}
+              canRejudge={isStaff}
+              rejudgeLockedReason={contest.resultsPublished ? 'Results are published. Unpublish them to rejudge.' : undefined}
+            />
+          </TabsContent>
+        )}
+
+        {/* ── Results (Module 9) ── */}
+        {isStaff && hasResults && (
+          <TabsContent value="results" className="pt-6">
+            <ResultsPanel contest={contest} />
           </TabsContent>
         )}
       </Tabs>

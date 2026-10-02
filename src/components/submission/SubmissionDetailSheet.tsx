@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { ChevronDown, Clock, Cpu, RotateCw, Weight } from 'lucide-react';
-import { Badge, Button, Dialog, Sheet, Skeleton } from '../ui';
+import { RotateCw } from 'lucide-react';
+import { Button, Dialog, Sheet, Skeleton, Tooltip } from '../ui';
 import { ErrorState } from '../states/ErrorState';
 import { OutputBlock, VerdictBadge } from '../editor/VerdictBadge';
-import { formatKb, formatMs } from '../../lib/format';
 import { useEvaluatorSubmission, useRejudge } from '../../hooks/useSubmissions';
 import { languageLabel } from '../../lib/languages';
 import { verdictOf } from '../../lib/verdicts';
 import { getErrorMessage } from '../../lib/apiError';
-import { cn } from '../../lib/cn';
-import type { ContestSubmissionRow, EvaluatorTestCaseResult } from '../../api/submissionApi';
+import type { ContestSubmissionRow } from '../../api/submissionApi';
+import { EvaluatorTestResults } from './EvaluatorTestResults';
 
 interface SubmissionDetailSheetProps {
   contestId: string;
@@ -19,54 +18,12 @@ interface SubmissionDetailSheetProps {
   questionTitle?: string;
   points?: number;
   canRejudge: boolean;
+  /** Module 9: shown on a disabled Rejudge button while results are published. */
+  rejudgeLockedReason?: string;
   onClose: () => void;
 }
 
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
-
-const TestRow: React.FC<{ result: EvaluatorTestCaseResult; index: number }> = ({ result, index }) => {
-  const [open, setOpen] = useState(result.status !== 'PASSED' && index < 3);
-  return (
-    <li className="rounded-xl border border-line bg-surface">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2 text-left hover-fine:bg-surface-2/60"
-      >
-        <ChevronDown className={cn('size-4 shrink-0 text-fg-subtle transition-transform duration-200 ease-out', !open && '-rotate-90')} aria-hidden />
-        <span className="tabular text-[13px] font-medium text-fg">Test {index + 1}</span>
-        <Badge size="sm" tone={result.sample ? 'primary' : 'neutral'}>
-          {result.sample ? 'Sample' : 'Hidden'}
-        </Badge>
-        <VerdictBadge status={result.status} />
-        <span className="ml-auto flex items-center gap-3 text-[12px] text-fg-subtle">
-          <span className="tabular inline-flex items-center gap-1" title="Weight">
-            <Weight className="size-3.5" aria-hidden />
-            <span className="sr-only">Weight </span>
-            {result.weight}
-          </span>
-          <span className="tabular inline-flex items-center gap-1" title="Time">
-            <Clock className="size-3.5" aria-hidden />
-            {formatMs(result.timeMs)}
-          </span>
-          <span className="tabular inline-flex items-center gap-1" title="Memory">
-            <Cpu className="size-3.5" aria-hidden />
-            {formatKb(result.memoryKb)}
-          </span>
-        </span>
-      </button>
-      {open && (
-        <div className="grid gap-3 border-t border-line p-3 md:grid-cols-3">
-          <OutputBlock label="Input" value={result.input} emptyText="(empty)" />
-          <OutputBlock label="Expected" value={result.expectedOutput} />
-          <OutputBlock label="Actual" value={result.actualOutput} />
-          {result.stderr && <OutputBlock label="stderr" value={result.stderr} tone="danger" className="md:col-span-3" />}
-        </div>
-      )}
-    </li>
-  );
-};
 
 export const SubmissionDetailSheet: React.FC<SubmissionDetailSheetProps> = ({
   contestId,
@@ -75,6 +32,7 @@ export const SubmissionDetailSheet: React.FC<SubmissionDetailSheetProps> = ({
   questionTitle,
   points,
   canRejudge,
+  rejudgeLockedReason,
   onClose,
 }) => {
   const { data, isLoading, isError, error, refetch } = useEvaluatorSubmission(submissionId);
@@ -85,6 +43,7 @@ export const SubmissionDetailSheet: React.FC<SubmissionDetailSheetProps> = ({
   const v = verdictOf(status);
   const type = data?.type ?? row?.type;
   const rejudgeable = canRejudge && type === 'SUBMIT' && status !== 'PENDING';
+  const locked = rejudgeable && !!rejudgeLockedReason;
 
   return (
     <Sheet
@@ -94,7 +53,16 @@ export const SubmissionDetailSheet: React.FC<SubmissionDetailSheetProps> = ({
       title={row?.candidateName ?? 'Submission'}
       description={[questionTitle, row?.candidateRollNumber ?? row?.candidateEmail].filter(Boolean).join(' · ') || undefined}
       headerActions={
-        rejudgeable ? (
+        locked ? (
+          <Tooltip content={rejudgeLockedReason}>
+            {/* span: a disabled button fires no pointer events, so the tooltip needs a wrapper */}
+            <span tabIndex={0}>
+              <Button size="sm" variant="secondary" leadingIcon={<RotateCw className="size-3.5" />} disabled>
+                Rejudge
+              </Button>
+            </span>
+          </Tooltip>
+        ) : rejudgeable ? (
           <Button size="sm" variant="secondary" leadingIcon={<RotateCw className="size-3.5" />} onClick={() => setConfirm(true)}>
             Rejudge
           </Button>
@@ -169,11 +137,7 @@ export const SubmissionDetailSheet: React.FC<SubmissionDetailSheetProps> = ({
               ) : data.testCaseResults.length === 0 ? (
                 <p className="text-[13px] text-fg-muted">No test results were recorded.</p>
               ) : (
-                <ul className="space-y-2">
-                  {data.testCaseResults.map((r, i) => (
-                    <TestRow key={r.testCaseId} result={r} index={i} />
-                  ))}
-                </ul>
+                <EvaluatorTestResults results={data.testCaseResults} />
               )}
             </section>
           </>

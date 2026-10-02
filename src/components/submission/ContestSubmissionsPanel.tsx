@@ -24,13 +24,15 @@ interface ContestSubmissionsPanelProps {
   contestId: string;
   candidates: ContestCandidate[];
   canRejudge: boolean;
+  /** Set while results are published: rejudge is refused until they're unpublished. */
+  rejudgeLockedReason?: string;
 }
 
 /**
  * Evaluator/admin view of every submission in a contest.
  * Filters, page and the open submission live in the URL (survive refresh, shareable).
  */
-export const ContestSubmissionsPanel: React.FC<ContestSubmissionsPanelProps> = ({ contestId, candidates, canRejudge }) => {
+export const ContestSubmissionsPanel: React.FC<ContestSubmissionsPanelProps> = ({ contestId, candidates, canRejudge, rejudgeLockedReason }) => {
   const [params, setParams] = useSearchParams();
   const questionId = params.get('sq') || undefined;
   const candidateId = params.get('sc') || undefined;
@@ -207,6 +209,7 @@ export const ContestSubmissionsPanel: React.FC<ContestSubmissionsPanelProps> = (
         questionTitle={openRow ? questionById.get(openRow.questionId)?.title : undefined}
         points={openRow ? questionById.get(openRow.questionId)?.points : undefined}
         canRejudge={canRejudge}
+        rejudgeLockedReason={rejudgeLockedReason}
         onClose={() => update({ submission: undefined }, false)}
       />
     </div>
