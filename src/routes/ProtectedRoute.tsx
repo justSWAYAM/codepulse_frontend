@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { LoadingState } from '../components/states/LoadingState';
 
@@ -21,8 +22,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
   }
 
   if (roles && user && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Forbidden />;
   }
 
   return <>{children}</>;
+};
+
+/** Signed in but not allowed here: back to the dashboard with a note, not the landing page. */
+const Forbidden: React.FC = () => {
+  useEffect(() => {
+    // Fixed id: StrictMode's double effect (or a quick re-render) shows a single toast
+    toast.error("You don't have access to that page.", { id: 'forbidden-route' });
+  }, []);
+  return <Navigate to="/dashboard" replace />;
 };

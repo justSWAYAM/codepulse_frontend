@@ -194,10 +194,14 @@ export const BulkImportDialog: React.FC<BulkImportDialogProps> = ({ open, onClos
 
           <div className="rounded-xl border border-line bg-surface-2/60 p-3">
             <p className="mb-1.5 text-[12px] font-medium text-fg-muted">Expected CSV format</p>
+            <p className="mb-1.5 text-[12px] text-fg-subtle">
+              Columns are read in this order. Year, branch, division, batch and roll number are for candidates only.
+            </p>
             <pre className="overflow-x-auto font-mono text-[12px] leading-5 text-fg-subtle">
-              {`email, name, role, password, rollNumber, year, branch, division, batch
-john@example.com, John Doe, CANDIDATE, password123, 12345, 1, CSE, A, B
-jane@example.com, Jane Smith, EVALUATOR, , , , , , `}
+              {`Email,Name,Role,Password,Year,Branch,Division,Batch,RollNumber
+student1@example.com,Alice Smith,CANDIDATE,SecurePass123!,1,CSE,A,A,10001
+student4@example.com,Diana Prince,CANDIDATE,SecurePass123!,4,MECH,,D,10004
+eval1@example.com,Evan Lee,EVALUATOR,SecurePass123!,,,,,`}
             </pre>
           </div>
         </div>

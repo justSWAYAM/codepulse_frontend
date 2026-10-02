@@ -133,7 +133,15 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Year">
                   {(p) => (
-                    <Select {...p} defaultValue={editingUser.year || ''} {...register('year', { valueAsNumber: true })}>
+                    <Select
+                      {...p}
+                      defaultValue={editingUser.year || ''}
+                      {...register('year', {
+                        // valueAsNumber turns the empty "Select" option into NaN, which fails
+                        // z.number() and silently blocks Save — map it to undefined instead
+                        setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                      })}
+                    >
                       <option value="">Select</option>
                       <option value="1">1st Year</option>
                       <option value="2">2nd Year</option>
