@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getErrorMessage } from '../lib/apiError';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -38,9 +39,7 @@ const LoginPage: React.FC = () => {
         if (axiosError.response?.status === 401) {
           setServerError('Invalid email or password. Check them and try again.');
         } else {
-          setServerError(
-            axiosError.response?.data?.message || 'Something went wrong. Please try again.'
-          );
+          setServerError(getErrorMessage(error));
         }
       },
     });

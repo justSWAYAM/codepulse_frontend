@@ -25,7 +25,7 @@ const questionSchema = z.object({
   memoryLimitKb: z
     .number()
     .min(4096, 'Minimum 4096 KB (4 MB)')
-    .max(1048576, 'Maximum 1,048,576 KB (1 GB)'),
+    .max(512000, 'Maximum 512,000 KB (500 MB), the judge limit'),
 });
 
 export type QuestionFormData = z.infer<typeof questionSchema>;

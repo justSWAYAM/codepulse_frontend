@@ -71,9 +71,15 @@ apiClient.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        setAccessToken(null);
-        onSessionExpired?.();
-        return Promise.reject(refreshError);
+        // Only a rejected refresh token means the session is over. A network blip or
+        // 5xx mid-exam must not throw the candidate out to /login.
+        const status = (refreshError as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) {
+          setAccessToken(null);
+          onSessionExpired?.();
+          return Promise.reject(refreshError);
+        }
+        return Promise.reject(error);
       }
     }
 

@@ -59,8 +59,8 @@ describe('CodeEditorPanel', () => {
   });
 
   it('runs sample tests and shows each sample’s verdict and output', async () => {
-    api.run.mockResolvedValue({ id: 'r1', questionId: 'q1', type: 'RUN', status: 'WRONG_ANSWER' });
-    api.getForCandidate.mockResolvedValue({
+    // Run answers with the candidate view itself, sample outputs included
+    api.run.mockResolvedValue({
       id: 'r1',
       questionId: 'q1',
       type: 'RUN',
@@ -77,6 +77,7 @@ describe('CodeEditorPanel', () => {
 
     expect(await screen.findAllByText('Wrong answer')).not.toHaveLength(0);
     expect(api.run).toHaveBeenCalledWith({ questionId: 'q1', language: 'PYTHON', sourceCode: 'print(4)' });
+    expect(api.getForCandidate).not.toHaveBeenCalled();
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('0 / 1')).toBeInTheDocument();
   });
@@ -93,7 +94,7 @@ describe('CodeEditorPanel', () => {
     const { unmount } = renderPanel();
     const editor = await screen.findByLabelText(/code editor, python 3/i);
     fireEvent.change(editor, { target: { value: 'print("draft")' } });
-    await waitFor(() => expect(localStorage.getItem('cp:draft:c1:q1:PYTHON')).toBe('print("draft")'), { timeout: 2000 });
+    await waitFor(() => expect(localStorage.getItem('cp:draft:anonymous:c1:q1:PYTHON')).toBe('print("draft")'), { timeout: 2000 });
     unmount();
     renderPanel();
     expect(await screen.findByLabelText(/code editor, python 3/i)).toHaveValue('print("draft")');

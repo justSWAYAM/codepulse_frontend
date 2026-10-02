@@ -42,7 +42,8 @@ export interface SubmissionSummary {
   questionId: string;
   type: SubmissionType;
   language: string;
-  status: SubmissionStatus;
+  /** null once the session has ended: verdicts stay hidden until results are published */
+  status: SubmissionStatus | null;
   score: number | null;
   passedCount: number | null;
   totalCount: number | null;
@@ -138,8 +139,9 @@ export interface ContestSubmissionFilters {
 
 export const submissionApi = {
   /** Synchronous: runs against sample tests only and returns the summary. */
-  run: async (payload: CodePayload): Promise<SubmissionSummary> => {
-    const { data } = await apiClient.post<SubmissionSummary>('/submissions/run', payload);
+  /** Run is synchronous and returns the candidate view, sample outputs included. */
+  run: async (payload: CodePayload): Promise<SubmissionCandidateView> => {
+    const { data } = await apiClient.post<SubmissionCandidateView>('/submissions/run', payload);
     return data;
   },
 
@@ -159,9 +161,14 @@ export const submissionApi = {
     return data;
   },
 
-  myHistory: async (questionId: string, page = 0, size = 20): Promise<PagedData<SubmissionSummary>> => {
+  myHistory: async (
+    questionId: string,
+    page = 0,
+    size = 20,
+    type?: SubmissionType,
+  ): Promise<PagedData<SubmissionSummary>> => {
     const { data } = await apiClient.get<PagedData<SubmissionSummary>>(`/questions/${questionId}/submissions/me`, {
-      params: { page, size },
+      params: { page, size, ...(type ? { type } : {}) },
     });
     return data;
   },

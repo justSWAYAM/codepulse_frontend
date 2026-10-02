@@ -43,6 +43,8 @@ export const useAssessmentSession = (contestId: string, enabled = true) =>
 export const useStartSession = (contestId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
+    // Callers show their own error; skip the global toast so it isn't shown twice
+    onError: () => {},
     mutationFn: () => sessionApi.start(contestId),
     onSuccess: (data) => {
       queryClient.setQueryData(sessionKeys.detail(contestId), toStatusResponse(data));
@@ -55,6 +57,7 @@ export const useStartSession = (contestId: string) => {
 export const useSubmitSession = (contestId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
+    onError: () => {},
     mutationFn: () => sessionApi.submit(contestId),
     // The submit response is already the canonical session. Don't await a follow-up
     // GET here: if it failed, the mutation would reject and the UI would report

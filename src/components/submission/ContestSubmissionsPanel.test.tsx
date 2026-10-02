@@ -39,7 +39,7 @@ const renderPanel = () =>
       <MemoryRouter>
         <ContestSubmissionsPanel
           contestId="c1"
-          candidates={[{ id: 'u1', fullName: 'Asha Rao', email: 'asha@example.com', role: 'CANDIDATE', active: true, createdAt: '' }]}
+          candidates={[{ id: 'u1', fullName: 'Asha Rao', email: 'asha@example.com', role: 'CANDIDATE', isActive: true, createdAt: '' }]}
           canRejudge
         />
       </MemoryRouter>

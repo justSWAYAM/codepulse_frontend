@@ -1,3 +1,4 @@
+import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -104,10 +105,12 @@ export const useBulkImportUsers = () => {
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
+  const { updateUser } = useAuth();
 
   return useMutation({
     mutationFn: (payload: UpdateProfilePayload) => userApi.updateProfile(payload),
-    onSuccess: () => {
+    onSuccess: (_data, payload) => {
+      updateUser({ fullName: payload.fullName });
       queryClient.invalidateQueries({ queryKey: userKeys.profile });
       toast.success('Profile updated successfully');
     },

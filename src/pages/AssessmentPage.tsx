@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Code2, FileText, Send, WifiOff } from 'lucid
 import { toast } from 'sonner';
 
 import { useContest } from '../hooks/useContests';
-import { useAssessmentSession, useSubmitSession } from '../hooks/useAssessmentSession';
+import { useQueryClient } from '@tanstack/react-query';
+import { sessionKeys, useAssessmentSession, useSubmitSession } from '../hooks/useAssessmentSession';
 import { useSessionTimer } from '../hooks/useSessionTimer';
 import { useQuestions } from '../hooks/useQuestions';
 import { useQuestionProgress } from '../hooks/useSubmissions';
@@ -74,6 +75,7 @@ const AssessmentPage: React.FC = () => {
 
   // ── Submit exam ──
   const submitMutation = useSubmitSession(contestId!);
+  const queryClient = useQueryClient();
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const handleSubmit = async () => {
@@ -85,6 +87,9 @@ const AssessmentPage: React.FC = () => {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status !== 409 && status !== 422) {
         toast.error(getErrorMessage(err, 'Failed to submit exam'));
+      } else {
+        // Already submitted or timed out on the server: show the ended screen now
+        queryClient.invalidateQueries({ queryKey: sessionKeys.detail(contestId!) });
       }
     }
   };

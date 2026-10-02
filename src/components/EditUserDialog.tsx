@@ -34,7 +34,6 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
     register,
     handleSubmit,
     reset,
-    setValue,
     watch,
     formState: { errors },
   } = useForm<EditUserFormData>({
@@ -46,18 +45,21 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
   const noDivision = selectedBranch === 'MECH' || selectedBranch === 'ECS';
 
   useEffect(() => {
+    // Reset every field for each user opened, so values from the previously
+    // edited user (e.g. a roll number) can't leak into this one's payload
     if (editingUser) {
-      setValue('role', editingUser.role);
-      setValue('isActive', editingUser.isActive);
-      if (editingUser.role === 'CANDIDATE') {
-        setValue('year', editingUser.year || undefined);
-        setValue('branch', (editingUser.branch as any) || '');
-        setValue('division', (editingUser.division as any) || '');
-        setValue('batch', (editingUser.batch as any) || '');
-        setValue('rollNumber', editingUser.rollNumber || '');
-      }
+      const candidate = editingUser.role === 'CANDIDATE';
+      reset({
+        role: editingUser.role,
+        isActive: editingUser.isActive,
+        year: candidate ? editingUser.year || undefined : undefined,
+        branch: candidate ? (editingUser.branch as any) || '' : '',
+        division: candidate ? (editingUser.division as any) || '' : '',
+        batch: candidate ? (editingUser.batch as any) || '' : '',
+        rollNumber: candidate ? editingUser.rollNumber || '' : '',
+      });
     }
-  }, [editingUser, setValue]);
+  }, [editingUser, reset]);
 
   const onSubmit = (data: EditUserFormData) => {
     if (!editingUser) return;

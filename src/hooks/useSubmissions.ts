@@ -6,13 +6,17 @@ import {
   type ContestSubmissionFilters,
   type SubmissionCandidateView,
   type SubmissionSummary,
+  type SubmissionType,
 } from '../api/submissionApi';
+import type { PagedData } from '../api/contestApi';
 import { isFinal } from '../lib/verdicts';
 
 export const submissionKeys = {
   detail: (id: string) => ['submission', id] as const,
   evaluatorDetail: (id: string) => ['submission', 'evaluator', id] as const,
   mine: (questionId: string) => ['mySubmissions', questionId] as const,
+  // Under mine(questionId), so invalidating mine() refreshes the counts too
+  count: (questionId: string, type: SubmissionType) => ['mySubmissions', questionId, 'count', type] as const,
   contest: (contestId: string, filters: ContestSubmissionFilters) => ['contestSubmissions', contestId, filters] as const,
   contestAll: (contestId: string) => ['contestSubmissions', contestId] as const,
 };
@@ -27,24 +31,16 @@ const inlineError = { onError: () => {} };
 // ── Candidate ──
 
 export interface RunResult {
-  summary: SubmissionSummary;
   detail: SubmissionCandidateView;
 }
 
-/**
- * Run is synchronous on the server but its response carries no per-test output,
- * so we follow up with the detail view to show each sample's result.
- */
+/** Run is synchronous on the server and returns each sample's result directly. */
 export const useRunCode = (questionId: string) => {
   const qc = useQueryClient();
   return useMutation({
     ...inlineError,
     mutationKey: ['run', questionId],
-    mutationFn: async (payload: CodePayload): Promise<RunResult> => {
-      const summary = await submissionApi.run(payload);
-      const detail = await submissionApi.getForCandidate(summary.id);
-      return { summary, detail };
-    },
+    mutationFn: async (payload: CodePayload): Promise<RunResult> => ({ detail: await submissionApi.run(payload) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: submissionKeys.mine(questionId) }),
   });
 };
@@ -58,6 +54,13 @@ export const useSubmitCode = (questionId: string) => {
     onSuccess: () => qc.invalidateQueries({ queryKey: submissionKeys.mine(questionId) }),
   });
 };
+
+/**
+ * Nothing more will change: a final verdict, or no verdict at all because the
+ * session ended and results stay hidden until they are published.
+ */
+const settled = (detail: SubmissionCandidateView | undefined) =>
+  !!detail && (detail.status == null || isFinal(detail.status));
 
 /** Candidate view of one submission; polls while PENDING, gives up after POLL_TIMEOUT_MS. */
 export const useSubmissionDetail = (submissionId: string | null, questionId?: string) => {
@@ -77,15 +80,15 @@ export const useSubmissionDetail = (submissionId: string | null, questionId?: st
     queryKey: submissionKeys.detail(submissionId ?? ''),
     queryFn: async () => {
       const detail = await submissionApi.getForCandidate(submissionId!);
-      if (isFinal(detail.status) && questionId) {
+      if (settled(detail) && questionId) {
         qc.invalidateQueries({ queryKey: submissionKeys.mine(questionId) });
       }
       return detail;
     },
     enabled: !!submissionId,
-    staleTime: (q) => (isFinal(q.state.data?.status) ? Infinity : 0),
+    staleTime: (q) => (settled(q.state.data) ? Infinity : 0),
     refetchInterval: (q) => {
-      if (isFinal(q.state.data?.status)) return false;
+      if (settled(q.state.data)) return false;
       if (Date.now() - startedAt.current.at > POLL_TIMEOUT_MS) return false;
       return POLL_INTERVAL_MS;
     },
@@ -95,7 +98,7 @@ export const useSubmissionDetail = (submissionId: string | null, questionId?: st
   const timedOut =
     !!submissionId &&
     !!query.data &&
-    !isFinal(query.data.status) &&
+    !settled(query.data) &&
     Date.now() - startedAt.current.at > POLL_TIMEOUT_MS;
 
   return {
@@ -110,25 +113,48 @@ export const useSubmissionDetail = (submissionId: string | null, questionId?: st
   };
 };
 
+const hasPending = (page: PagedData<SubmissionSummary> | undefined) =>
+  !!page?.content.some((s) => s.status === 'PENDING');
+
+/**
+ * History keeps polling on its own while a SUBMIT is judging. The detail poll only
+ * lives while the results tab is on screen; without this, switching tabs or reloading
+ * left Submit disabled behind a PENDING row that never refreshed.
+ */
+const historyQuery = (questionId: string, enabled: boolean) => ({
+  queryKey: submissionKeys.mine(questionId),
+  queryFn: () => submissionApi.myHistory(questionId, 0, 50),
+  enabled,
+  staleTime: 15_000,
+  refetchInterval: (q: { state: { data?: PagedData<SubmissionSummary> } }) =>
+    hasPending(q.state.data) ? 2000 : false,
+});
+
 export const useMySubmissions = (questionId: string | undefined, enabled = true) =>
-  useQuery({
-    queryKey: submissionKeys.mine(questionId ?? ''),
-    queryFn: () => submissionApi.myHistory(questionId!, 0, 50),
-    enabled: !!questionId && enabled,
-    staleTime: 15_000,
+  useQuery(historyQuery(questionId ?? '', !!questionId && enabled));
+
+/**
+ * Runs and Submits used on a question. Counted server-side (totalElements of a
+ * type-filtered page), because a 50-row history page can't count up to the 100-run cap.
+ */
+export const useSubmissionCounts = (questionId: string) => {
+  const [runs, submits] = useQueries({
+    queries: (['RUN', 'SUBMIT'] as const).map((type) => ({
+      queryKey: submissionKeys.count(questionId, type),
+      queryFn: () => submissionApi.myHistory(questionId, 0, 1, type),
+      staleTime: 15_000,
+      select: (page: PagedData<SubmissionSummary>) => page.totalElements,
+    })),
   });
+  return { runsUsed: runs.data ?? 0, submitsUsed: submits.data ?? 0 };
+};
 
 export type QuestionProgress = 'accepted' | 'attempted' | 'pending';
 
 /** Per-question progress for the navigator, derived from each question's SUBMIT history. */
 export const useQuestionProgress = (questionIds: string[], enabled = true) => {
   const results = useQueries({
-    queries: questionIds.map((id) => ({
-      queryKey: submissionKeys.mine(id),
-      queryFn: () => submissionApi.myHistory(id, 0, 50),
-      enabled,
-      staleTime: 15_000,
-    })),
+    queries: questionIds.map((id) => historyQuery(id, enabled)),
   });
 
   const progress: Record<string, QuestionProgress | undefined> = {};

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { setAccessToken, getAccessToken, setSessionExpiredHandler } from '../lib/apiClient';
 import { authApi, type LoginPayload } from '../api/auth';
+import { queryClient } from '../lib/queryClient';
+import { clearAllDrafts, setDraftOwner } from '../lib/drafts';
 
 interface User {
   id: string;
@@ -15,20 +17,32 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
+  /** Patch the cached user after a profile edit (e.g. a new full name in the header). */
+  updateUser: (patch: Partial<Pick<User, 'fullName'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Every change of user drops the query cache: keys are not user-scoped, so the
+  // next person on this browser would otherwise see the previous user's data
+  const setUser = useCallback((next: User | null) => {
+    setUserState((prev) => {
+      if (prev?.id !== next?.id) queryClient.clear();
+      return next;
+    });
+    setDraftOwner(next?.id ?? null);
+  }, []);
 
   // When a token refresh fails mid-session, drop to logged-out state;
   // ProtectedRoute handles the redirect to /login.
   useEffect(() => {
     setSessionExpiredHandler(() => setUser(null));
     return () => setSessionExpiredHandler(null);
-  }, []);
+  }, [setUser]);
 
   // On mount, try to refresh if we had a session
   useEffect(() => {
@@ -62,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     tryRefresh();
-  }, []);
+  }, [setUser]);
 
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await authApi.login(payload);
@@ -73,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fullName: response.user.fullName,
       role: response.user.role,
     });
-  }, []);
+  }, [setUser]);
 
   const logout = useCallback(async () => {
     try {
@@ -81,7 +95,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setAccessToken(null);
       setUser(null);
+      clearAllDrafts();
     }
+  }, [setUser]);
+
+  const updateUser = useCallback((patch: Partial<Pick<User, 'fullName'>>) => {
+    setUserState((prev) => (prev ? { ...prev, ...patch } : prev));
   }, []);
 
   return (
@@ -92,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}

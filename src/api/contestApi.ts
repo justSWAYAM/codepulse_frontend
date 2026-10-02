@@ -39,7 +39,7 @@ export interface ContestCandidate {
   email: string;
   fullName: string;
   role: string;
-  active: boolean;
+  isActive: boolean;
   createdAt: string;
 }
 
@@ -84,7 +84,11 @@ export const contestApi = {
     page?: number;
     size?: number;
   }): Promise<PagedData<ContestRecord>> => {
-    const { data } = await apiClient.get<ApiWrapper<PagedData<ContestRecord>>>('/contests', { params });
+    // The list page has no pager: ask for enough rows, newest first, instead of
+    // Spring's default of 20 in no particular order
+    const { data } = await apiClient.get<ApiWrapper<PagedData<ContestRecord>>>('/contests', {
+      params: { size: 200, sort: 'startTime,desc', ...params },
+    });
     return data.data;
   },
 

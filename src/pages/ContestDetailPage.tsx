@@ -140,8 +140,12 @@ const ContestDetailPage: React.FC = () => {
       toast.error('Select at least one candidate');
       return;
     }
-    await assignMutation.mutateAsync({ candidateIds: selectedCandidateIds });
-    setSelectedCandidateIds([]);
+    try {
+      await assignMutation.mutateAsync({ candidateIds: selectedCandidateIds });
+      setSelectedCandidateIds([]);
+    } catch {
+      // the global mutation handler already showed the error; keep the selection
+    }
   };
 
   const currentStatusIndex = CONTEST_STATUSES.indexOf(contest.status);

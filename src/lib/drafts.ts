@@ -4,8 +4,31 @@
  * storage can be blocked or full.
  */
 
-const draftKey = (contestId: string, questionId: string, lang: string) => `cp:draft:${contestId}:${questionId}:${lang}`;
-const langKey = (contestId: string, questionId: string) => `cp:lang:${contestId}:${questionId}`;
+// Keyed by user too: on a shared lab PC the next candidate must not open someone else's code
+let owner = 'anonymous';
+
+/** AuthContext calls this whenever the signed-in user changes. */
+export function setDraftOwner(userId: string | null) {
+  owner = userId ?? 'anonymous';
+}
+
+const draftKey = (contestId: string, questionId: string, lang: string) =>
+  `cp:draft:${owner}:${contestId}:${questionId}:${lang}`;
+const langKey = (contestId: string, questionId: string) => `cp:lang:${owner}:${contestId}:${questionId}`;
+
+/** Removes every saved draft and language choice from this browser (used on logout). */
+export function clearAllDrafts() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('cp:draft:') || key.startsWith('cp:lang:'))) keys.push(key);
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // ignore
+  }
+}
 
 export function loadDraft(contestId: string, questionId: string, lang: string): string | null {
   try {

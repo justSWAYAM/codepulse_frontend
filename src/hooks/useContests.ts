@@ -70,6 +70,7 @@ export const usePublishContest = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    onError: () => {}, // ContestDetailPage toasts the error itself
     mutationFn: () => contestApi.publish(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(id) });
@@ -88,6 +89,7 @@ export const useAssignCandidates = (contestId: string) => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(contestId) });
       queryClient.invalidateQueries({ queryKey: contestKeys.candidates(contestId) });
+      queryClient.invalidateQueries({ queryKey: contestKeys.all }); // candidateCount on the list
       toast.success(
         `${result.assignedCount} assigned, ${result.alreadyAssignedCount} already enrolled`
       );

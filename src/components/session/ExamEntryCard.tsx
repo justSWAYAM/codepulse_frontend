@@ -86,6 +86,18 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
   // Only the server's status decides whether starting is allowed. The client clock can be
   // skewed, and the backend scheduler flips PUBLISHED -> ONGOING up to ~60s after startTime.
   const assessmentOpen = contest.status === 'ONGOING';
+
+  // Re-render when the start time arrives, so a page opened early unlocks by itself
+  const [, setStartTick] = useState(0);
+  useEffect(() => {
+    if (contest.status !== 'PUBLISHED') return;
+    const msUntilStart = new Date(contest.startTime).getTime() - Date.now();
+    if (msUntilStart <= 0) return;
+    // setTimeout caps at ~24.8 days; re-check daily for anything further out
+    const id = window.setTimeout(() => setStartTick((n) => n + 1), Math.min(msUntilStart + 250, 86_400_000));
+    return () => window.clearTimeout(id);
+  }, [contest.status, contest.startTime]);
+
   const awaitingOpen = contest.status === 'PUBLISHED' && hasStartTimePassed(contest);
 
   // While waiting for the scheduler to open the contest, poll its status

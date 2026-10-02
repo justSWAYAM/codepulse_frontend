@@ -44,7 +44,7 @@ const ContestCreatePage: React.FC = () => {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -56,13 +56,14 @@ const ContestCreatePage: React.FC = () => {
   const startTime = watch('startTime');
   const endTime = watch('endTime');
 
-  // Auto-compute durationMinutes from startTime and endTime
+  // Suggest durationMinutes from the window, but only until the admin types their own:
+  // a 60-minute exam inside a 3-hour window must not be reset to 180
+  const durationEdited = !!dirtyFields.durationMinutes;
   useEffect(() => {
-    if (startTime && endTime) {
-      const diff = (new Date(endTime).getTime() - new Date(startTime).getTime()) / 60000;
-      if (diff > 0) setValue('durationMinutes', Math.round(diff));
-    }
-  }, [startTime, endTime, setValue]);
+    if (durationEdited || !startTime || !endTime) return;
+    const diff = (new Date(endTime).getTime() - new Date(startTime).getTime()) / 60000;
+    if (diff > 0) setValue('durationMinutes', Math.round(diff));
+  }, [startTime, endTime, setValue, durationEdited]);
 
   const toggleLanguage = (lang: string) => {
     const current = watch('allowedLanguages');

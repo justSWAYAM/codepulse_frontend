@@ -52,7 +52,7 @@ describe('QuestionCreatePage', () => {
     });
     fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '200' } });
     fireEvent.change(screen.getAllByRole('spinbutton')[1], { target: { value: '1000' } });
-    fireEvent.change(screen.getAllByRole('spinbutton')[2], { target: { value: '524288' } });
+    fireEvent.change(screen.getAllByRole('spinbutton')[2], { target: { value: '512000' } });
 
     fireEvent.click(screen.getByRole('button', { name: /add test case/i }));
     fireEvent.click(screen.getByRole('button', { name: /^save test case$/i }));

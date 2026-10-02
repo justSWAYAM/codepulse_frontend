@@ -4,7 +4,7 @@ import { Button, Dialog, IconButton, Kbd, MOD_KEY, Skeleton, Tooltip } from '../
 import type { QuestionCandidateRecord } from '../../api/questionApi';
 import { LANGUAGES, toLanguage, type LanguageMeta } from '../../lib/languages';
 import { clearDraft, loadDraft, loadLanguage, saveDraft, saveLanguage } from '../../lib/drafts';
-import { useMySubmissions, useRunCode, useSubmitCode } from '../../hooks/useSubmissions';
+import { useMySubmissions, useRunCode, useSubmissionCounts, useSubmitCode } from '../../hooks/useSubmissions';
 import { ResultsPanel, type LastAction, type ResultsTab } from './ResultsPanel';
 
 const MonacoEditor = lazy(() => import('./MonacoEditor'));
@@ -67,6 +67,15 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
     setTab('results');
   }, [questionId, contestId, pickInitialLanguage]);
 
+  // The contest's allowed languages can arrive after the first render; never keep a
+  // language the server will reject with LANGUAGE_NOT_ALLOWED
+  useEffect(() => {
+    if (languages.some((l) => l.name === language.name)) return;
+    const lang = pickInitialLanguage();
+    setLanguage(lang);
+    setCode(loadDraft(contestId, questionId, lang.name) ?? lang.template);
+  }, [languages, language.name, pickInitialLanguage, contestId, questionId]);
+
   // Debounced draft autosave
   useEffect(() => {
     const t = setTimeout(() => {
@@ -101,16 +110,19 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
   const { data: historyPage, isLoading: historyLoading } = useMySubmissions(questionId);
   const history = historyPage?.content;
 
-  const runsUsed = history?.filter((h) => h.type === 'RUN').length ?? 0;
-  const submitsUsed = history?.filter((h) => h.type === 'SUBMIT').length ?? 0;
+  const { runsUsed, submitsUsed } = useSubmissionCounts(questionId);
   const submitPending = history?.some((h) => h.type === 'SUBMIT' && h.status === 'PENDING') ?? false;
   const busy = runMutation.isPending || submitMutation.isPending;
   const blocked = disabled || busy;
 
   const payload = () => ({ questionId, language: language.name, sourceCode: code });
 
+  const runsLeft = RUN_LIMIT - runsUsed;
+  const submitsLeft = SUBMIT_LIMIT - submitsUsed;
+
+  // Same guards as the buttons: the Ctrl/Cmd+Enter shortcuts call these directly
   const run = () => {
-    if (blocked || !code.trim()) return;
+    if (blocked || !code.trim() || runsLeft <= 0) return;
     setResultsOpen(true);
     setTab('results');
     setLastAction({ kind: 'run', pending: true, error: null, detail: null });
@@ -121,7 +133,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
   };
 
   const submit = () => {
-    if (blocked || !code.trim()) return;
+    if (blocked || !code.trim() || submitPending || submitsLeft <= 0) return;
     setResultsOpen(true);
     setTab('results');
     setLastAction({ kind: 'submit', pending: true, error: null, submissionId: null });
@@ -130,9 +142,6 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
       onError: (error) => setLastAction({ kind: 'submit', pending: false, error, submissionId: null }),
     });
   };
-
-  const runsLeft = RUN_LIMIT - runsUsed;
-  const submitsLeft = SUBMIT_LIMIT - submitsUsed;
 
   return (
     <section data-theme="dark" aria-label="Code editor" className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-editor-bg text-editor-fg">
