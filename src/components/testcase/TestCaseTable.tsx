@@ -7,7 +7,8 @@ import { DeleteTestCaseDialog } from './DeleteTestCaseDialog';
 
 interface TestCaseTableProps {
   testCases: TestCaseAdminRecord[];
-  onDelete: (testCaseId: string) => void;
+  /** Omit to render the table read-only (no delete column) */
+  onDelete?: (testCaseId: string) => void;
   isDeleting: boolean;
 }
 
@@ -40,9 +41,11 @@ export const TestCaseTable: React.FC<TestCaseTableProps> = ({ testCases, onDelet
                 <th className={th}>Input</th>
                 <th className={th}>Expected output</th>
                 <th className={`${th} w-20 text-right`}>Weight</th>
-                <th className={`${th} w-14`}>
-                  <span className="sr-only">Actions</span>
-                </th>
+                {onDelete && (
+                  <th className={`${th} w-14`}>
+                    <span className="sr-only">Actions</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -71,19 +74,21 @@ export const TestCaseTable: React.FC<TestCaseTableProps> = ({ testCases, onDelet
                     <code className={code}>{truncate(tc.expectedOutput)}</code>
                   </td>
                   <td className="tabular px-4 py-2.5 text-right font-mono text-[12px] text-fg">{tc.weight}</td>
-                  <td className="px-4 py-1.5 text-right">
-                    <IconButton
-                      aria-label={`Delete test case ${index + 1}`}
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Don't open preview
-                        setDeleteTarget(tc.id);
-                      }}
-                      className="hover-fine:bg-danger-soft hover-fine:text-danger-text"
-                    >
-                      <Trash2 className="size-4" />
-                    </IconButton>
-                  </td>
+                  {onDelete && (
+                    <td className="px-4 py-1.5 text-right">
+                      <IconButton
+                        aria-label={`Delete test case ${index + 1}`}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Don't open preview
+                          setDeleteTarget(tc.id);
+                        }}
+                        className="hover-fine:bg-danger-soft hover-fine:text-danger-text"
+                      >
+                        <Trash2 className="size-4" />
+                      </IconButton>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -107,7 +112,7 @@ export const TestCaseTable: React.FC<TestCaseTableProps> = ({ testCases, onDelet
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
-            onDelete(deleteTarget);
+            onDelete?.(deleteTarget);
             setDeleteTarget(null);
           }
         }}

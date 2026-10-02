@@ -57,6 +57,7 @@ export const useUpdateContest = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    onError: () => {}, // the edit form shows the error inline
     mutationFn: (payload: UpdateContestPayload) => contestApi.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(id) });
@@ -80,6 +81,19 @@ export const usePublishContest = (id: string) => {
   });
 };
 
+export const useDeleteContest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => contestApi.delete(id),
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({ queryKey: contestKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: contestKeys.all });
+      toast.success('Contest deleted');
+    },
+  });
+};
+
 export const useAssignCandidates = (contestId: string) => {
   const queryClient = useQueryClient();
 
@@ -93,6 +107,21 @@ export const useAssignCandidates = (contestId: string) => {
       toast.success(
         `${result.assignedCount} assigned, ${result.alreadyAssignedCount} already enrolled`
       );
+    },
+  });
+};
+
+export const useUnassignCandidates = (contestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AssignCandidatesPayload) =>
+      contestApi.unassignCandidates(contestId, payload),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: contestKeys.detail(contestId) });
+      queryClient.invalidateQueries({ queryKey: contestKeys.candidates(contestId) });
+      queryClient.invalidateQueries({ queryKey: contestKeys.all }); // candidateCount on the list
+      toast.success(`${result.removedCount} unassigned`);
     },
   });
 };

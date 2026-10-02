@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, Plus } from 'lucide-react';
-import { Button, Card, Field, Input, PageHeader, Textarea } from '../components/ui';
+import { ArrowLeft, Check, Lock, Plus } from 'lucide-react';
+import { Button, ButtonLink, Card, Field, Input, PageHeader, Textarea } from '../components/ui';
+import { LoadingState } from '../components/states/LoadingState';
+import { EmptyState } from '../components/states/EmptyState';
 import { LANGUAGES as LANGUAGE_META } from '../lib/languages';
 import { getErrorMessage } from '../lib/apiError';
 import { cn } from '../lib/cn';
-import { useCreateContest } from '../hooks/useContests';
+import { useContest, useCreateContest, useUpdateContest } from '../hooks/useContests';
 
 const LANGUAGES = ['JAVA', 'PYTHON', 'CPP', 'C', 'JAVASCRIPT'] as const;
 
@@ -25,17 +27,27 @@ const schema = z
   .refine((d) => new Date(d.endTime) > new Date(d.startTime), {
     message: 'End time must be after start time',
     path: ['endTime'],
-  })
-  .refine((d) => new Date(d.startTime) > new Date(), {
-    message: 'Start time must be in the future',
-    path: ['startTime'],
   });
+// "Start time must be in the future" is checked in onSubmit: when editing it only
+// applies if the schedule changed, matching ContestService.updateContest
 
 type FormValues = z.infer<typeof schema>;
 
+// ISO instant -> value for <input type="datetime-local"> in the viewer's timezone
+const toLocalInput = (iso: string) => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+/** Create a contest, or edit a DRAFT one at /contests/:id/edit */
 const ContestCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
   const createContest = useCreateContest();
+  const updateContest = useUpdateContest(id ?? '');
+  const { data: contest, isLoading } = useContest(id ?? '');
   const [apiError, setApiError] = useState<string | null>(null);
   const [description, setDescription] = useState('');
 
@@ -44,6 +56,8 @@ const ContestCreatePage: React.FC = () => {
     handleSubmit,
     watch,
     setValue,
+    setError,
+    reset,
     formState: { errors, dirtyFields },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -53,28 +67,70 @@ const ContestCreatePage: React.FC = () => {
     },
   });
 
+  // Prefill once the contest loads
+  useEffect(() => {
+    if (!contest) return;
+    reset({
+      title: contest.title,
+      description: contest.description ?? '',
+      startTime: toLocalInput(contest.startTime),
+      endTime: toLocalInput(contest.endTime),
+      durationMinutes: contest.durationMinutes,
+      allowedLanguages: contest.allowedLanguages,
+    });
+    setDescription(contest.description ?? '');
+  }, [contest, reset]);
+
   const startTime = watch('startTime');
   const endTime = watch('endTime');
+  const scheduleChanged = !!dirtyFields.startTime || !!dirtyFields.endTime;
 
   // Suggest durationMinutes from the window, but only until the admin types their own:
-  // a 60-minute exam inside a 3-hour window must not be reset to 180
+  // a 60-minute exam inside a 3-hour window must not be reset to 180.
+  // When editing, keep the saved duration until the schedule itself changes.
   const durationEdited = !!dirtyFields.durationMinutes;
   useEffect(() => {
-    if (durationEdited || !startTime || !endTime) return;
+    if (durationEdited || !startTime || !endTime || (isEdit && !scheduleChanged)) return;
     const diff = (new Date(endTime).getTime() - new Date(startTime).getTime()) / 60000;
     if (diff > 0) setValue('durationMinutes', Math.round(diff));
-  }, [startTime, endTime, setValue, durationEdited]);
+  }, [startTime, endTime, setValue, durationEdited, isEdit, scheduleChanged]);
 
   const toggleLanguage = (lang: string) => {
     const current = watch('allowedLanguages');
     const next = current.includes(lang)
       ? current.filter((l) => l !== lang)
       : [...current, lang];
-    setValue('allowedLanguages', next, { shouldValidate: true });
+    setValue('allowedLanguages', next, { shouldValidate: true, shouldDirty: true });
   };
 
   const onSubmit = async (values: FormValues) => {
     setApiError(null);
+    if ((!isEdit || scheduleChanged) && new Date(values.startTime) <= new Date()) {
+      setError('startTime', { message: 'Start time must be in the future' });
+      return;
+    }
+
+    if (isEdit) {
+      // Send only what changed so untouched times aren't re-validated server-side
+      const payload: Parameters<typeof updateContest.mutateAsync>[0] = {};
+      if (dirtyFields.title) payload.title = values.title;
+      if (dirtyFields.description) payload.description = values.description ?? '';
+      if (scheduleChanged) {
+        payload.startTime = new Date(values.startTime).toISOString();
+        payload.endTime = new Date(values.endTime).toISOString();
+      }
+      // The duration may also be auto-adjusted from a schedule change, not just typed
+      if (values.durationMinutes !== contest?.durationMinutes) payload.durationMinutes = values.durationMinutes;
+      if (dirtyFields.allowedLanguages) payload.allowedLanguages = values.allowedLanguages;
+      try {
+        await updateContest.mutateAsync(payload);
+        navigate(`/dashboard/contests/${id}`);
+      } catch (err: unknown) {
+        setApiError(getErrorMessage(err, 'Failed to save changes. Please try again.'));
+      }
+      return;
+    }
+
     try {
       const result = await createContest.mutateAsync({
         title: values.title,
@@ -91,18 +147,51 @@ const ContestCreatePage: React.FC = () => {
   };
 
   const selectedLangs = watch('allowedLanguages');
+  const backTo = isEdit ? `/dashboard/contests/${id}` : '/dashboard/contests';
+
+  if (isEdit && isLoading) return <LoadingState message="Loading contest…" />;
+
+  if (isEdit && (!contest || contest.status !== 'DRAFT')) {
+    return (
+      <Card className="mx-auto mt-8 max-w-md">
+        <EmptyState
+          icon={<Lock className="size-5" />}
+          title={contest ? 'Only draft contests can be edited' : 'Contest not found'}
+          message={
+            contest
+              ? 'This contest has been published, so its details are locked.'
+              : 'This contest doesn’t exist or has been removed.'
+          }
+          action={
+            <ButtonLink
+              to={contest ? backTo : '/dashboard/contests'}
+              variant="secondary"
+              size="sm"
+              leadingIcon={<ArrowLeft className="size-4" />}
+            >
+              {contest ? 'Back to contest' : 'Back to contests'}
+            </ButtonLink>
+          }
+        />
+      </Card>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <Link
-          to="/dashboard/contests"
+          to={backTo}
           className="mb-3 inline-flex items-center gap-1.5 rounded-lg text-[13px] text-fg-muted hover-fine:text-fg"
         >
           <ArrowLeft className="size-4" />
-          Contests
+          {isEdit ? 'Back to contest' : 'Contests'}
         </Link>
-        <PageHeader title="Create contest" description="Set the schedule and languages. You’ll add questions and candidates next." />
+        {isEdit ? (
+          <PageHeader title="Edit contest" description="Change the details, schedule or languages while the contest is still a draft." />
+        ) : (
+          <PageHeader title="Create contest" description="Set the schedule and languages. You’ll add questions and candidates next." />
+        )}
       </div>
 
       <Card>
@@ -128,7 +217,7 @@ const ContestCreatePage: React.FC = () => {
                   value={description}
                   onChange={(e) => {
                     setDescription(e.target.value);
-                    setValue('description', e.target.value);
+                    setValue('description', e.target.value, { shouldDirty: true });
                   }}
                   placeholder="Rules, topics and anything candidates should know…"
                   rows={4}
@@ -195,11 +284,11 @@ const ContestCreatePage: React.FC = () => {
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t border-line bg-surface-2/50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-            <Button variant="secondary" onClick={() => navigate('/dashboard/contests')}>
+            <Button variant="secondary" onClick={() => navigate(backTo)}>
               Cancel
             </Button>
-            <Button type="submit" loading={createContest.isPending}>
-              Create contest
+            <Button type="submit" loading={isEdit ? updateContest.isPending : createContest.isPending}>
+              {isEdit ? 'Save changes' : 'Create contest'}
             </Button>
           </div>
         </form>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
-import { FileCode2, Plus } from 'lucide-react';
+import { FileCode2, Lock, Plus } from 'lucide-react';
 import { Button, Card, Skeleton } from '../ui';
 import { EmptyState } from '../states/EmptyState';
 import { QuestionCard } from './QuestionCard';
@@ -25,6 +25,9 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
   const navigate = useNavigate();
   const isAdmin = role === 'ADMIN';
   const isCandidate = role === 'CANDIDATE';
+  // Questions freeze once the contest starts (the backend refuses changes too)
+  const locked = contestStatus === 'ONGOING' || contestStatus === 'COMPLETED';
+  const canEdit = isAdmin && !locked;
 
   const { data: questions = [], isLoading } = useQuestions(contestId);
   const reorderMutation = useReorderQuestions(contestId);
@@ -37,7 +40,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
   });
 
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination || !isAdmin) return;
+    if (!result.destination || !canEdit) return;
     if (result.destination.index === result.source.index) return;
 
     // Create a new array and move the item
@@ -98,11 +101,11 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
           icon={<FileCode2 className="size-5" />}
           title="No questions yet"
           message={
-            isAdmin
+            canEdit
               ? 'Add the first programming question to this contest.'
               : 'No questions have been added to this contest yet.'
           }
-          action={isAdmin ? addButton : undefined}
+          action={canEdit ? addButton : undefined}
         />
       </Card>
     );
@@ -115,11 +118,31 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
           <h2 className="font-display text-[15px] font-semibold tracking-[-0.015em] text-fg">
             Questions <span className="tabular text-fg-subtle">({questions.length})</span>
           </h2>
-          {addButton}
+          {canEdit && addButton}
         </div>
       )}
 
-      {isAdmin ? (
+      {isAdmin && locked && (
+        <p className="flex items-center gap-2 rounded-xl border border-line bg-surface-2/60 px-3.5 py-2.5 text-[13px] text-fg-muted">
+          <Lock className="size-3.5 shrink-0 text-fg-subtle" aria-hidden />
+          This contest is {contestStatus === 'ONGOING' ? 'live' : 'completed'}, so its questions and test cases are locked.
+        </p>
+      )}
+
+      {isAdmin && locked ? (
+        <div className="space-y-2">
+          {questions.map((question, index) => (
+            <QuestionCard
+              key={question.id}
+              question={question}
+              role={role}
+              index={index}
+              readOnly
+              onEdit={(id) => navigate(`/dashboard/contests/${contestId}/questions/${id}/edit`)}
+            />
+          ))}
+        </div>
+      ) : isAdmin ? (
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="questions-list">
             {(provided) => (

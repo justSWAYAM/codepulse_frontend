@@ -76,6 +76,11 @@ export interface AssignCandidatesResult {
   failedIds: string[];
 }
 
+export interface UnassignCandidatesResult {
+  removedCount: number;
+  notAssignedCount: number;
+}
+
 // ── API Functions ──
 
 export const contestApi = {
@@ -107,6 +112,10 @@ export const contestApi = {
     return data.data;
   },
 
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/contests/${id}`);
+  },
+
   publish: async (id: string): Promise<ContestRecord> => {
     const { data } = await apiClient.post<ApiWrapper<ContestRecord>>(`/contests/${id}/publish`);
     return data.data;
@@ -119,6 +128,17 @@ export const contestApi = {
     const { data } = await apiClient.post<ApiWrapper<AssignCandidatesResult>>(
       `/contests/${id}/candidates`,
       payload
+    );
+    return data.data;
+  },
+
+  unassignCandidates: async (
+    id: string,
+    payload: AssignCandidatesPayload
+  ): Promise<UnassignCandidatesResult> => {
+    const { data } = await apiClient.delete<ApiWrapper<UnassignCandidatesResult>>(
+      `/contests/${id}/candidates`,
+      { data: payload }
     );
     return data.data;
   },

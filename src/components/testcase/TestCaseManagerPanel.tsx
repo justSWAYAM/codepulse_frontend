@@ -13,9 +13,11 @@ import type { TestCaseFormData } from './TestCaseForm';
 interface TestCaseManagerPanelProps {
   questionId: string;
   contestId: string;
+  /** Contest is live/completed: list and preview only */
+  readOnly?: boolean;
 }
 
-export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ questionId, contestId }) => {
+export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ questionId, contestId, readOnly = false }) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
 
@@ -59,17 +61,19 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ ques
           description="Inputs and expected outputs used for automated grading."
           className="flex-wrap"
           actions={
-            <>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowBulkDialog(true)}
-                leadingIcon={<Upload className="size-4" />}
-              >
-                Bulk upload
-              </Button>
-              {addButton}
-            </>
+            readOnly ? undefined : (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowBulkDialog(true)}
+                  leadingIcon={<Upload className="size-4" />}
+                >
+                  Bulk upload
+                </Button>
+                {addButton}
+              </>
+            )
           }
         />
         {adminTestCases.length === 0 && (
@@ -77,15 +81,23 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ ques
             <EmptyState
               icon={<FlaskConical className="size-5" />}
               title="No test cases yet"
-              message="Add at least one hidden test case before this question can be scored."
-              action={addButton}
+              message={
+                readOnly
+                  ? 'This question has no test cases.'
+                  : 'Add at least one hidden test case before this question can be scored.'
+              }
+              action={readOnly ? undefined : addButton}
             />
           </div>
         )}
       </Card>
 
       {adminTestCases.length > 0 && (
-        <TestCaseTable testCases={adminTestCases} onDelete={handleDelete} isDeleting={deleteMutation.isPending} />
+        <TestCaseTable
+          testCases={adminTestCases}
+          onDelete={readOnly ? undefined : handleDelete}
+          isDeleting={deleteMutation.isPending}
+        />
       )}
 
       <CreateTestCaseDialog

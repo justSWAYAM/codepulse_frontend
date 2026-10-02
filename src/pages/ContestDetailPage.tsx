@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, BookOpen, Calendar, Check, Clock, Code2, FileCode2, Hourglass, ListChecks, Send, Users } from 'lucide-react';
-import { useContest, usePublishContest, useAssignCandidates } from '../hooks/useContests';
+import { AlertTriangle, ArrowLeft, BookOpen, Calendar, Check, Clock, X, Code2, FileCode2, Hourglass, ListChecks, Pencil, Send, Users } from 'lucide-react';
+import { useContest, usePublishContest, useAssignCandidates, useUnassignCandidates } from '../hooks/useContests';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../context/AuthContext';
 import { ContestStatusBadge } from '../components/contest/ContestStatusBadge';
@@ -48,6 +48,8 @@ const ContestDetailPage: React.FC = () => {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  // Enrolled candidates marked for removal (DRAFT only)
+  const [markedForRemoval, setMarkedForRemoval] = useState<string[]>([]);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const [filterBranch, setFilterBranch] = useState<string>('');
@@ -72,6 +74,7 @@ const ContestDetailPage: React.FC = () => {
   const { data: contest, isLoading, isError, error } = useContest(id!);
   const publishMutation = usePublishContest(id!);
   const assignMutation = useAssignCandidates(id!);
+  const unassignMutation = useUnassignCandidates(id!);
 
   // GET /users is admin-only, so don't fire it for other roles.
   // Page size is large because the picker filters client-side (Spring caps size at 2000).
@@ -98,6 +101,7 @@ const ContestDetailPage: React.FC = () => {
   const handleDeselectAllFiltered = () => {
     const filteredIds = new Set(filteredCandidates.map((c) => c.id));
     setSelectedCandidateIds((prev) => prev.filter((cid) => !filteredIds.has(cid)));
+    setMarkedForRemoval((prev) => prev.filter((cid) => !filteredIds.has(cid)));
   };
 
   if (isLoading) return <LoadingState message="Loading contest…" />;
@@ -135,18 +139,41 @@ const ContestDetailPage: React.FC = () => {
   const toggleCandidate = (cid: string) =>
     setSelectedCandidateIds((prev) => (prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid]));
 
-  const handleAssign = async () => {
-    if (selectedCandidateIds.length === 0) {
+  // Unassigning is DRAFT-only; once the contest leaves DRAFT, stale marks are ignored
+  const canUnassign = contest.status === 'DRAFT';
+  const removeIds = canUnassign ? markedForRemoval : [];
+  const toggleRemoval = (cid: string) =>
+    setMarkedForRemoval((prev) => (prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid]));
+
+  const handleSave = async () => {
+    if (selectedCandidateIds.length === 0 && removeIds.length === 0) {
       toast.error('Select at least one candidate');
       return;
     }
     try {
-      await assignMutation.mutateAsync({ candidateIds: selectedCandidateIds });
-      setSelectedCandidateIds([]);
+      if (selectedCandidateIds.length > 0) {
+        await assignMutation.mutateAsync({ candidateIds: selectedCandidateIds });
+        setSelectedCandidateIds([]);
+      }
+      if (removeIds.length > 0) {
+        await unassignMutation.mutateAsync({ candidateIds: removeIds });
+        setMarkedForRemoval([]);
+      }
     } catch {
-      // the global mutation handler already showed the error; keep the selection
+      // the global mutation handler already showed the error; keep the pending changes
     }
   };
+
+  const addCount = selectedCandidateIds.length;
+  const removeCount = removeIds.length;
+  const saveLabel =
+    addCount > 0 && removeCount > 0
+      ? `Assign ${addCount} · Remove ${removeCount}`
+      : removeCount > 0
+        ? `Remove ${removeCount} candidate${removeCount === 1 ? '' : 's'}`
+        : addCount > 0
+          ? `Assign ${addCount} candidate${addCount === 1 ? '' : 's'}`
+          : 'Assign candidates';
 
   const currentStatusIndex = CONTEST_STATUSES.indexOf(contest.status);
 
@@ -170,14 +197,19 @@ const ContestDetailPage: React.FC = () => {
             <p className="mt-1 font-mono text-[11px] text-fg-subtle">{contest.id}</p>
           </div>
           {isAdmin && contest.status === 'DRAFT' && (
-            <Button
-              onClick={() => setShowPublishConfirm(true)}
-              disabled={contest.candidateCount === 0}
-              leadingIcon={<Send className="size-4" />}
-              title={contest.candidateCount === 0 ? 'Assign candidates before publishing' : undefined}
-            >
-              Publish contest
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <ButtonLink to={`/dashboard/contests/${contest.id}/edit`} variant="secondary" leadingIcon={<Pencil className="size-4" />}>
+                Edit details
+              </ButtonLink>
+              <Button
+                onClick={() => setShowPublishConfirm(true)}
+                disabled={contest.candidateCount === 0}
+                leadingIcon={<Send className="size-4" />}
+                title={contest.candidateCount === 0 ? 'Assign candidates before publishing' : undefined}
+              >
+                Publish contest
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -361,20 +393,23 @@ const ContestDetailPage: React.FC = () => {
                         {filteredCandidates.map((c) => {
                           const isAssigned = !!contest.candidates?.some((cc) => cc.id === c.id);
                           const isSelected = selectedCandidateIds.includes(c.id);
+                          const isMarked = isAssigned && removeIds.includes(c.id);
+                          const locked = isAssigned && !canUnassign;
                           return (
                             <li key={c.id}>
                               <label
                                 className={cn(
                                   'flex items-center gap-3 px-3.5 py-2.5',
-                                  isAssigned ? 'cursor-default opacity-60' : 'cursor-pointer hover-fine:bg-surface-2/60',
+                                  locked ? 'cursor-default opacity-60' : 'cursor-pointer hover-fine:bg-surface-2/60',
                                   isSelected && 'bg-primary-soft',
+                                  isMarked && 'bg-danger-soft',
                                 )}
                               >
                                 <input
                                   type="checkbox"
-                                  checked={isSelected || isAssigned}
-                                  disabled={isAssigned}
-                                  onChange={() => toggleCandidate(c.id)}
+                                  checked={isAssigned ? !isMarked : isSelected}
+                                  disabled={locked}
+                                  onChange={() => (isAssigned ? toggleRemoval(c.id) : toggleCandidate(c.id))}
                                   className="size-4 accent-[var(--primary)]"
                                 />
                                 <div className="min-w-0 flex-1">
@@ -383,10 +418,16 @@ const ContestDetailPage: React.FC = () => {
                                     {[c.rollNumber, c.email].filter(Boolean).join(' · ')}
                                   </p>
                                 </div>
-                                {isAssigned && (
-                                  <Badge size="sm" tone="success" icon={<Check className="size-3" />}>
-                                    Enrolled
+                                {isMarked ? (
+                                  <Badge size="sm" tone="danger" icon={<X className="size-3" />}>
+                                    Will be removed
                                   </Badge>
+                                ) : (
+                                  isAssigned && (
+                                    <Badge size="sm" tone="success" icon={<Check className="size-3" />}>
+                                      Enrolled
+                                    </Badge>
+                                  )
                                 )}
                               </label>
                             </li>
@@ -398,17 +439,18 @@ const ContestDetailPage: React.FC = () => {
 
                   <div className="flex items-center justify-between gap-3">
                     <p className="tabular text-[13px] text-fg-muted">
-                      {selectedCandidateIds.length > 0 ? `${selectedCandidateIds.length} selected` : `${filteredCandidates.length} shown`}
+                      {addCount > 0 || removeCount > 0
+                        ? [addCount > 0 && `${addCount} to add`, removeCount > 0 && `${removeCount} to remove`].filter(Boolean).join(' · ')
+                        : `${filteredCandidates.length} shown`}
                     </p>
                     <Button
-                      onClick={handleAssign}
-                      loading={assignMutation.isPending}
-                      disabled={selectedCandidateIds.length === 0}
+                      onClick={handleSave}
+                      loading={assignMutation.isPending || unassignMutation.isPending}
+                      disabled={addCount === 0 && removeCount === 0}
+                      variant={removeCount > 0 && addCount === 0 ? 'danger' : 'primary'}
                       leadingIcon={<Users className="size-4" />}
                     >
-                      {selectedCandidateIds.length > 0
-                        ? `Assign ${selectedCandidateIds.length} candidate${selectedCandidateIds.length === 1 ? '' : 's'}`
-                        : 'Assign candidates'}
+                      {saveLabel}
                     </Button>
                   </div>
                 </CardBody>

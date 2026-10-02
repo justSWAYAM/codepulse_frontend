@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FlaskConical, Plus } from 'lucide-react';
+import { ArrowLeft, FlaskConical, Lock, Plus } from 'lucide-react';
 import { QuestionForm } from '../components/question/QuestionForm';
 import type { QuestionFormData } from '../components/question/QuestionForm';
 import { TestCaseForm } from '../components/testcase/TestCaseForm';
@@ -8,13 +8,16 @@ import type { TestCaseFormData } from '../components/testcase/TestCaseForm';
 import { TestCaseTable } from '../components/testcase/TestCaseTable';
 import type { TestCaseAdminRecord } from '../api/testCaseApi';
 import { useCreateQuestion } from '../hooks/useQuestions';
-import { Button, Card, CardBody, CardHeader, PageHeader } from '../components/ui';
+import { useContest } from '../hooks/useContests';
+import { Button, ButtonLink, Card, CardBody, CardHeader, PageHeader } from '../components/ui';
 import { EmptyState } from '../components/states/EmptyState';
 
 export const QuestionCreatePage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
   const navigate = useNavigate();
   const createMutation = useCreateQuestion(contestId!);
+  const { data: contest } = useContest(contestId!);
+  const locked = contest?.status === 'ONGOING' || contest?.status === 'COMPLETED';
   const [draftTestCases, setDraftTestCases] = useState<TestCaseAdminRecord[]>([]);
   const [showTestCaseForm, setShowTestCaseForm] = useState(false);
 
@@ -64,11 +67,33 @@ export const QuestionCreatePage: React.FC = () => {
     [draftTestCases]
   );
 
+  if (locked) {
+    return (
+      <Card className="mx-auto mt-8 max-w-md">
+        <EmptyState
+          icon={<Lock className="size-5" />}
+          title="Questions are locked"
+          message={`Questions can't be added once a contest is ${contest?.status === 'ONGOING' ? 'live' : 'completed'}.`}
+          action={
+            <ButtonLink
+              to={`/dashboard/contests/${contestId}?tab=questions`}
+              variant="secondary"
+              size="sm"
+              leadingIcon={<ArrowLeft className="size-4" />}
+            >
+              Back to questions
+            </ButtonLink>
+          }
+        />
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-3">
         <Link
-          to={`/dashboard/contests/${contestId}`}
+          to={`/dashboard/contests/${contestId}?tab=questions`}
           className="inline-flex items-center gap-1.5 text-[13px] text-fg-muted transition-colors duration-150 hover-fine:text-fg"
         >
           <ArrowLeft className="size-3.5" aria-hidden />

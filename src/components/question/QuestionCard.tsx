@@ -1,5 +1,5 @@
 import React from 'react';
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { DifficultyBadge } from '../DifficultyBadge';
 import { IconButton } from '../ui';
@@ -13,9 +13,11 @@ interface QuestionCardProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string, title: string) => void;
   onClick?: (id: string) => void;
+  /** Contest is live/completed: view only, no reorder or delete */
+  readOnly?: boolean;
 }
 
-export const QuestionCard: React.FC<QuestionCardProps> = ({ question, role, index, onEdit, onDelete, onClick }) => {
+export const QuestionCard: React.FC<QuestionCardProps> = ({ question, role, index, onEdit, onDelete, onClick, readOnly = false }) => {
   const isAdmin = role === 'ADMIN';
 
   return (
@@ -26,7 +28,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, role, inde
         onClick && 'cursor-pointer transition-colors duration-150 hover-fine:bg-surface-2/60',
       )}
     >
-      {isAdmin && (
+      {isAdmin && !readOnly && (
         <span
           className="-ml-1 cursor-grab text-fg-subtle transition-colors duration-150 active:cursor-grabbing hover-fine:text-fg-muted"
           aria-hidden
@@ -53,15 +55,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, role, inde
       {isAdmin && (
         <div className="flex items-center gap-1">
           <IconButton
-            aria-label={`Edit ${question.title}`}
+            aria-label={`${readOnly ? 'View' : 'Edit'} ${question.title}`}
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
               onEdit?.(question.id);
             }}
           >
-            <Pencil className="size-4" />
+            {readOnly ? <Eye className="size-4" /> : <Pencil className="size-4" />}
           </IconButton>
+          {!readOnly && (
           <IconButton
             aria-label={`Delete ${question.title}`}
             size="sm"
@@ -73,6 +76,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, role, inde
           >
             <Trash2 className="size-4" />
           </IconButton>
+          )}
         </div>
       )}
     </div>

@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trophy } from 'lucide-react';
-import { useContests } from '../hooks/useContests';
+import { Plus, Trash2, Trophy } from 'lucide-react';
+import { useContests, useDeleteContest } from '../hooks/useContests';
 import { useAuth } from '../context/AuthContext';
 import { ContestCard } from '../components/contest/ContestCard';
 import { EmptyState } from '../components/states/EmptyState';
 import { ErrorState } from '../components/states/ErrorState';
-import { Button, ButtonLink, PageHeader, Segmented, Skeleton } from '../components/ui';
-import type { ContestStatus } from '../api/contestApi';
+import { Button, ButtonLink, Dialog, PageHeader, Segmented, Skeleton } from '../components/ui';
+import type { ContestRecord, ContestStatus } from '../api/contestApi';
 
 type Filter = 'ALL' | ContestStatus;
 
@@ -32,6 +32,13 @@ const ContestListPage: React.FC = () => {
 
   const { data, isLoading, isError, refetch } = useContests({ status: filter === 'ALL' ? undefined : filter });
   const contests = data?.content ?? [];
+  const [contestToDelete, setContestToDelete] = useState<ContestRecord | null>(null);
+  const deleteMutation = useDeleteContest();
+
+  const confirmDelete = () => {
+    if (!contestToDelete) return;
+    deleteMutation.mutate(contestToDelete.id, { onSuccess: () => setContestToDelete(null) });
+  };
   // Candidates never see drafts
   const filters = isCandidate ? FILTERS.filter((f) => f.value !== 'DRAFT') : FILTERS;
 
@@ -108,10 +115,40 @@ const ContestListPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {contests.map((contest) => (
-            <ContestCard key={contest.id} contest={contest} showCandidateCount={!isCandidate} />
+            <ContestCard
+              key={contest.id}
+              contest={contest}
+              showCandidateCount={!isCandidate}
+              onDelete={isAdmin ? setContestToDelete : undefined}
+            />
           ))}
         </div>
       )}
+
+      <Dialog
+        open={!!contestToDelete}
+        onOpenChange={(o) => !o && setContestToDelete(null)}
+        size="sm"
+        tone="danger"
+        icon={<Trash2 className="size-[18px]" />}
+        title="Delete contest"
+        description={
+          contestToDelete
+            ? `“${contestToDelete.title}” and its questions, test cases and candidate assignments will be permanently deleted.`
+            : undefined
+        }
+        dismissible={!deleteMutation.isPending}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setContestToDelete(null)} disabled={deleteMutation.isPending}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDelete} loading={deleteMutation.isPending}>
+              Delete
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 };

@@ -51,6 +51,14 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="contests/:id/edit"
+              element={
+                <ProtectedRoute roles={['ADMIN']}>
+                  <ContestCreatePage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="contests/:id" element={<ContestDetailPage />} />
 
             {/* Question routes — nested under a specific contest */}

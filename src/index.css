@@ -212,12 +212,6 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  html,
-  body {
-    height: 100%;
-    overflow: hidden;
-  }
-
   body {
     margin: 0;
     background-color: var(--canvas);

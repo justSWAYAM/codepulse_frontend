@@ -34,12 +34,15 @@ interface QuestionFormProps {
   defaultValues?: Partial<QuestionFormData>;
   onSubmit: (data: QuestionFormData) => void;
   isPending: boolean;
+  /** Contest is live/completed: show the question without letting it be changed */
+  readOnly?: boolean;
 }
 
 export const QuestionForm: React.FC<QuestionFormProps> = ({
   defaultValues,
   onSubmit,
   isPending,
+  readOnly = false,
 }) => {
   const {
     register,
@@ -65,7 +68,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       <Card className="overflow-hidden">
         <div className="grid lg:grid-cols-2">
           {/* Left: fields */}
-          <div className="space-y-5 p-5 sm:p-6">
+          <fieldset disabled={readOnly} className="min-w-0 space-y-5 p-5 sm:p-6">
             <Field label="Title" error={errors.title?.message} required>
               {(p) => <Input {...p} {...register('title')} placeholder="e.g., Two Sum" />}
             </Field>
@@ -119,7 +122,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 />
               )}
             </Field>
-          </div>
+          </fieldset>
 
           {/* Right: live preview */}
           <div className="flex min-w-0 flex-col border-t border-line bg-surface-2/40 lg:border-t-0 lg:border-l">
@@ -140,6 +143,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         </div>
 
         {/* Actions */}
+        {!readOnly && (
         <div className="flex flex-col-reverse gap-2 border-t border-line bg-surface-2/60 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <Button variant="secondary" onClick={() => window.history.back()} disabled={isPending}>
             Cancel
@@ -148,6 +152,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             Save question
           </Button>
         </div>
+        )}
       </Card>
     </form>
   );
