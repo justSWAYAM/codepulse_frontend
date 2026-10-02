@@ -27,6 +27,15 @@ const FRIENDLY: Record<string, string> = {
   SUBMISSION_ACCESS_DENIED: 'You don’t have access to that submission.',
   RATE_LIMITED: 'You’re going a bit fast. Wait a few seconds, then try again.',
   ACCOUNT_DISABLED: 'Your account has been deactivated. Contact an administrator.',
+  // Module 9. RESULTS_NOT_READY is left out on purpose: the server's message carries the counts.
+  RESULTS_NEED_REVIEW: 'Some results are flagged for review. Tick the acknowledgement to publish anyway, or resolve them first.',
+  RESULTS_ALREADY_PUBLISHED: 'These results are already published.',
+  RESULTS_NOT_PUBLISHED: 'These results aren’t published.',
+  RESULTS_PUBLISHED_LOCKED: 'Results are published, so scores are locked. Unpublish them to make changes.',
+  SUBMISSION_NOT_EVALUABLE: 'This submission can’t be scored by hand. Only finished SUBMITs from an ended exam can.',
+  SUBMISSION_NOT_COUNTED: 'This isn’t the submission that counts for this question. Refresh and evaluate the counted one.',
+  ADJUSTED_SCORE_OUT_OF_RANGE: 'The score must be between 0 and the question’s points, with at most 2 decimals.',
+  RESULT_NOT_FOUND: 'No result yet. This candidate may still be taking the exam or being judged.',
 };
 
 export function getErrorCode(error: unknown): string | null {
@@ -51,7 +60,9 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
     if (/^[A-Z][A-Z0-9_]+$/.test(cleaned)) {
       return cleaned.charAt(0) + cleaned.slice(1).toLowerCase().replace(/_/g, ' ') + '.';
     }
-    return cleaned;
+    // "CODE: readable text" with no friendly copy → show just the text
+    const text = cleaned.replace(/^[A-Z][A-Z0-9_]+\s*:\s*/, '');
+    return text || cleaned;
   }
   if (!e?.response && e?.message === 'Network Error') return 'Can’t reach the server. Check your connection and try again.';
   return fallback;

@@ -32,6 +32,9 @@ export interface ContestRecord {
   status: ContestStatus;
   candidateCount: number;
   createdAt: string;
+  /** Module 9: results visible to candidates once an admin publishes them. */
+  resultsPublished: boolean;
+  resultsPublishedAt?: string | null;
 }
 
 export interface ContestCandidate {

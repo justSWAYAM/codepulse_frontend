@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -19,7 +19,14 @@ interface DataTableProps<TData> {
   isLoading?: boolean;
   emptyMessage?: string;
   pageSize?: number;
+  /** Makes rows clickable and keyboard-activatable (Enter). */
+  onRowClick?: (row: TData) => void;
+  /** Accessible name for a clickable row. */
+  rowLabel?: (row: TData) => string;
 }
+
+/** Optional per-column class (e.g. 'hidden md:table-cell'), set via columnDef.meta.className. */
+const metaClass = (meta: unknown) => (meta as { className?: string } | undefined)?.className;
 
 const headCell = 'h-10 px-4 text-left align-middle text-[12px] font-medium whitespace-nowrap text-fg-subtle';
 const bodyCell = 'h-14 px-4 align-middle text-[13px] text-fg-muted';
@@ -30,6 +37,8 @@ export function DataTable<TData>({
   isLoading = false,
   emptyMessage = 'No data found.',
   pageSize = 10,
+  onRowClick,
+  rowLabel,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -74,7 +83,7 @@ export function DataTable<TData>({
                     <th
                       key={header.id}
                       scope="col"
-                      className={headCell}
+                      className={cn(headCell, metaClass(header.column.columnDef.meta))}
                       aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
@@ -111,7 +120,7 @@ export function DataTable<TData>({
               ? Array.from({ length: skeletonRows }, (_, ri) => (
                   <tr key={ri} className="border-b border-line last:border-b-0">
                     {table.getVisibleLeafColumns().map((col, ci) => (
-                      <td key={col.id} className={bodyCell}>
+                      <td key={col.id} className={cn(bodyCell, metaClass(col.columnDef.meta))}>
                         <Skeleton className={cn('h-3.5', ci === 0 ? 'w-36' : ci % 2 ? 'w-24' : 'w-16')} />
                       </td>
                     ))}
@@ -120,10 +129,21 @@ export function DataTable<TData>({
               : table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-line transition-colors duration-150 last:border-b-0 hover-fine:bg-surface-2/60"
+                    className={cn(
+                      'border-b border-line transition-colors duration-150 last:border-b-0 hover-fine:bg-surface-2/60',
+                      onRowClick && 'cursor-pointer focus-visible:bg-surface-2/60 focus-visible:outline-none',
+                    )}
+                    {...(onRowClick && {
+                      tabIndex: 0,
+                      'aria-label': rowLabel?.(row.original),
+                      onClick: () => onRowClick(row.original),
+                      onKeyDown: (e: React.KeyboardEvent) => {
+                        if (e.key === 'Enter') onRowClick(row.original);
+                      },
+                    })}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className={bodyCell}>
+                      <td key={cell.id} className={cn(bodyCell, metaClass(cell.column.columnDef.meta))}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
