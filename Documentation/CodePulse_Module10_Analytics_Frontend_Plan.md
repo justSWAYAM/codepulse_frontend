@@ -9,7 +9,13 @@
 
 The Module 10 backend must be working (see `codepulse_backend/Documentation/CodePulse_Module10_Analytics_Backend_Plan.md`). Do not touch it.
 
-**Status:** plan, not yet built (written 2026-10-03 against frontend `feature/module-9-results` @ `1bcae64`). Module 10 must be built on top of Module 9.
+**Status:** built on branch `feature/module-10-analytics` (2026-10-03), stacked on `feature/module-9-results`. Plan written against `1bcae64`.
+
+> **As built:**
+> - Recharts `3.10.1`. The Analytics tab is lazy-loaded, so the build emits a separate `AnalyticsPanel` chunk (372 kB, 108 kB gzipped). The tab content only mounts while the tab is active.
+> - `ScoreDistributionChart` and `TimeAnalysisChart` share one file, `DistributionCharts.tsx`, because they use the same bucket bars. `ProvisionalBanner` is a small component inside `AnalyticsPanel.tsx`.
+> - The "Open test cases" link on a suspicious test case is shown to admins only: the question edit page (`…/edit?tab=testcases`) is an admin route.
+> - Tests stub `ResizeObserver`. `AnalyticsPanel` is imported statically in tests, because a dynamic import loads Recharts inside the test and runs past the 5 s timeout.
 
 ---
 

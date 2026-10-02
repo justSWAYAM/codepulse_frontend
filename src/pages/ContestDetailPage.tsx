@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, BookOpen, Calendar, Check, Clock, X, Code2, FileCode2, Hourglass, ListChecks, Pencil, Send, Trophy, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BookOpen, Calendar, Check, Clock, X, Code2, FileCode2, Hourglass, ListChecks, BarChart3, Pencil, Send, Trophy, Users } from 'lucide-react';
 import { useContest, usePublishContest, useAssignCandidates, useUnassignCandidates } from '../hooks/useContests';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,7 @@ import { QuestionListPanel } from '../components/question/QuestionListPanel';
 import { ExamEntryCard } from '../components/session/ExamEntryCard';
 import { ContestSubmissionsPanel } from '../components/submission/ContestSubmissionsPanel';
 import { ResultsPanel } from '../components/result/ResultsPanel';
+import { AnalyticsSkeleton } from '../components/analytics/AnalyticsSkeleton';
 import { LoadingState } from '../components/states/LoadingState';
 import { EmptyState } from '../components/states/EmptyState';
 import { Avatar } from '../layouts/AppShell';
@@ -32,6 +33,9 @@ import { cn } from '../lib/cn';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../lib/apiError';
 
+// Module 10: Recharts loads only when a staff member opens the Analytics tab
+const AnalyticsPanel = lazy(() => import('../components/analytics/AnalyticsPanel'));
+
 const CONTEST_STATUSES = ['DRAFT', 'PUBLISHED', 'ONGOING', 'COMPLETED'] as const;
 const STATUS_LABELS: Record<(typeof CONTEST_STATUSES)[number], string> = {
   DRAFT: 'Draft',
@@ -40,7 +44,7 @@ const STATUS_LABELS: Record<(typeof CONTEST_STATUSES)[number], string> = {
   COMPLETED: 'Completed',
 };
 
-type Tab = 'overview' | 'candidates' | 'questions' | 'submissions' | 'results';
+type Tab = 'overview' | 'candidates' | 'questions' | 'submissions' | 'results' | 'analytics';
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -68,7 +72,7 @@ const ContestDetailPage: React.FC = () => {
   // Results exist once a contest has started (Module 9); before that there is nothing to show
   const hasResults = contest?.status === 'ONGOING' || contest?.status === 'COMPLETED';
   const allowedTabs: Tab[] = isStaff
-    ? ['overview', 'candidates', 'questions', 'submissions', ...(hasResults ? (['results'] as Tab[]) : [])]
+    ? ['overview', 'candidates', 'questions', 'submissions', ...(hasResults ? (['results', 'analytics'] as Tab[]) : [])]
     : isCandidate
       ? ['overview']
       : ['overview', 'questions'];
@@ -280,6 +284,11 @@ const ContestDetailPage: React.FC = () => {
             {isStaff && hasResults && (
               <TabsTrigger value="results" icon={<Trophy />}>
                 Results
+              </TabsTrigger>
+            )}
+            {isStaff && hasResults && (
+              <TabsTrigger value="analytics" icon={<BarChart3 />}>
+                Analytics
               </TabsTrigger>
             )}
           </TabsList>
@@ -521,6 +530,15 @@ const ContestDetailPage: React.FC = () => {
         {isStaff && hasResults && (
           <TabsContent value="results" className="pt-6">
             <ResultsPanel contest={contest} />
+          </TabsContent>
+        )}
+
+        {/* ── Analytics (Module 10) ── */}
+        {isStaff && hasResults && activeTab === 'analytics' && (
+          <TabsContent value="analytics" className="pt-6">
+            <Suspense fallback={<AnalyticsSkeleton />}>
+              <AnalyticsPanel contest={contest} />
+            </Suspense>
           </TabsContent>
         )}
       </Tabs>
