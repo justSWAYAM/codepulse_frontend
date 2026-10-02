@@ -36,6 +36,8 @@ const FRIENDLY: Record<string, string> = {
   SUBMISSION_NOT_COUNTED: 'This isn’t the submission that counts for this question. Refresh and evaluate the counted one.',
   ADJUSTED_SCORE_OUT_OF_RANGE: 'The score must be between 0 and the question’s points, with at most 2 decimals.',
   RESULT_NOT_FOUND: 'No result yet. This candidate may still be taking the exam or being judged.',
+  // Module 10
+  ANALYTICS_NOT_AVAILABLE: 'Analytics are available once the contest starts.',
 };
 
 export function getErrorCode(error: unknown): string | null {

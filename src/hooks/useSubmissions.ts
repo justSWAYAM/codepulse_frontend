@@ -8,6 +8,7 @@ import {
   type SubmissionSummary,
   type SubmissionType,
 } from '../api/submissionApi';
+import { analyticsKeys } from './useAnalytics';
 import type { PagedData } from '../api/contestApi';
 import { isFinal } from '../lib/verdicts';
 
@@ -195,6 +196,8 @@ export const useRejudge = (contestId: string) => {
     onSuccess: (_d, submissionId) => {
       qc.invalidateQueries({ queryKey: submissionKeys.contestAll(contestId) });
       qc.invalidateQueries({ queryKey: submissionKeys.evaluatorDetail(submissionId) });
+      // A rejudge changes results once it finishes; let analytics refetch on next view
+      qc.invalidateQueries({ queryKey: analyticsKeys.contest(contestId) });
     },
   });
 };

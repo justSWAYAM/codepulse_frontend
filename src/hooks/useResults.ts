@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { resultApi, type LeaderboardResponse, type ManualEvaluationPayload } from '../api/resultApi';
 import { contestKeys } from './useContests';
+import { analyticsKeys } from './useAnalytics';
 
 export const resultKeys = {
   all: ['results'] as const,
@@ -66,6 +67,7 @@ export const useRecomputeResults = (contestId: string) => {
     onSuccess: (data) => {
       qc.setQueryData(resultKeys.leaderboard(contestId), data);
       qc.invalidateQueries({ queryKey: resultKeys.contest(contestId) });
+      qc.invalidateQueries({ queryKey: analyticsKeys.contest(contestId) });
       toast.success('Results recomputed');
     },
   });
@@ -102,6 +104,7 @@ export const useManualEvaluation = (contestId: string, candidateId: string) => {
       // The response is the whole updated result; ranks moved, so the leaderboard is stale
       qc.setQueryData(resultKeys.candidate(contestId, candidateId), data);
       qc.invalidateQueries({ queryKey: resultKeys.leaderboard(contestId) });
+      qc.invalidateQueries({ queryKey: analyticsKeys.contest(contestId) });
     },
   });
 };
