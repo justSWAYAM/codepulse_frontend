@@ -12,6 +12,8 @@ import ContestListPage from './pages/ContestListPage';
 import ContestCreatePage from './pages/ContestCreatePage';
 import ContestDetailPage from './pages/ContestDetailPage';
 import AssessmentPage from './pages/AssessmentPage';
+import EvaluationPage from './pages/EvaluationPage';
+import MyResultPage from './pages/MyResultPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -75,6 +77,24 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute roles={['ADMIN']}>
                   <QuestionEditPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Module 9: grading one candidate (staff) and a candidate's own result */}
+            <Route
+              path="contests/:contestId/results/:candidateId"
+              element={
+                <ProtectedRoute roles={['ADMIN', 'EVALUATOR']}>
+                  <EvaluationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="contests/:contestId/result"
+              element={
+                <ProtectedRoute roles={['CANDIDATE']}>
+                  <MyResultPage />
                 </ProtectedRoute>
               }
             />

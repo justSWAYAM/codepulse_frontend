@@ -4,7 +4,8 @@ import { ArrowUpRight, Calendar, Clock, MoreHorizontal, Trash2, Users } from 'lu
 import { ContestStatusBadge } from './ContestStatusBadge';
 import type { ContestRecord } from '../../api/contestApi';
 import { languageLabel } from '../../lib/languages';
-import { IconButton, Menu, MenuContent, MenuItem, MenuTrigger } from '../ui';
+import { Badge, IconButton, Menu, MenuContent, MenuItem, MenuTrigger } from '../ui';
+import { useAuth } from '../../context/AuthContext';
 
 interface ContestCardProps {
   contest: ContestRecord;
@@ -25,6 +26,7 @@ function formatDate(isoString: string): string {
 export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidateCount = false, onDelete }) => {
   // Started contests hold exam records, so the backend refuses to delete them
   const canDelete = !!onDelete && (contest.status === 'DRAFT' || contest.status === 'PUBLISHED');
+  const { user } = useAuth();
 
   return (
     <div className="relative h-full">
@@ -33,7 +35,14 @@ export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidate
         className="press group flex h-full flex-col rounded-2xl border border-line bg-surface p-5 shadow-card active:scale-[0.98] hover-fine:border-line-strong"
       >
         <div className="flex items-start justify-between gap-3">
-          <ContestStatusBadge status={contest.status} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ContestStatusBadge status={contest.status} />
+            {contest.resultsPublished && (
+              <Badge size="sm" tone="success">
+                {user?.role === 'CANDIDATE' ? 'Results out' : 'Results published'}
+              </Badge>
+            )}
+          </div>
           <ArrowUpRight
             aria-hidden
             className={

@@ -10,6 +10,7 @@ import { getErrorMessage } from '../../lib/apiError';
 import { languageLabel } from '../../lib/languages';
 import { cn } from '../../lib/cn';
 import { Button, Spinner } from '../ui';
+import { MyResultCard } from '../result/MyResultCard';
 
 interface ExamEntryCardProps {
   contest: ContestDetailRecord;
@@ -190,6 +191,8 @@ export const ExamEntryCard: React.FC<ExamEntryCardProps> = ({ contest }) => {
   }
 
   if (hasSession && (session.status === 'SUBMITTED' || session.status === 'AUTO_SUBMITTED')) {
+    // Module 9: once results are out, the score replaces the "you submitted" note
+    if (contest.resultsPublished) return <MyResultCard contestId={contest.id} />;
     return (
       <Shell tone="success" icon={<CheckCircle2 />}>
         <p>You have already submitted this assessment.</p>

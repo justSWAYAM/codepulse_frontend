@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExamEntryCard } from './ExamEntryCard';
 import * as assessmentSessionHook from '../../hooks/useAssessmentSession';
+import * as resultHooks from '../../hooks/useResults';
 
 const mockUseAssessmentSession = vi.spyOn(assessmentSessionHook, 'useAssessmentSession');
 const mockUseStartSession = vi.spyOn(assessmentSessionHook, 'useStartSession');
@@ -107,5 +108,53 @@ describe('ExamEntryCard session states', () => {
 
     expect(screen.getByText(/already submitted/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /start exam/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the published score instead of the submitted note once results are out', () => {
+    mockUseAssessmentSession.mockReturnValue({
+      data: { status: 'SUBMITTED' },
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+    } as any);
+    const myResult = vi.spyOn(resultHooks, 'useMyResult').mockReturnValue({
+      data: { contestId: 'contest-1', contestTitle: 'Sample', published: true, status: 'SCORED', totalScore: 42.5, maxScore: 100, rank: 3, rankedCount: 10 },
+      isLoading: false,
+    } as any);
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <ExamEntryCard contest={{ ...contest, status: 'COMPLETED', resultsPublished: true }} />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('Rank 3 of 10')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /view breakdown/i })).toHaveAttribute('href', '/dashboard/contests/contest-1/result');
+    expect(screen.queryByText(/already submitted/i)).not.toBeInTheDocument();
+    myResult.mockRestore();
+  });
+
+  it('keeps the "results appear here" note until results are published', () => {
+    mockUseAssessmentSession.mockReturnValue({
+      data: { status: 'SUBMITTED' },
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+    } as any);
+    const myResult = vi.spyOn(resultHooks, 'useMyResult');
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <ExamEntryCard contest={{ ...contest, status: 'COMPLETED', resultsPublished: false }} />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText(/results appear here once/i)).toBeInTheDocument();
+    expect(myResult).not.toHaveBeenCalled();
+    myResult.mockRestore();
   });
 });

@@ -8,7 +8,14 @@
 
 The Module 9 backend must be working (see `codepulse_backend/Documentation/CodePulse_Module9_ResultEvaluation_Backend_Plan.md`). Do not touch it.
 
-**Status:** plan, not yet built (written 2026-10-03 against frontend `main` @ `bfd9b4e`).
+**Status:** built on branch `feature/module-9-results` (2026-10-03). Plan written against frontend `main` @ `bfd9b4e`.
+
+> **As built — differences from the text below:**
+> - The backend leaves `null` fields out of JSON (`spring.jackson.default-property-inclusion: non_null`), so nullable fields in `resultApi.ts` are typed optional (`rank?: number | null`). Read them with `?? null` / `!= null`, never `=== null`.
+> - `DataTable` gained two optional, backwards-compatible props: `onRowClick` / `rowLabel` (clickable, Enter-activatable rows) and per-column `meta.className` (used to hide question columns below `md`).
+> - Pure helpers (`readinessRows`, `publishBlocker`, `filterEntries`, `overrideSchema`, `REVIEW_REASON_TEXT`) live in `src/lib/results.ts`, so component files export only components (Vite fast refresh).
+> - Publish, unpublish and evaluate mutations opt out of the global error toast (`onError` no-op) because they show errors inline.
+> - `getErrorMessage` now strips a leading `CODE:` when the code has no friendly copy, so `RESULTS_NOT_READY` shows just the server's counts.
 
 ---
 
