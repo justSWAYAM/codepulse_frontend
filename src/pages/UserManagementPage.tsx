@@ -11,6 +11,7 @@ import {
   UserCheck2,
   UserMinus,
   Search,
+  Trash2,
   X,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -20,7 +21,8 @@ import { StatusBadge } from '../components/StatusBadge';
 import { CreateUserDialog } from '../components/CreateUserDialog';
 import { EditUserDialog } from '../components/EditUserDialog';
 import { BulkImportDialog } from '../components/BulkImportDialog';
-import { useUsers, useDeactivateUser, useReactivateUser } from '../hooks/useUsers';
+import { useUsers, useDeactivateUser, useReactivateUser, useDeleteUser } from '../hooks/useUsers';
+import { useAuth } from '../context/AuthContext';
 import type { UserRecord, UserRole } from '../api/userApi';
 import { ErrorState } from '../components/states/ErrorState';
 import {
@@ -81,7 +83,8 @@ const RowActions: React.FC<{
   user: UserRecord;
   onEdit: (user: UserRecord) => void;
   onToggleActive: (user: UserRecord) => void;
-}> = ({ user, onEdit, onToggleActive }) => (
+  onDelete?: (user: UserRecord) => void;
+}> = ({ user, onEdit, onToggleActive, onDelete }) => (
   <div className="flex justify-end">
     <Menu>
       <MenuTrigger asChild>
@@ -101,6 +104,11 @@ const RowActions: React.FC<{
         ) : (
           <MenuItem icon={<UserCheck />} onSelect={() => onToggleActive(user)}>
             Reactivate
+          </MenuItem>
+        )}
+        {onDelete && (
+          <MenuItem icon={<Trash2 />} tone="danger" onSelect={() => onDelete(user)}>
+            Delete
           </MenuItem>
         )}
       </MenuContent>
@@ -148,12 +156,47 @@ const ConfirmDialog: React.FC<{
   );
 };
 
+// ─── Delete confirmation ───
+const DeleteDialog: React.FC<{
+  user: UserRecord | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}> = ({ user, onConfirm, onCancel, isPending }) => (
+  <Dialog
+    open={!!user}
+    onOpenChange={(o) => !o && onCancel()}
+    size="sm"
+    tone="danger"
+    icon={<Trash2 className="size-[18px]" />}
+    title="Delete user"
+    description={
+      user
+        ? `Permanently delete ${user.fullName} (${user.email})? Their contest enrolments, submissions and results will also be deleted. This cannot be undone.`
+        : undefined
+    }
+    dismissible={!isPending}
+    footer={
+      <>
+        <Button variant="secondary" onClick={onCancel} disabled={isPending}>
+          Cancel
+        </Button>
+        <Button variant="danger" onClick={onConfirm} loading={isPending}>
+          Delete
+        </Button>
+      </>
+    }
+  />
+);
+
 // ─── Main Page ───
 const UserManagementPage: React.FC = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserRecord | null>(null);
   const [confirmUser, setConfirmUser] = useState<UserRecord | null>(null);
+  const [deleteUser, setDeleteUser] = useState<UserRecord | null>(null);
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -162,6 +205,7 @@ const UserManagementPage: React.FC = () => {
   const { data, isLoading, isError, refetch } = useUsers({ pageSize: 2000 });
   const deactivateMutation = useDeactivateUser();
   const reactivateMutation = useReactivateUser();
+  const deleteMutation = useDeleteUser();
 
   const users = useMemo(() => data?.users ?? [], [data]);
   const totalUsers = data?.total ?? users.length;
@@ -207,6 +251,14 @@ const UserManagementPage: React.FC = () => {
         onSuccess: () => setConfirmUser(null),
       });
     }
+  };
+
+  // On failure (e.g. the user authored content) the dialog stays open; the global handler toasts why
+  const confirmDelete = () => {
+    if (!deleteUser) return;
+    deleteMutation.mutate(deleteUser.id, {
+      onSuccess: () => setDeleteUser(null),
+    });
   };
 
   const columns: ColumnDef<UserRecord, unknown>[] = [
@@ -260,7 +312,13 @@ const UserManagementPage: React.FC = () => {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
-        <RowActions user={row.original} onEdit={setEditUser} onToggleActive={handleToggleActive} />
+        <RowActions
+          user={row.original}
+          onEdit={setEditUser}
+          onToggleActive={handleToggleActive}
+          // An admin can't delete their own account
+          onDelete={row.original.id === currentUser?.id ? undefined : setDeleteUser}
+        />
       ),
       enableSorting: false,
     },
@@ -367,6 +425,12 @@ const UserManagementPage: React.FC = () => {
         onConfirm={confirmToggle}
         onCancel={() => setConfirmUser(null)}
         isPending={deactivateMutation.isPending || reactivateMutation.isPending}
+      />
+      <DeleteDialog
+        user={deleteUser}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteUser(null)}
+        isPending={deleteMutation.isPending}
       />
     </>
   );

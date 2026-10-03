@@ -151,6 +151,10 @@ export const userApi = {
     return data.data;
   },
 
+  deleteUser: async (id: string): Promise<void> => {
+    await apiClient.delete(`/users/${id}`);
+  },
+
   bulkImport: async (file: File): Promise<BulkImportResponse> => {
     const formData = new FormData();
     formData.append('file', file);

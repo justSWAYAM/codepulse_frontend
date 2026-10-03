@@ -92,6 +92,18 @@ export const useReactivateUser = () => {
   });
 };
 
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => userApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      toast.success('User deleted');
+    },
+  });
+};
+
 export const useBulkImportUsers = () => {
   const queryClient = useQueryClient();
 
