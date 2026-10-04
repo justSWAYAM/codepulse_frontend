@@ -9,12 +9,17 @@ import { sessionKeys, useAssessmentSession, useSubmitSession } from '../hooks/us
 import { useSessionTimer } from '../hooks/useSessionTimer';
 import { useQuestions } from '../hooks/useQuestions';
 import { useQuestionProgress } from '../hooks/useSubmissions';
+import { useExamLock, type ViolationType } from '../hooks/useExamLock';
+import { useAuth } from '../context/AuthContext';
 
 import { CountdownTimer } from '../components/session/CountdownTimer';
 import { QuestionNavigator } from '../components/session/QuestionNavigator';
 import { QuestionPanel } from '../components/session/QuestionPanel';
 import { SubmitExamDialog } from '../components/session/SubmitExamDialog';
 import { SessionEndedScreen } from '../components/session/SessionEndedScreen';
+import { ExamRulesScreen } from '../components/session/ExamRulesScreen';
+import { FullscreenBlocker } from '../components/session/FullscreenBlocker';
+import { Watermark } from '../components/session/Watermark';
 import { CodeEditorPanel } from '../components/editor/CodeEditorPanel';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
@@ -42,6 +47,7 @@ const DEFAULT_SPLIT = 0.42;     // fraction of remaining space for problem panel
  */
 const AssessmentPage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // ── Data fetching ──
@@ -76,6 +82,83 @@ const AssessmentPage: React.FC = () => {
   // ── Submit exam ──
   const submitMutation = useSubmitSession(contestId!);
   const queryClient = useQueryClient();
+
+  // ── Lockdown / proctoring state ──
+  const TAB_SWITCH_LIMIT = 3;
+
+  /** true once the candidate has passed the rules screen and entered fullscreen */
+  const [examReady, setExamReady] = useState(false);
+  /** true while the fullscreen blocker should cover the exam */
+  const [fullscreenBlocked, setFullscreenBlocked] = useState(false);
+  /** running count of distinct violation events (all types) */
+  const [strikeCount, setStrikeCount] = useState(0);
+  /** tab-switch / window-blur violations specifically — auto-submit at TAB_SWITCH_LIMIT */
+  const tabSwitchCountRef = useRef(0);
+  /** ref to the latest submitMutation so handleViolation can call it without stale closure */
+  const submitMutationRef = useRef(submitMutation);
+  useEffect(() => { submitMutationRef.current = submitMutation; });
+
+  // Debounce rapid-fire violations (mouse-leave, blur spam) to 1s windows
+  const violationDebounceRef = useRef<Map<ViolationType, ReturnType<typeof setTimeout>>>(new Map());
+
+  const handleViolation = useCallback((type: ViolationType) => {
+    // Only count each violation type once per second
+    if (violationDebounceRef.current.has(type)) return;
+
+    const timer = setTimeout(() => {
+      violationDebounceRef.current.delete(type);
+    }, 1000);
+    violationDebounceRef.current.set(type, timer);
+
+    setStrikeCount((n) => n + 1);
+
+    if (type === 'FULLSCREEN_EXIT') {
+      setFullscreenBlocked(true);
+
+    } else if (type === 'PASTE_ATTEMPT') {
+      toast.warning('External paste is blocked during the exam.', { id: 'paste-block', duration: 2500 });
+
+    } else if (type === 'TAB_HIDDEN' || type === 'WINDOW_BLUR') {
+      // ── Tab-switch auto-submit logic ──
+      tabSwitchCountRef.current += 1;
+      const switches = tabSwitchCountRef.current;
+      const remaining = TAB_SWITCH_LIMIT - switches;
+
+      if (switches >= TAB_SWITCH_LIMIT) {
+        // 3rd (or beyond) violation — auto-submit immediately
+        toast.error(
+          `You switched tabs ${TAB_SWITCH_LIMIT} times. Your exam has been auto-submitted.`,
+          { id: 'auto-submit', duration: 8000 },
+        );
+        // Fire-and-forget; the onSuccess handler will update the session status
+        submitMutationRef.current.mutate();
+      } else if (remaining === 1) {
+        // 2nd violation — final warning
+        toast.warning(
+          '⚠ Final warning: 1 more tab switch will auto-submit your exam.',
+          { id: 'tab-switch', duration: 5000 },
+        );
+      } else {
+        // 1st violation
+        toast.warning(
+          `Tab switch detected — ${remaining} of ${TAB_SWITCH_LIMIT} switches remaining before auto-submit.`,
+          { id: 'tab-switch', duration: 4000 },
+        );
+      }
+
+    } else if (type === 'DEVTOOLS_SUSPECTED') {
+      toast.warning('DevTools detected — this is recorded.', { id: 'devtools', duration: 3000 });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Attach all lockdown listeners when the exam is live and the rules screen is passed
+  useExamLock(sessionIsActive && examReady, handleViolation);
+
+  // Cleanup debounce timers on unmount
+  useEffect(() => {
+    const map = violationDebounceRef.current;
+    return () => map.forEach((t) => clearTimeout(t));
+  }, []);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const handleSubmit = async () => {
@@ -191,6 +274,17 @@ const AssessmentPage: React.FC = () => {
     return <SessionEndedScreen status={session.status} contestId={contestId!} contestTitle={contest?.title} />;
   }
 
+  // ── Rules / fullscreen gate ──
+  if (sessionIsActive && !examReady) {
+    return (
+      <ExamRulesScreen
+        contestTitle={contest?.title ?? 'Assessment'}
+        durationMinutes={contest?.durationMinutes ?? 0}
+        onReady={() => setExamReady(true)}
+      />
+    );
+  }
+
   const questionList =
     questions.length > 0 ? (
       <QuestionNavigator
@@ -203,6 +297,13 @@ const AssessmentPage: React.FC = () => {
     ) : null;
 
   const acceptedCount = questionIds.filter((id) => progress[id] === 'accepted').length;
+
+  // Build watermark lines from the authenticated user
+  const watermarkLines = [
+    user?.fullName ?? '',
+    user?.email ?? '',
+    contestId ?? '',
+  ].filter(Boolean);
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-canvas">
@@ -361,6 +462,22 @@ const AssessmentPage: React.FC = () => {
         onConfirm={handleSubmit}
         isSubmitting={submitMutation.isPending}
       />
+
+      {/* ── Watermark overlay ── */}
+      {examReady && watermarkLines.length > 0 && (
+        <Watermark
+          lines={watermarkLines}
+          onTamper={() => handleViolation('COPY_ATTEMPT')}
+        />
+      )}
+
+      {/* ── Fullscreen blocker ── */}
+      {fullscreenBlocked && (
+        <FullscreenBlocker
+          strikeCount={strikeCount}
+          onReturnToFullscreen={() => setFullscreenBlocked(false)}
+        />
+      )}
     </div>
   );
 };

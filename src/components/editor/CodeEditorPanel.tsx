@@ -226,6 +226,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
             language={language.monaco}
             onChange={setCode}
             readOnly={disabled}
+            blockPaste
             onRun={run}
             onSubmit={submit}
             ariaLabel={`Code editor, ${language.label}`}

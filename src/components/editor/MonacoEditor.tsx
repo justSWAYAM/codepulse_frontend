@@ -46,6 +46,8 @@ export interface MonacoEditorProps {
   language: string;
   onChange: (value: string) => void;
   readOnly?: boolean;
+  /** Block Ctrl/Cmd+V and the DOM paste event (exam lockdown). */
+  blockPaste?: boolean;
   /** Ctrl/⌘+Enter */
   onRun?: () => void;
   /** Ctrl/⌘+Shift+Enter */
@@ -53,7 +55,7 @@ export interface MonacoEditorProps {
   ariaLabel?: string;
 }
 
-const MonacoEditor: React.FC<MonacoEditorProps> = ({ value, language, onChange, readOnly, onRun, onSubmit, ariaLabel }) => {
+const MonacoEditor: React.FC<MonacoEditorProps> = ({ value, language, onChange, readOnly, blockPaste, onRun, onSubmit, ariaLabel }) => {
   // Shortcuts are registered once at mount; refs keep them pointing at the latest handlers
   const runRef = useRef(onRun);
   const submitRef = useRef(onSubmit);
@@ -65,6 +67,22 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({ value, language, onChange, 
   const handleMount: OnMount = (editor, monaco) => {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runRef.current?.());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => submitRef.current?.());
+
+    if (blockPaste) {
+      // Block Ctrl/Cmd+V and Shift+Insert at the Monaco keybinding level
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {});
+      editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Insert, () => {});
+
+      // Block DOM-level paste events on Monaco's container (right-click paste, etc.)
+      const domNode = editor.getDomNode();
+      if (domNode) {
+        domNode.addEventListener('paste', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, true);
+      }
+    }
+
     if (!window.matchMedia('(pointer: coarse)').matches) editor.focus();
   };
 
@@ -100,7 +118,7 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({ value, language, onChange, 
         guides: { indentation: true },
         bracketPairColorization: { enabled: true },
         stickyScroll: { enabled: false },
-        contextmenu: true,
+        contextmenu: !blockPaste,
       }}
     />
   );
