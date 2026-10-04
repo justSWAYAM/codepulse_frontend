@@ -14,6 +14,8 @@ import ContestDetailPage from './pages/ContestDetailPage';
 import AssessmentPage from './pages/AssessmentPage';
 import EvaluationPage from './pages/EvaluationPage';
 import MyResultPage from './pages/MyResultPage';
+import QuestionLibraryPage from './pages/QuestionLibraryPage';
+import LibraryQuestionCreatePage from './pages/LibraryQuestionCreatePage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -42,6 +44,24 @@ const App: React.FC = () => {
               }
             />
             <Route path="profile" element={<ProfilePage />} />
+
+            {/* Module 5A: shared question library */}
+            <Route
+              path="library"
+              element={
+                <ProtectedRoute roles={['ADMIN', 'EVALUATOR']}>
+                  <QuestionLibraryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="library/new"
+              element={
+                <ProtectedRoute roles={['ADMIN', 'EVALUATOR']}>
+                  <LibraryQuestionCreatePage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Contest routes */}
             <Route path="contests" element={<ContestListPage />} />

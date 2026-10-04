@@ -1,4 +1,5 @@
 import { Users, User, LayoutDashboard, Trophy, type LucideIcon } from 'lucide-react';
+import { LibraryBig } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -33,6 +34,12 @@ export const navigationItems: NavItem[] = [
     path: '/dashboard/profile',
     icon: User,
     roles: ['ADMIN', 'EVALUATOR', 'CANDIDATE'],
+  },
+  {
+    label: 'Question library',
+    path: '/dashboard/library',
+    icon: LibraryBig,
+    roles: ['ADMIN', 'EVALUATOR'],
   },
 ];
 

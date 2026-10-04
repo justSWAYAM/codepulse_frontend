@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
-import { FileCode2, Lock, Plus } from 'lucide-react';
+import { FileCode2, LibraryBig, Lock, Plus } from 'lucide-react';
 import { Button, Card, Skeleton } from '../ui';
 import { EmptyState } from '../states/EmptyState';
 import { QuestionCard } from './QuestionCard';
@@ -10,6 +10,7 @@ import { DeleteQuestionDialog } from './DeleteQuestionDialog';
 import { useQuestions, useReorderQuestions, useDeleteQuestion } from '../../hooks/useQuestions';
 import type { UserRole } from '../../api/userApi';
 import type { ContestStatus } from '../../api/contestApi';
+import { LibraryPickerDialog } from '../library/LibraryPickerDialog';
 
 interface QuestionListPanelProps {
   contestId: string;
@@ -38,6 +39,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
     id: '',
     title: '',
   });
+  const [libraryPickerOpen, setLibraryPickerOpen] = useState(false);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !canEdit) return;
@@ -71,6 +73,17 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
     </Button>
   );
 
+  const addFromLibraryButton = canEdit ? (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={() => setLibraryPickerOpen(true)}
+      leadingIcon={<LibraryBig className="size-4" />}
+    >
+      Add from library
+    </Button>
+  ) : null;
+
   if (isLoading) {
     return (
       <div className="space-y-3" aria-busy="true">
@@ -96,18 +109,28 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
 
   if (questions.length === 0) {
     return (
-      <Card>
-        <EmptyState
-          icon={<FileCode2 className="size-5" />}
-          title="No questions yet"
-          message={
-            canEdit
-              ? 'Add the first programming question to this contest.'
-              : 'No questions have been added to this contest yet.'
-          }
-          action={canEdit ? addButton : undefined}
-        />
-      </Card>
+      <>
+        <Card>
+          <EmptyState
+            icon={<FileCode2 className="size-5" />}
+            title="No questions yet"
+            message={
+              canEdit
+                ? 'Add the first programming question to this contest.'
+                : 'No questions have been added to this contest yet.'
+            }
+            action={
+              canEdit ? (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {addButton}
+                  {addFromLibraryButton}
+                </div>
+              ) : undefined
+            }
+          />
+        </Card>
+        <LibraryPickerDialog contestId={contestId} open={libraryPickerOpen} onOpenChange={setLibraryPickerOpen} />
+      </>
     );
   }
 
@@ -118,7 +141,12 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
           <h2 className="font-display text-[15px] font-semibold tracking-[-0.015em] text-fg">
             Questions <span className="tabular text-fg-subtle">({questions.length})</span>
           </h2>
-          {canEdit && addButton}
+          {canEdit && (
+            <div className="flex flex-wrap justify-end gap-2">
+              {addFromLibraryButton}
+              {addButton}
+            </div>
+          )}
         </div>
       )}
 
@@ -196,6 +224,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
         title={deleteDialog.title}
         isDeleting={deleteMutation.isPending}
       />
+      <LibraryPickerDialog contestId={contestId} open={libraryPickerOpen} onOpenChange={setLibraryPickerOpen} />
     </div>
   );
 };
