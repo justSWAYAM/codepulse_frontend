@@ -92,7 +92,7 @@ export const QuestionEditPage: React.FC = () => {
           />
         </TabsContent>
         <TabsContent value="testcases" className="pt-6">
-          <TestCaseManagerPanel questionId={questionId!} contestId={contestId!} readOnly={locked} />
+          <TestCaseManagerPanel questionId={questionId!} contestId={contestId!} readOnly={locked} question={question} />
         </TabsContent>
       </Tabs>
     </div>

@@ -7,19 +7,40 @@ import { TestCaseTable } from './TestCaseTable';
 import { CreateTestCaseDialog } from './CreateTestCaseDialog';
 import { BulkUploadTestCasesDialog } from './BulkUploadTestCasesDialog';
 import { useTestCases, useCreateTestCase, useDeleteTestCase } from '../../hooks/useTestCases';
+import { useQuestion } from '../../hooks/useQuestions';
 import type { TestCaseAdminRecord } from '../../api/testCaseApi';
 import type { TestCaseFormData } from './TestCaseForm';
+import { TestCasePromptButton } from '../../features/library/import/TestCasePromptButton';
+import type { PromptSource } from '../../features/library/import/testCasePrompts';
+import type { QuestionRecord } from '../../api/questionApi';
 
 interface TestCaseManagerPanelProps {
   questionId: string;
   contestId: string;
   /** Contest is live/completed: list and preview only */
   readOnly?: boolean;
+  question?: QuestionRecord | PromptSource;
 }
 
-export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ questionId, contestId, readOnly = false }) => {
+export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
+  questionId,
+  contestId,
+  readOnly = false,
+  question,
+}) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+
+  const { data: fetchedQuestion } = useQuestion(contestId, questionId);
+  const activeQuestion = question ?? fetchedQuestion;
+  const promptSource: PromptSource | null = activeQuestion
+    ? {
+        title: activeQuestion.title,
+        description: activeQuestion.description,
+        questionType: (activeQuestion as any).questionType ?? 'DSA',
+        schemaSql: (activeQuestion as any).schemaSql ?? null,
+      }
+    : null;
 
   const { data: testCases, isLoading } = useTestCases(questionId);
   const createMutation = useCreateTestCase(contestId, questionId);
@@ -63,6 +84,7 @@ export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({ ques
           actions={
             readOnly ? undefined : (
               <>
+                {promptSource && <TestCasePromptButton question={promptSource} />}
                 <Button
                   variant="secondary"
                   size="sm"
