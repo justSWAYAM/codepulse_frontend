@@ -144,7 +144,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
   };
 
   return (
-    <section data-theme="dark" aria-label="Code editor" className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-editor-bg text-editor-fg">
+    <section aria-label="Code editor" className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-editor-bg text-editor-fg">
       {/* ── Toolbar ── */}
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-editor-line bg-editor-panel px-3">
         <label htmlFor="language-selector" className="sr-only">
@@ -189,7 +189,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ contestId, que
             disabled={disabled || submitMutation.isPending || runsLeft <= 0}
             loading={runMutation.isPending}
             leadingIcon={<Play className="size-3.5" />}
-            className="border-editor-line bg-white/[0.04] text-editor-fg hover-fine:bg-white/[0.08]"
+            className="border-editor-line bg-surface-2/80 text-fg hover-fine:bg-surface-3"
           >
             Run
           </Button>

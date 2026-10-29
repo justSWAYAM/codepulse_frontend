@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Check, Clock, Copy, FlaskConical, MemoryStick, Trophy } from 'lucide-react';
-import { DifficultyBadge } from '../DifficultyBadge';
+import { Check, Clock, Copy, FlaskConical, MemoryStick } from 'lucide-react';
 import { Eyebrow, IconButton } from '../ui';
 import type { QuestionRecord, QuestionAdminRecord, QuestionCandidateRecord } from '../../api/questionApi';
 
@@ -47,17 +46,17 @@ const CopyButton: React.FC<{ text: string; label: string }> = ({ text, label }) 
   };
 
   return (
-    <>
+    <span className="relative inline-flex items-center">
       <IconButton
         aria-label={label}
         size="sm"
         onClick={copy}
-        className="text-editor-muted hover-fine:bg-editor-line hover-fine:text-editor-fg"
+        className="text-fg-subtle hover-fine:bg-surface-2 hover-fine:text-fg"
       >
         {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
       </IconButton>
       <span className="sr-only" aria-live="polite">{copied ? `${label} copied` : ''}</span>
-    </>
+    </span>
   );
 };
 
@@ -68,19 +67,19 @@ const SamplePane: React.FC<{
   placeholder?: string;
   copyable?: boolean;
 }> = ({ label, value, placeholder, copyable = false }) => (
-  <div className="overflow-hidden rounded-lg border border-editor-line bg-editor-bg">
-    <div className="flex items-center justify-between gap-2 border-b border-editor-line bg-editor-panel py-1 pr-1 pl-3">
-      <span className="tabular font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">
+  <div className="overflow-hidden rounded-lg border border-line bg-surface">
+    <div className="flex items-center justify-between gap-2 border-b border-line bg-surface-2 py-1 pr-1 pl-3">
+      <span className="tabular font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">
         {label}
       </span>
       {copyable && value ? <CopyButton text={value} label={`Copy ${label}`} /> : <span className="h-7" />}
     </div>
     {value ? (
-      <pre className="scroll-thin m-0 min-h-[36px] overflow-x-auto px-3 py-2.5 font-mono text-[13px] leading-6 whitespace-pre-wrap break-words text-editor-fg">
+      <pre className="scroll-thin m-0 min-h-[36px] overflow-x-auto px-3 py-2.5 font-mono text-[13px] leading-6 whitespace-pre-wrap break-words text-fg">
         {value}
       </pre>
     ) : (
-      <p className="px-3 py-2.5 text-[12px] italic text-editor-muted">{placeholder ?? '—'}</p>
+      <p className="px-3 py-2.5 text-[12px] italic text-fg-subtle">{placeholder ?? '—'}</p>
     )}
   </div>
 );
@@ -92,12 +91,12 @@ const SampleCard: React.FC<{
   expectedOutput?: string | null;
 }> = ({ index, input, expectedOutput }) => (
   <div
-    className="overflow-hidden rounded-xl border border-editor-line bg-editor-bg/40"
-    data-theme="dark"
+    className="overflow-hidden rounded-xl border border-line bg-surface-2/40"
+
   >
     {/* Card header */}
-    <div className="flex items-center border-b border-editor-line bg-editor-panel px-3 py-1.5">
-      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-editor-muted">
+    <div className="flex items-center border-b border-line bg-surface-2 px-3 py-1.5">
+      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-fg-subtle">
         Sample {index + 1}
       </span>
     </div>
@@ -134,10 +133,8 @@ export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question
           <h2 className="min-w-0 font-display text-[20px] font-semibold leading-7 tracking-[-0.02em] text-fg">
             {question.title}
           </h2>
-          <DifficultyBadge difficulty={question.difficulty} className="mt-1" />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-fg-muted">
-          <Meta icon={<Trophy />}>{question.points} pts</Meta>
           <Meta icon={<Clock />}>{question.timeLimitMs} ms</Meta>
           <Meta icon={<MemoryStick />}>{Math.round(question.memoryLimitKb / 1024)} MB</Meta>
         </div>
@@ -156,7 +153,16 @@ export const QuestionDetailCard: React.FC<QuestionDetailCardProps> = ({ question
       )}
 
       <div className="prose-cp max-w-[72ch] px-5 py-5 sm:px-6">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{question.description}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            p: ({ children }) => (
+              <p style={{ whiteSpace: "pre-wrap" }}>{children}</p>
+            ),
+          }}
+        >
+          {question.description}
+        </ReactMarkdown>
       </div>
 
       {samples.length > 0 && (

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Check, Loader2 } from 'lucide-react';
-import { DifficultyBadge } from '../DifficultyBadge';
 import type { QuestionCandidateRecord } from '../../api/questionApi';
 import type { QuestionProgress } from '../../hooks/useSubmissions';
 import { cn } from '../../lib/cn';
@@ -41,14 +40,14 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({ questions,
             onClick={() => onSelect(q.id)}
             aria-current={isCurrent ? 'true' : undefined}
             className={cn(
-              'press relative flex items-start gap-3 rounded-xl px-3 py-2.5 text-left',
+              'press relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-left',
               isCurrent ? 'bg-primary-soft' : 'hover-fine:bg-surface-2',
             )}
           >
             <span
               aria-hidden
               className={cn(
-                'tabular mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold',
+                'tabular flex size-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold',
                 state === 'accepted'
                   ? 'bg-success text-white'
                   : isCurrent
@@ -65,16 +64,12 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({ questions,
               <span className={cn('block truncate text-[13.5px] font-medium', isCurrent ? 'text-fg' : 'text-fg-muted')}>
                 {q.title}
               </span>
-              <span className="mt-1 flex items-center gap-2">
-                <DifficultyBadge difficulty={q.difficulty} />
-                <span className="tabular text-[12px] text-fg-subtle">{q.points} pts</span>
-              </span>
             </span>
 
             {state && (
               <span
                 className={cn(
-                  'mt-1 flex shrink-0 items-center gap-1 text-[11px] font-medium',
+                  'flex shrink-0 items-center gap-1 text-[11px] font-medium',
                   state === 'accepted' && 'sr-only',
                   state === 'attempted' && 'text-warning-text',
                   state === 'pending' && 'text-info-text',

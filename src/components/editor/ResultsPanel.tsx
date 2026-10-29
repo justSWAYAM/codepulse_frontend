@@ -25,7 +25,7 @@ interface ResultsPanelProps {
   onTabChange: (tab: ResultsTab) => void;
   lastAction: LastAction;
   questionId: string;
-  points: number;
+  points?: number;
   /** Number of sample test cases on this question — used as fallback when backend omits sampleResults. */
   sampleCount: number;
   history: SubmissionSummary[] | undefined;
@@ -42,9 +42,6 @@ function timeAgo(iso: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 }
 
-const fmtScore = (score: number | null, points: number) =>
-  score == null ? '—' : `${Number(score).toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${points}`;
-
 /* ─────────────────── Pieces ─────────────────── */
 
 const Metric: React.FC<{ icon: React.ReactNode; children: React.ReactNode; label: string }> = ({ icon, children, label }) => (
@@ -58,12 +55,12 @@ const Metric: React.FC<{ icon: React.ReactNode; children: React.ReactNode; label
 const SampleCard: React.FC<{ result: SampleResult; index: number; defaultOpen: boolean }> = ({ result, index, defaultOpen }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl border border-editor-line bg-white/[0.02]">
+    <div className="rounded-xl border border-editor-line bg-surface-2/40">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left hover-fine:bg-white/[0.03]"
+        className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left hover-fine:bg-fg/[0.04]"
       >
         <ChevronDown
           className={cn('size-4 shrink-0 text-editor-muted transition-transform duration-200 ease-out', !open && '-rotate-90')}
@@ -123,7 +120,7 @@ const InlineError: React.FC<{ error: unknown }> = ({ error }) => (
 );
 
 const Waiting: React.FC<{ label: string; sub?: string }> = ({ label, sub }) => (
-  <div className="flex items-center gap-3 rounded-xl border border-editor-line bg-white/[0.02] px-4 py-4 text-editor-fg">
+  <div className="flex items-center gap-3 rounded-xl border border-editor-line bg-surface-2/40 px-4 py-4 text-editor-fg">
     <Spinner size={16} />
     <div>
       <div className="text-[13px] font-medium">{label}</div>
@@ -133,7 +130,7 @@ const Waiting: React.FC<{ label: string; sub?: string }> = ({ label, sub }) => (
 );
 
 /** Full candidate view of a run or submission: verdict, compile output, samples, hidden summary. */
-const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; points: number; sampleCount?: number }> = ({ detail, points, sampleCount }) => {
+const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; sampleCount?: number }> = ({ detail, sampleCount }) => {
   const samples = detail.sampleResults ?? [];
   const firstFailing = samples.findIndex((s) => s.status !== 'PASSED');
   const samplesPassed = samples.filter((s) => s.status === 'PASSED').length;
@@ -153,10 +150,7 @@ const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; points: number
         {isRun ? (
           <Stat label="Samples passed" value={sampleLabel} />
         ) : (
-          <>
-            <Stat label="Tests passed" value={`${detail.passedCount ?? 0} / ${detail.totalCount ?? 0}`} />
-            <Stat label="Score" value={fmtScore(detail.score, points)} />
-          </>
+          <Stat label="Tests passed" value={`${detail.passedCount ?? 0} / ${detail.totalCount ?? 0}`} />
         )}
       </VerdictHeader>
 
@@ -179,7 +173,7 @@ const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; points: number
       )}
 
       {!isRun && detail.hiddenSummary && detail.hiddenSummary.total > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-editor-line bg-white/[0.02] px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-editor-line bg-surface-2/40 px-4 py-3">
           <EyeOff className="size-4 shrink-0 text-editor-muted" aria-hidden />
           <span className="text-[13px] text-editor-fg">Hidden tests</span>
           <span className="tabular ml-auto text-[13px] font-medium text-editor-fg">
@@ -191,10 +185,9 @@ const SubmissionBody: React.FC<{ detail: SubmissionCandidateView; points: number
   );
 };
 
-const PolledSubmission: React.FC<{ submissionId: string; questionId: string; points: number }> = ({
+const PolledSubmission: React.FC<{ submissionId: string; questionId: string }> = ({
   submissionId,
   questionId,
-  points,
 }) => {
   const { data, isError, error, timedOut, retryPolling } = useSubmissionDetail(submissionId, questionId);
   if (isError) return <InlineError error={error} />;
@@ -211,25 +204,24 @@ const PolledSubmission: React.FC<{ submissionId: string; questionId: string; poi
     }
     return <Waiting label="Judging your submission…" sub="Running every test case. This usually takes a few seconds." />;
   }
-  return <SubmissionBody detail={data} points={points} />;
+  return <SubmissionBody detail={data} />;
 };
 
 const HistoryRow: React.FC<{
   item: SubmissionSummary;
-  points: number;
   questionId: string;
   expanded: boolean;
   onToggle: () => void;
   onLoadCode: (code: string, language: string) => void;
-}> = ({ item, points, questionId, expanded, onToggle, onLoadCode }) => {
+}> = ({ item, questionId, expanded, onToggle, onLoadCode }) => {
   const { data } = useSubmissionDetail(expanded ? item.id : null, questionId);
   return (
-    <li className="rounded-xl border border-editor-line bg-white/[0.02]">
+    <li className="rounded-xl border border-editor-line bg-surface-2/40">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className="grid h-11 w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl px-3 text-left hover-fine:bg-white/[0.03]"
+        className="grid h-11 w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl px-3 text-left hover-fine:bg-fg/[0.04]"
       >
         <VerdictBadge status={item.status} short />
         <span className="flex min-w-0 items-center gap-2 text-[13px]">
@@ -242,7 +234,11 @@ const HistoryRow: React.FC<{
           )}
         </span>
         <span className="flex items-center gap-3">
-          {item.type === 'SUBMIT' && <span className="tabular text-[12px] text-editor-fg">{fmtScore(item.score, points)}</span>}
+          {item.type === 'SUBMIT' && item.passedCount != null && item.totalCount != null && (
+            <span className="tabular text-[12px] text-editor-muted">
+              {item.passedCount} / {item.totalCount} passed
+            </span>
+          )}
           <span className="tabular hidden text-[12px] text-editor-muted sm:inline">{timeAgo(item.submittedAt)}</span>
         </span>
       </button>
@@ -250,7 +246,7 @@ const HistoryRow: React.FC<{
         <div className="space-y-3 border-t border-editor-line p-3">
           {data ? (
             <>
-              <SubmissionBody detail={data} points={points} />
+              <SubmissionBody detail={data} />
               <div className="flex justify-end">
                 <Button
                   size="sm"
@@ -286,7 +282,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
   onTabChange,
   lastAction,
   questionId,
-  points,
+  points: _points,
   sampleCount,
   history,
   historyLoading,
@@ -310,14 +306,14 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
     results = lastAction.pending || !lastAction.detail ? (
       <Waiting label="Running sample tests…" />
     ) : (
-      <SubmissionBody detail={lastAction.detail} points={points} sampleCount={sampleCount} />
+      <SubmissionBody detail={lastAction.detail} sampleCount={sampleCount} />
     );
   } else {
     results =
       lastAction.pending || !lastAction.submissionId ? (
         <Waiting label="Submitting…" />
       ) : (
-        <PolledSubmission submissionId={lastAction.submissionId} questionId={questionId} points={points} />
+        <PolledSubmission submissionId={lastAction.submissionId} questionId={questionId} />
       );
   }
 
@@ -340,7 +336,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
             <History className="size-4" aria-hidden />
             Submissions
             {submits > 0 && (
-              <span className="tabular rounded-full bg-white/10 px-1.5 text-[11px] leading-[18px] text-editor-fg">{submits}</span>
+              <span className="tabular rounded-full bg-fg/[0.08] px-1.5 text-[11px] leading-[18px] text-editor-fg">{submits}</span>
             )}
           </RT.Trigger>
         </RT.List>
@@ -349,7 +345,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
           onClick={() => onOpenChange(!open)}
           aria-label={open ? 'Collapse results panel' : 'Expand results panel'}
           aria-expanded={open}
-          className="press-sm ml-auto flex size-8 items-center justify-center rounded-lg text-editor-muted hover-fine:bg-white/5 hover-fine:text-editor-fg"
+          className="press-sm ml-auto flex size-8 items-center justify-center rounded-lg text-editor-muted hover-fine:bg-fg/[0.06] hover-fine:text-editor-fg"
         >
           <ChevronDown className={cn('size-4 transition-transform duration-200 ease-out', !open && 'rotate-180')} />
         </button>
@@ -372,7 +368,6 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
                   <HistoryRow
                     key={item.id}
                     item={item}
-                    points={points}
                     questionId={questionId}
                     expanded={expandedId === item.id}
                     onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}

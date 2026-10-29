@@ -19,7 +19,7 @@ interface BulkUploadTestCasesDialogProps {
   isOpen: boolean;
   onClose: () => void;
   questionId: string;
-  contestId: string;
+  contestId?: string;
 }
 
 type Stage = 'upload' | 'preview' | 'uploading' | 'results';
@@ -40,7 +40,7 @@ export const BulkUploadTestCasesDialog: React.FC<BulkUploadTestCasesDialogProps>
   isOpen,
   onClose,
   questionId,
-  contestId,
+  contestId = '',
 }) => {
   const [stage, setStage] = useState<Stage>('upload');
   const [file, setFile] = useState<File | null>(null);

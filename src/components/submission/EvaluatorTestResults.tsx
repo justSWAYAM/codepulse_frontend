@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn';
 import type { EvaluatorTestCaseResult } from '../../api/submissionApi';
 
 /** One test case in the evaluator view: Sample/Hidden, weight, verdict, and input/expected/actual. */
-export const EvaluatorTestRow: React.FC<{ result: EvaluatorTestCaseResult; index: number }> = ({ result, index }) => {
+export const EvaluatorTestRow: React.FC<{ result: EvaluatorTestCaseResult; index: number; compact?: boolean }> = ({ result, index, compact }) => {
   const [open, setOpen] = useState(result.status !== 'PASSED' && index < 3);
   return (
     <li className="rounded-xl border border-line bg-surface">
@@ -40,11 +40,11 @@ export const EvaluatorTestRow: React.FC<{ result: EvaluatorTestCaseResult; index
         </span>
       </button>
       {open && (
-        <div className="grid gap-3 border-t border-line p-3 md:grid-cols-3">
+        <div className={cn('grid gap-3 border-t border-line p-3', compact ? 'grid-cols-1' : 'md:grid-cols-3')}>
           <OutputBlock label="Input" value={result.input} emptyText="(empty)" />
           <OutputBlock label="Expected" value={result.expectedOutput} />
           <OutputBlock label="Actual" value={result.actualOutput} />
-          {result.stderr && <OutputBlock label="stderr" value={result.stderr} tone="danger" className="md:col-span-3" />}
+          {result.stderr && <OutputBlock label="stderr" value={result.stderr} tone="danger" className={compact ? undefined : 'md:col-span-3'} />}
         </div>
       )}
     </li>
@@ -52,10 +52,10 @@ export const EvaluatorTestRow: React.FC<{ result: EvaluatorTestCaseResult; index
 };
 
 /** Every test case of a submission, as evaluators see them. Used by the submission sheet and grading page. */
-export const EvaluatorTestResults: React.FC<{ results: EvaluatorTestCaseResult[] }> = ({ results }) => (
+export const EvaluatorTestResults: React.FC<{ results: EvaluatorTestCaseResult[]; compact?: boolean }> = ({ results, compact }) => (
   <ul className="space-y-2">
     {results.map((r, i) => (
-      <EvaluatorTestRow key={r.testCaseId} result={r} index={i} />
+      <EvaluatorTestRow key={r.testCaseId} result={r} index={i} compact={compact} />
     ))}
   </ul>
 );

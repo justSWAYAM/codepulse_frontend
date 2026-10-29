@@ -6,6 +6,7 @@ import {
   type CreateContestPayload,
   type UpdateContestPayload,
   type AssignCandidatesPayload,
+  type ChangeSessionQuestionPayload,
 } from '../api/contestApi';
 
 // ── Query Keys ──
@@ -16,6 +17,7 @@ export const contestKeys = {
     [...contestKeys.all, 'list', params] as const,
   detail: (id: string) => [...contestKeys.all, 'detail', id] as const,
   candidates: (id: string) => [...contestKeys.all, 'candidates', id] as const,
+  candidateAssignments: (id: string) => [...contestKeys.all, 'candidateAssignments', id] as const,
 };
 
 // ── Queries ──
@@ -36,6 +38,15 @@ export const useContest = (id: string) => {
   });
 };
 
+export const useCandidateAssignments = (contestId: string, enabled = true) => {
+  return useQuery({
+    queryKey: contestKeys.candidateAssignments(contestId),
+    queryFn: () => contestApi.getCandidateAssignments(contestId),
+    enabled: !!contestId && enabled,
+    refetchInterval: 10_000,
+  });
+};
+
 // ── Mutations ──
 
 export const useCreateContest = () => {
@@ -45,11 +56,8 @@ export const useCreateContest = () => {
     mutationFn: (payload: CreateContestPayload) => contestApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contestKeys.all });
-      // Caller handles the redirect after creation
     },
-    onError: () => {
-      // Let caller handle inline error display, don't show a generic toast here
-    },
+    onError: () => {},
   });
 };
 
@@ -57,7 +65,7 @@ export const useUpdateContest = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    onError: () => {}, // the edit form shows the error inline
+    onError: () => {},
     mutationFn: (payload: UpdateContestPayload) => contestApi.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(id) });
@@ -71,7 +79,7 @@ export const usePublishContest = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    onError: () => {}, // ContestDetailPage toasts the error itself
+    onError: () => {},
     mutationFn: () => contestApi.publish(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(id) });
@@ -94,6 +102,17 @@ export const useDeleteContest = () => {
   });
 };
 
+export const useReuseContest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => contestApi.reuse(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contestKeys.all });
+    },
+  });
+};
+
 export const useAssignCandidates = (contestId: string) => {
   const queryClient = useQueryClient();
 
@@ -103,7 +122,7 @@ export const useAssignCandidates = (contestId: string) => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(contestId) });
       queryClient.invalidateQueries({ queryKey: contestKeys.candidates(contestId) });
-      queryClient.invalidateQueries({ queryKey: contestKeys.all }); // candidateCount on the list
+      queryClient.invalidateQueries({ queryKey: contestKeys.all });
       toast.success(
         `${result.assignedCount} assigned, ${result.alreadyAssignedCount} already enrolled`
       );
@@ -120,8 +139,22 @@ export const useUnassignCandidates = (contestId: string) => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: contestKeys.detail(contestId) });
       queryClient.invalidateQueries({ queryKey: contestKeys.candidates(contestId) });
-      queryClient.invalidateQueries({ queryKey: contestKeys.all }); // candidateCount on the list
+      queryClient.invalidateQueries({ queryKey: contestKeys.all });
       toast.success(`${result.removedCount} unassigned`);
+    },
+  });
+};
+
+export const useChangeSessionQuestion = (contestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, payload }: { sessionId: string; payload: ChangeSessionQuestionPayload }) =>
+      contestApi.changeSessionQuestion(contestId, sessionId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contestKeys.candidateAssignments(contestId) });
+      queryClient.invalidateQueries({ queryKey: contestKeys.detail(contestId) });
+      toast.success('Assigned question changed. -5 score penalty applied.');
     },
   });
 };

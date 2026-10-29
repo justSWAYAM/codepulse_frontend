@@ -15,11 +15,12 @@ export const questionKeys = {
 };
 
 // List
-export const useQuestions = (contestId: string, enabled = true) =>
+export const useQuestions = (contestId: string, enabled = true, refetchInterval?: number) =>
   useQuery({
     queryKey: questionKeys.all(contestId),
     queryFn: () => questionApi.getQuestions(contestId),
     enabled: !!contestId && enabled,
+    refetchInterval,
   });
 
 // Single

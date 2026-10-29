@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { FolderPlus, Plus, Upload } from 'lucide-react';
 import { PageHeader, ButtonLink, Button, Tooltip } from '../components/ui';
 import { SubjectFolderTree } from '../components/library/SubjectFolderTree';
 import { LibraryQuestionTable } from '../components/library/LibraryQuestionTable';
 import { useSubjects } from '../hooks/useLibrary';
 import { QuestionImportDialog } from '../features/library/import/QuestionImportDialog';
+import { AddQuestionsToFolderModal } from '../components/library/AddQuestionsToFolderModal';
 
 const QuestionLibraryPage: React.FC = () => {
   const [subjectId, setSubjectId] = useState<string>();
   const [importOpen, setImportOpen] = useState(false);
+  const [addQuestionsOpen, setAddQuestionsOpen] = useState(false);
   const { data: subjects = [] } = useSubjects();
   const selectedSubject = subjects.find((s) => s.id === subjectId);
 
@@ -30,6 +32,15 @@ const QuestionLibraryPage: React.FC = () => {
         description="Browse shared questions by subject, difficulty, type, or author."
         actions={
           <div className="flex items-center gap-2">
+            {selectedSubject && (
+              <Button
+                variant="secondary"
+                onClick={() => setAddQuestionsOpen(true)}
+                leadingIcon={<FolderPlus className="size-4" />}
+              >
+                Add questions
+              </Button>
+            )}
             {!selectedSubject ? (
               <Tooltip content="Select a folder first">
                 <span className="inline-block cursor-not-allowed">{importButton}</span>
@@ -58,6 +69,14 @@ const QuestionLibraryPage: React.FC = () => {
           onOpenChange={setImportOpen}
           subjectId={selectedSubject.id}
           subjectName={selectedSubject.name}
+        />
+      )}
+
+      {selectedSubject && addQuestionsOpen && (
+        <AddQuestionsToFolderModal
+          open={addQuestionsOpen}
+          onOpenChange={setAddQuestionsOpen}
+          targetSubject={selectedSubject}
         />
       )}
     </div>

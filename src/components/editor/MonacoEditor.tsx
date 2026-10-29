@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react';
+import { useTheme } from '../../context/ThemeContext';
 
 /*
  * Lazy-loaded (see CodeEditorPanel) so Monaco never weighs on other pages.
- * The editor is dark in both app themes; these colours mirror the --editor-* tokens.
+ * The editor themes mirror the light and dark --editor-* tokens.
  */
 const defineTheme: BeforeMount = (monaco) => {
   monaco.editor.defineTheme('codepulse-dark', {
@@ -18,7 +19,7 @@ const defineTheme: BeforeMount = (monaco) => {
       { token: 'delimiter', foreground: 'a4aac4' },
     ],
     colors: {
-      'editor.background': '#0d1120',
+      'editor.background': '#0b0f1d',
       'editor.foreground': '#d7dcef',
       'editorLineNumber.foreground': '#4a5170',
       'editorLineNumber.activeForeground': '#a4aac4',
@@ -29,14 +30,48 @@ const defineTheme: BeforeMount = (monaco) => {
       'editorCursor.foreground': '#8aa6ff',
       'editorIndentGuide.background1': '#1c2238',
       'editorIndentGuide.activeBackground1': '#343b57',
-      'editorWidget.background': '#121729',
-      'editorWidget.border': '#232a42',
-      'editorSuggestWidget.background': '#121729',
-      'editorSuggestWidget.border': '#232a42',
+      'editorWidget.background': '#0f1426',
+      'editorWidget.border': '#242a42',
+      'editorSuggestWidget.background': '#0f1426',
+      'editorSuggestWidget.border': '#242a42',
       'editorSuggestWidget.selectedBackground': '#1f2640',
       'scrollbarSlider.background': '#ffffff14',
       'scrollbarSlider.hoverBackground': '#ffffff22',
       'scrollbarSlider.activeBackground': '#ffffff2e',
+    },
+  });
+
+  monaco.editor.defineTheme('codepulse-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '767c96', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '2448c4' },
+      { token: 'string', foreground: '0f6e44' },
+      { token: 'number', foreground: '8a580a' },
+      { token: 'type', foreground: '1d6aa6' },
+      { token: 'delimiter', foreground: '4a5070' },
+    ],
+    colors: {
+      'editor.background': '#ffffff',
+      'editor.foreground': '#11152e',
+      'editorLineNumber.foreground': '#9aa1be',
+      'editorLineNumber.activeForeground': '#4a5070',
+      'editor.lineHighlightBackground': '#f1f3f8',
+      'editor.lineHighlightBorder': '#00000000',
+      'editor.selectionBackground': '#2f5bea25',
+      'editor.inactiveSelectionBackground': '#2f5bea12',
+      'editorCursor.foreground': '#2f5bea',
+      'editorIndentGuide.background1': '#e2e5ee',
+      'editorIndentGuide.activeBackground1': '#cbd0de',
+      'editorWidget.background': '#ffffff',
+      'editorWidget.border': '#e2e5ee',
+      'editorSuggestWidget.background': '#ffffff',
+      'editorSuggestWidget.border': '#e2e5ee',
+      'editorSuggestWidget.selectedBackground': '#ebf0ff',
+      'scrollbarSlider.background': '#11152e14',
+      'scrollbarSlider.hoverBackground': '#11152e22',
+      'scrollbarSlider.activeBackground': '#11152e2e',
     },
   });
 };
@@ -56,6 +91,9 @@ export interface MonacoEditorProps {
 }
 
 const MonacoEditor: React.FC<MonacoEditorProps> = ({ value, language, onChange, readOnly, blockPaste, onRun, onSubmit, ariaLabel }) => {
+  const { resolved } = useTheme();
+  const activeTheme = resolved === 'dark' ? 'codepulse-dark' : 'codepulse-light';
+
   // Shortcuts are registered once at mount; refs keep them pointing at the latest handlers
   const runRef = useRef(onRun);
   const submitRef = useRef(onSubmit);
@@ -89,7 +127,7 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({ value, language, onChange, 
   return (
     <Editor
       height="100%"
-      theme="codepulse-dark"
+      theme={activeTheme}
       language={language}
       value={value}
       onChange={(v) => onChange(v ?? '')}

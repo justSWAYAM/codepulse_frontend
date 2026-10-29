@@ -221,7 +221,7 @@ export const ExamRulesScreen: React.FC<ExamRulesScreenProps> = ({
                       display: 'flex',
                     }}
                   >
-                    {React.cloneElement(rule.icon as React.ReactElement, {
+                    {React.cloneElement(rule.icon as React.ReactElement<{ style?: React.CSSProperties }>, {
                       style: { width: 16, height: 16 },
                     })}
                   </span>

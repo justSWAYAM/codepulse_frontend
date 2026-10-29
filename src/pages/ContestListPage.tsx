@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Trophy } from 'lucide-react';
-import { useContests, useDeleteContest } from '../hooks/useContests';
+import { toast } from 'sonner';
+import { useContests, useDeleteContest, useReuseContest } from '../hooks/useContests';
 import { useAuth } from '../context/AuthContext';
 import { ContestCard } from '../components/contest/ContestCard';
 import { EmptyState } from '../components/states/EmptyState';
 import { ErrorState } from '../components/states/ErrorState';
 import { Button, ButtonLink, Dialog, PageHeader, Segmented, Skeleton } from '../components/ui';
+import { getErrorMessage } from '../lib/apiError';
 import type { ContestRecord, ContestStatus } from '../api/contestApi';
 
 type Filter = 'ALL' | ContestStatus;
@@ -21,6 +23,7 @@ const FILTERS: { label: string; value: Filter }[] = [
 
 const ContestListPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
   const isCandidate = user?.role === 'CANDIDATE';
 
@@ -34,11 +37,25 @@ const ContestListPage: React.FC = () => {
   const contests = data?.content ?? [];
   const [contestToDelete, setContestToDelete] = useState<ContestRecord | null>(null);
   const deleteMutation = useDeleteContest();
+  const reuseMutation = useReuseContest();
 
   const confirmDelete = () => {
     if (!contestToDelete) return;
     deleteMutation.mutate(contestToDelete.id, { onSuccess: () => setContestToDelete(null) });
   };
+
+  const handleReuse = (contest: ContestRecord) => {
+    reuseMutation.mutate(contest.id, {
+      onSuccess: (newContest) => {
+        toast.success('Contest copied as draft! Redirecting to edit...');
+        navigate(`/dashboard/contests/${newContest.id}/edit`);
+      },
+      onError: (err) => {
+        toast.error(getErrorMessage(err, 'Failed to reuse contest'));
+      },
+    });
+  };
+
   // Candidates never see drafts
   const filters = isCandidate ? FILTERS.filter((f) => f.value !== 'DRAFT') : FILTERS;
 
@@ -120,6 +137,7 @@ const ContestListPage: React.FC = () => {
               contest={contest}
               showCandidateCount={!isCandidate}
               onDelete={isAdmin ? setContestToDelete : undefined}
+              onReuse={isAdmin ? handleReuse : undefined}
             />
           ))}
         </div>
@@ -134,7 +152,7 @@ const ContestListPage: React.FC = () => {
         title="Delete contest"
         description={
           contestToDelete
-            ? `“${contestToDelete.title}” and its questions, test cases and candidate assignments will be permanently deleted.`
+            ? `“${contestToDelete.title}” and all its questions, test cases, submissions, and results will be permanently deleted.`
             : undefined
         }
         dismissible={!deleteMutation.isPending}

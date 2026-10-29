@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Code2, FileText, Send, WifiOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Code2, FileText, Send, WifiOff, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useContest } from '../hooks/useContests';
@@ -11,6 +11,7 @@ import { useQuestions } from '../hooks/useQuestions';
 import { useQuestionProgress } from '../hooks/useSubmissions';
 import { useExamLock, type ViolationType } from '../hooks/useExamLock';
 import { useAuth } from '../context/AuthContext';
+import { sessionApi } from '../api/sessionApi';
 
 import { CountdownTimer } from '../components/session/CountdownTimer';
 import { QuestionNavigator } from '../components/session/QuestionNavigator';
@@ -24,7 +25,8 @@ import { CodeEditorPanel } from '../components/editor/CodeEditorPanel';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
 import { EmptyState } from '../components/states/EmptyState';
-import { Badge, BrandMark, Button, Segmented, ThemeToggle } from '../components/ui';
+import { Badge, BrandMark, Button, IconButton, Segmented, ThemeToggle, Tooltip } from '../components/ui';
+import { useSessionLiveEvents } from '../hooks/useSessionLiveEvents';
 import { getErrorMessage } from '../lib/apiError';
 import { cn } from '../lib/cn';
 
@@ -63,7 +65,23 @@ const AssessmentPage: React.FC = () => {
 
   const sessionIsActive = !!session && session.status === 'IN_PROGRESS';
 
-  const { data: questionsRaw = [] } = useQuestions(contestId!, sessionIsActive);
+  const {
+    data: questionsRaw = [],
+    refetch: refetchQuestions,
+    isFetching: isFetchingQuestions,
+  } = useQuestions(contestId!, sessionIsActive, sessionIsActive ? 15_000 : undefined);
+
+  // Real-time server-sent events for question swaps and session updates
+  useSessionLiveEvents({
+    contestId: contestId!,
+    sessionId: session?.sessionId,
+    enabled: sessionIsActive,
+    onQuestionChanged: (payload) => {
+      if (activeQuestionId === payload.oldQuestionId) {
+        setActiveQuestionId(payload.newQuestionId);
+      }
+    },
+  });
 
   const questions = useMemo(
     () =>
@@ -84,24 +102,23 @@ const AssessmentPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   // ── Lockdown / proctoring state ──
-  const TAB_SWITCH_LIMIT = 3;
-
   /** true once the candidate has passed the rules screen and entered fullscreen */
   const [examReady, setExamReady] = useState(false);
   /** true while the fullscreen blocker should cover the exam */
   const [fullscreenBlocked, setFullscreenBlocked] = useState(false);
   /** running count of distinct violation events (all types) */
   const [strikeCount, setStrikeCount] = useState(0);
-  /** tab-switch / window-blur violations specifically — auto-submit at TAB_SWITCH_LIMIT */
-  const tabSwitchCountRef = useRef(0);
-  /** ref to the latest submitMutation so handleViolation can call it without stale closure */
-  const submitMutationRef = useRef(submitMutation);
-  useEffect(() => { submitMutationRef.current = submitMutation; });
+  const lastGlobalViolationRef = useRef(0);
+  const fullscreenBlockedRef = useRef(false);
+  useEffect(() => { fullscreenBlockedRef.current = fullscreenBlocked; }, [fullscreenBlocked]);
 
   // Debounce rapid-fire violations (mouse-leave, blur spam) to 1s windows
   const violationDebounceRef = useRef<Map<ViolationType, ReturnType<typeof setTimeout>>>(new Map());
 
   const handleViolation = useCallback((type: ViolationType) => {
+    if (fullscreenBlockedRef.current && type !== 'FULLSCREEN_EXIT') return;
+    if (Date.now() - lastGlobalViolationRef.current < 800) return;
+    lastGlobalViolationRef.current = Date.now();
     // Only count each violation type once per second
     if (violationDebounceRef.current.has(type)) return;
 
@@ -111,6 +128,9 @@ const AssessmentPage: React.FC = () => {
     violationDebounceRef.current.set(type, timer);
 
     setStrikeCount((n) => n + 1);
+    if (contestId) {
+      sessionApi.recordViolation(contestId, type).catch(() => {});
+    }
 
     if (type === 'FULLSCREEN_EXIT') {
       setFullscreenBlocked(true);
@@ -119,32 +139,10 @@ const AssessmentPage: React.FC = () => {
       toast.warning('External paste is blocked during the exam.', { id: 'paste-block', duration: 2500 });
 
     } else if (type === 'TAB_HIDDEN' || type === 'WINDOW_BLUR') {
-      // ── Tab-switch auto-submit logic ──
-      tabSwitchCountRef.current += 1;
-      const switches = tabSwitchCountRef.current;
-      const remaining = TAB_SWITCH_LIMIT - switches;
-
-      if (switches >= TAB_SWITCH_LIMIT) {
-        // 3rd (or beyond) violation — auto-submit immediately
-        toast.error(
-          `You switched tabs ${TAB_SWITCH_LIMIT} times. Your exam has been auto-submitted.`,
-          { id: 'auto-submit', duration: 8000 },
-        );
-        // Fire-and-forget; the onSuccess handler will update the session status
-        submitMutationRef.current.mutate();
-      } else if (remaining === 1) {
-        // 2nd violation — final warning
-        toast.warning(
-          '⚠ Final warning: 1 more tab switch will auto-submit your exam.',
-          { id: 'tab-switch', duration: 5000 },
-        );
-      } else {
-        // 1st violation
-        toast.warning(
-          `Tab switch detected — ${remaining} of ${TAB_SWITCH_LIMIT} switches remaining before auto-submit.`,
-          { id: 'tab-switch', duration: 4000 },
-        );
-      }
+      toast.warning('Tab switch or window blur detected — this infraction has been recorded.', {
+        id: 'tab-switch',
+        duration: 4000,
+      });
 
     } else if (type === 'DEVTOOLS_SUSPECTED') {
       toast.warning('DevTools detected — this is recorded.', { id: 'devtools', duration: 3000 });
@@ -184,9 +182,11 @@ const AssessmentPage: React.FC = () => {
   const [pane, setPane] = useState<Pane>('problem');
 
   useEffect(() => {
-    if (questions.length > 0 && !activeQuestionId) {
-      setActiveQuestionId(questions[0].id);
-      setVisitedIds(new Set([questions[0].id]));
+    if (questions.length > 0) {
+      if (!activeQuestionId || !questions.some((q) => q.id === activeQuestionId)) {
+        setActiveQuestionId(questions[0].id);
+        setVisitedIds((prev) => new Set([...prev, questions[0].id]));
+      }
     }
   }, [questions, activeQuestionId]);
 
@@ -306,7 +306,7 @@ const AssessmentPage: React.FC = () => {
   ].filter(Boolean);
 
   return (
-    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-canvas">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-canvas">
       {/* ── Header ── */}
       <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 sm:px-4">
         <BrandMark size={28} withWordmark={false} />
@@ -331,6 +331,20 @@ const AssessmentPage: React.FC = () => {
           </Badge>
         )}
         <CountdownTimer remainingSeconds={remainingSeconds} />
+        <Tooltip content="Sync questions with server">
+          <IconButton
+            size="sm"
+            aria-label="Sync questions"
+            onClick={() => {
+              refetchQuestions();
+              toast.success('Questions synced');
+            }}
+            disabled={isFetchingQuestions}
+            className="text-fg-subtle hover-fine:text-fg"
+          >
+            <RefreshCw className={cn('size-3.5', isFetchingQuestions && 'animate-spin')} />
+          </IconButton>
+        </Tooltip>
         <ThemeToggle className="hidden sm:inline-flex" />
         <Button
           size="sm"
@@ -392,7 +406,7 @@ const AssessmentPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 min-h-0 flex-1 flex-col">
           {/* Problem | Code switch below xl */}
           <div className="flex shrink-0 items-center border-b border-line bg-surface px-3 py-2 xl:hidden">
             <Segmented<Pane>

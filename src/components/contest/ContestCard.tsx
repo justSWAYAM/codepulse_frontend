@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Calendar, Clock, MoreHorizontal, Trash2, Users } from 'lucide-react';
+import { ArrowUpRight, Calendar, Clock, Copy, MoreHorizontal, Trash2, Users } from 'lucide-react';
 import { ContestStatusBadge } from './ContestStatusBadge';
 import type { ContestRecord } from '../../api/contestApi';
 import { languageLabel } from '../../lib/languages';
@@ -10,8 +10,10 @@ import { useAuth } from '../../context/AuthContext';
 interface ContestCardProps {
   contest: ContestRecord;
   showCandidateCount?: boolean;
-  /** Shows a delete action (admins, DRAFT/PUBLISHED only) */
+  /** Shows a delete action (admins, non-live contests only) */
   onDelete?: (contest: ContestRecord) => void;
+  /** Shows a reuse contest action (admins) */
+  onReuse?: (contest: ContestRecord) => void;
 }
 
 function formatDate(isoString: string): string {
@@ -23,9 +25,15 @@ function formatDate(isoString: string): string {
   });
 }
 
-export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidateCount = false, onDelete }) => {
-  // Started contests hold exam records, so the backend refuses to delete them
-  const canDelete = !!onDelete && (contest.status === 'DRAFT' || contest.status === 'PUBLISHED');
+export const ContestCard: React.FC<ContestCardProps> = ({
+  contest,
+  showCandidateCount = false,
+  onDelete,
+  onReuse,
+}) => {
+  // Live contests cannot be deleted
+  const canDelete = !!onDelete && contest.status !== 'ONGOING';
+  const hasMenu = canDelete || !!onReuse;
   const { user } = useAuth();
 
   return (
@@ -46,7 +54,7 @@ export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidate
           <ArrowUpRight
             aria-hidden
             className={
-              canDelete
+              hasMenu
                 ? 'hidden'
                 : 'size-4 text-fg-subtle opacity-0 transition-opacity duration-150 group-focus-visible:opacity-100 [@media(hover:hover)]:group-hover:opacity-100'
             }
@@ -97,7 +105,7 @@ export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidate
       </Link>
 
       {/* Sibling of the Link, not inside it: a button can't nest in an <a> */}
-      {canDelete && (
+      {hasMenu && (
         <div className="absolute right-3 top-3">
           <Menu>
             <MenuTrigger asChild>
@@ -106,9 +114,16 @@ export const ContestCard: React.FC<ContestCardProps> = ({ contest, showCandidate
               </IconButton>
             </MenuTrigger>
             <MenuContent className="min-w-44">
-              <MenuItem icon={<Trash2 />} tone="danger" onSelect={() => onDelete!(contest)}>
-                Delete contest
-              </MenuItem>
+              {onReuse && (
+                <MenuItem icon={<Copy className="size-4" />} onSelect={() => onReuse(contest)}>
+                  Reuse contest
+                </MenuItem>
+              )}
+              {canDelete && (
+                <MenuItem icon={<Trash2 />} tone="danger" onSelect={() => onDelete!(contest)}>
+                  Delete contest
+                </MenuItem>
+              )}
             </MenuContent>
           </Menu>
         </div>

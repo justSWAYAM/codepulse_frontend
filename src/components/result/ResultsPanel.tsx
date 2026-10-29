@@ -79,7 +79,7 @@ export const ResultsPanel: React.FC<{ contest: ContestDetailRecord }> = ({ conte
               value={filter}
               onChange={(v) => setParam('rf', v, 'all')}
               options={FILTERS}
-              className="overflow-x-auto"
+              className="shrink-0 max-w-full overflow-x-auto overflow-y-hidden"
             />
           </div>
           <LeaderboardTable

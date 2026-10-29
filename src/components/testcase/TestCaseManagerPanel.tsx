@@ -16,7 +16,7 @@ import type { QuestionRecord } from '../../api/questionApi';
 
 interface TestCaseManagerPanelProps {
   questionId: string;
-  contestId: string;
+  contestId?: string;
   /** Contest is live/completed: list and preview only */
   readOnly?: boolean;
   question?: QuestionRecord | PromptSource;
@@ -24,7 +24,7 @@ interface TestCaseManagerPanelProps {
 
 export const TestCaseManagerPanel: React.FC<TestCaseManagerPanelProps> = ({
   questionId,
-  contestId,
+  contestId = '',
   readOnly = false,
   question,
 }) => {

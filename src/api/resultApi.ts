@@ -60,6 +60,9 @@ export interface LeaderboardEntry {
   adjusted: boolean;
   timeTakenSeconds?: number | null;
   questionScores: QuestionScoreCell[];
+  faultCount?: number;
+  penaltyScore?: number;
+  questionChangeCount?: number;
 }
 
 export interface LeaderboardResponse {
@@ -135,6 +138,10 @@ export interface ResultResponse {
   published: boolean;
   computedAt: string;
   questions: QuestionResultView[];
+  faultCount?: number;
+  violationLog?: string | null;
+  penaltyScore?: number;
+  questionChangeCount?: number;
 }
 
 export interface MyQuestionResult {
@@ -164,6 +171,8 @@ export interface MyResultResponse {
   rankedCount?: number | null;
   adjusted?: boolean | null;
   questions?: MyQuestionResult[];
+  penaltyScore?: number | null;
+  questionChangeCount?: number | null;
 }
 
 export interface ManualEvaluationPayload {

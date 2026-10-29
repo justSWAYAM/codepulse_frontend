@@ -8,6 +8,7 @@ interface DeleteQuestionDialogProps {
   onConfirm: () => void;
   title: string;
   isDeleting: boolean;
+  description?: React.ReactNode;
 }
 
 export const DeleteQuestionDialog: React.FC<DeleteQuestionDialogProps> = ({
@@ -16,16 +17,19 @@ export const DeleteQuestionDialog: React.FC<DeleteQuestionDialogProps> = ({
   onConfirm,
   title,
   isDeleting,
+  description,
 }) => (
   <Dialog
     open={isOpen}
     onOpenChange={(open) => !open && onClose()}
     title="Delete question?"
     description={
-      <>
-        <span className="font-medium text-fg">{title}</span> will be removed from this contest, along with its test
-        cases. This can't be undone.
-      </>
+      description ?? (
+        <>
+          <span className="font-medium text-fg">{title}</span> will be removed from this contest, along with its test
+          cases. This can't be undone.
+        </>
+      )
     }
     icon={<Trash2 className="size-5" />}
     tone="danger"

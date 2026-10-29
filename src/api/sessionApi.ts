@@ -19,6 +19,7 @@ export interface StartSessionResponse {
   serverTime: string;     // ISO 8601, the server's "now" at response time
   remainingSeconds: number;
   resumed: boolean;       // false = new session, true = existing returned
+  faultCount?: number;
 }
 
 export interface SessionStatusResponse {
@@ -30,6 +31,7 @@ export interface SessionStatusResponse {
   submittedAt: string | null;   // null while IN_PROGRESS
   serverTime: string;
   remainingSeconds: number;     // 0 unless IN_PROGRESS
+  faultCount?: number;
 }
 
 // ── API Functions ──
@@ -55,6 +57,14 @@ export const sessionApi = {
   submit: async (contestId: string): Promise<SessionStatusResponse> => {
     const { data } = await apiClient.post<ApiWrapper<SessionStatusResponse>>(
       `/contests/${contestId}/session/submit`
+    );
+    return data.data;
+  },
+
+  recordViolation: async (contestId: string, type: string): Promise<{ sessionId: string; faultCount: number; violationType: string }> => {
+    const { data } = await apiClient.post<ApiWrapper<{ sessionId: string; faultCount: number; violationType: string }>>(
+      `/contests/${contestId}/session/violation`,
+      { type }
     );
     return data.data;
   },

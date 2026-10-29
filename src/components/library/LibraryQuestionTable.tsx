@@ -1,12 +1,21 @@
 import React, { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useLibraryQuestions } from '../../hooks/useLibrary';
+import { ChevronLeft, ChevronRight, Eye, Pencil, Search, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  useAddQuestionsToSubject,
+  useDeleteLibraryQuestion,
+  useLibraryQuestions,
+  useSubjects,
+} from '../../hooks/useLibrary';
+import { useAuth } from '../../context/AuthContext';
 import type { LibraryQuestionRecord, LibraryQuestionType } from '../../api/libraryApi';
 import type { Difficulty } from '../DifficultyBadge';
 import { DataTable } from '../DataTable';
 import { DifficultyBadge } from '../DifficultyBadge';
-import { IconButton, Input, Select } from '../ui';
+import { Button, IconButton, Input, Select } from '../ui';
+import { DeleteQuestionDialog } from '../question/DeleteQuestionDialog';
+import { LibraryQuestionDetailModal } from './LibraryQuestionDetailModal';
 
 interface LibraryQuestionTableProps {
   selectedSubjectId?: string;
@@ -23,10 +32,35 @@ export const LibraryQuestionTable: React.FC<LibraryQuestionTableProps> = ({
   selectedIds = [],
   onSelectionChange,
 }) => {
+  const navigate = useNavigate();
+  let user: any = null;
+  try {
+    user = useAuth().user;
+  } catch {
+    user = null;
+  }
+  const deleteMutation = useDeleteLibraryQuestion();
+  const { data: subjects = [] } = useSubjects();
+
   const [page, setPage] = useState(0);
   const [type, setType] = useState<LibraryQuestionType | ''>('');
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
   const [search, setSearch] = useState('');
+
+  const [detailQuestionId, setDetailQuestionId] = useState<string | null>(null);
+  const [questionToDelete, setQuestionToDelete] = useState<{ id: string; title: string } | null>(null);
+
+  // Bulk move state for non-selectable (standard library view)
+  const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
+  const [targetFolderId, setTargetFolderId] = useState<string>('');
+
+  const activeSelectedIds = selectable ? selectedIds : internalSelectedIds;
+  const setActiveSelectedIds = selectable
+    ? (ids: string[]) => onSelectionChange?.(ids)
+    : (ids: string[]) => setInternalSelectedIds(ids);
+
+  const addQuestionsMutation = useAddQuestionsToSubject(targetFolderId);
+
   const params = {
     subjectId: selectedSubjectId,
     type: type || undefined,
@@ -39,36 +73,81 @@ export const LibraryQuestionTable: React.FC<LibraryQuestionTableProps> = ({
 
   const resetPage = () => setPage(0);
 
+  const canManageRow = (row: LibraryQuestionRecord) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true;
+    return user.fullName === row.authorName;
+  };
+
+  const pageQuestions = data?.content ?? [];
+
+  const handleBulkMove = () => {
+    if (!targetFolderId || internalSelectedIds.length === 0) return;
+    addQuestionsMutation.mutate(internalSelectedIds, {
+      onSuccess: () => {
+        setInternalSelectedIds([]);
+        setTargetFolderId('');
+      },
+    });
+  };
+
   const columns = useMemo<ColumnDef<LibraryQuestionRecord, unknown>[]>(
     () => [
-      ...(selectable
-        ? [
-            {
-              id: 'select',
-              header: () => <span className="sr-only">Select</span>,
-              cell: ({ row }: { row: { original: LibraryQuestionRecord } }) => (
-                <input
-                  type="checkbox"
-                  aria-label={`Select ${row.original.title}`}
-                  checked={selectedIds.includes(row.original.id)}
-                  onChange={(event) => {
-                    const next = event.target.checked
-                      ? [...selectedIds, row.original.id]
-                      : selectedIds.filter((selectedId) => selectedId !== row.original.id);
-                    onSelectionChange?.(Array.from(new Set(next)));
-                  }}
-                  className="size-4 accent-primary"
-                />
-              ),
-              enableSorting: false,
-              meta: { className: 'w-12' },
-            } satisfies ColumnDef<LibraryQuestionRecord, unknown>,
-          ]
-        : []),
+      {
+        id: 'select',
+        header: () => (
+          <input
+            type="checkbox"
+            aria-label="Select all on this page"
+            checked={
+              pageQuestions.length > 0 &&
+              pageQuestions.every((q) => activeSelectedIds.includes(q.id))
+            }
+            onChange={(e) => {
+              if (e.target.checked) {
+                const combined = Array.from(
+                  new Set([...activeSelectedIds, ...pageQuestions.map((q) => q.id)]),
+                );
+                setActiveSelectedIds(combined);
+              } else {
+                const filtered = activeSelectedIds.filter(
+                  (id) => !pageQuestions.some((q) => q.id === id),
+                );
+                setActiveSelectedIds(filtered);
+              }
+            }}
+            className="size-4 accent-primary"
+          />
+        ),
+        cell: ({ row }: { row: { original: LibraryQuestionRecord } }) => (
+          <input
+            type="checkbox"
+            aria-label={`Select ${row.original.title}`}
+            checked={activeSelectedIds.includes(row.original.id)}
+            onChange={(event) => {
+              const next = event.target.checked
+                ? [...activeSelectedIds, row.original.id]
+                : activeSelectedIds.filter((id) => id !== row.original.id);
+              setActiveSelectedIds(Array.from(new Set(next)));
+            }}
+            className="size-4 accent-primary"
+          />
+        ),
+        enableSorting: false,
+        meta: { className: 'w-12' },
+      },
       {
         accessorKey: 'title',
         header: 'Question',
-        cell: ({ row }) => <span className="font-medium text-fg">{row.original.title}</span>,
+        cell: ({ row }) => (
+          <button
+            type="button"
+            onClick={() => setDetailQuestionId(row.original.id)}
+            className="text-left font-medium text-fg transition-colors hover:text-primary focus-visible:outline-none focus-visible:underline"
+          >
+            {row.original.title}
+          </button>
+        ),
       },
       {
         accessorKey: 'questionType',
@@ -91,8 +170,58 @@ export const LibraryQuestionTable: React.FC<LibraryQuestionTableProps> = ({
         header: 'Author',
         meta: { className: 'hidden md:table-cell' },
       },
+      ...(!selectable
+        ? [
+            {
+              id: 'actions',
+              header: () => <span className="sr-only">Actions</span>,
+              cell: ({ row }: { row: { original: LibraryQuestionRecord } }) => {
+                const canManage = canManageRow(row.original);
+                return (
+                  <div className="flex items-center justify-end gap-1">
+                    <IconButton
+                      aria-label={`View ${row.original.title}`}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDetailQuestionId(row.original.id)}
+                      title="View question details"
+                    >
+                      <Eye className="size-4" />
+                    </IconButton>
+                    {canManage && (
+                      <>
+                        <IconButton
+                          aria-label={`Edit ${row.original.title}`}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => navigate(`/dashboard/library/${row.original.id}/edit`)}
+                          title="Edit question"
+                        >
+                          <Pencil className="size-4" />
+                        </IconButton>
+                        <IconButton
+                          aria-label={`Delete ${row.original.title}`}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setQuestionToDelete({ id: row.original.id, title: row.original.title })}
+                          className="text-danger hover-fine:bg-danger-soft hover-fine:text-danger-text"
+                          title="Delete question"
+                        >
+                          <Trash2 className="size-4" />
+                        </IconButton>
+                      </>
+                    )}
+                  </div>
+                );
+              },
+              enableSorting: false,
+              meta: { className: 'w-28 text-right' },
+            } satisfies ColumnDef<LibraryQuestionRecord, unknown>,
+          ]
+        : []),
     ],
-    [onSelectionChange, selectable, selectedIds],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeSelectedIds, navigate, pageQuestions, selectable, user],
   );
 
   const totalPages = data?.totalPages ?? 0;
@@ -144,6 +273,46 @@ export const LibraryQuestionTable: React.FC<LibraryQuestionTableProps> = ({
         </Select>
       </div>
 
+      {!selectable && internalSelectedIds.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary-soft p-3 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-primary-text">
+              {internalSelectedIds.length} question{internalSelectedIds.length === 1 ? '' : 's'} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setInternalSelectedIds([])}
+              className="text-xs text-fg-subtle underline hover:text-fg"
+            >
+              Clear selection
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              aria-label="Select destination folder"
+              value={targetFolderId}
+              onChange={(e) => setTargetFolderId(e.target.value)}
+              className="h-8 py-1 text-xs"
+            >
+              <option value="">Move to folder…</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+            <Button
+              size="sm"
+              disabled={!targetFolderId}
+              loading={addQuestionsMutation.isPending}
+              onClick={handleBulkMove}
+            >
+              Move
+            </Button>
+          </div>
+        </div>
+      )}
+
       {isError ? (
         <div className="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger-text">
           The question library could not be loaded. Try again in a moment.
@@ -168,7 +337,39 @@ export const LibraryQuestionTable: React.FC<LibraryQuestionTableProps> = ({
         </div>
       )}
 
-      {selectable && selectedIds.length > 0 && <p className="text-xs text-fg-subtle">{selectedIds.length} question{selectedIds.length === 1 ? '' : 's'} selected</p>}
+      {selectable && selectedIds.length > 0 && (
+        <p className="text-xs text-fg-subtle">
+          {selectedIds.length} question{selectedIds.length === 1 ? '' : 's'} selected
+        </p>
+      )}
+
+      <LibraryQuestionDetailModal
+        questionId={detailQuestionId}
+        isOpen={Boolean(detailQuestionId)}
+        onClose={() => setDetailQuestionId(null)}
+        onEdit={(id) => navigate(`/dashboard/library/${id}/edit`)}
+        onDelete={(q) => setQuestionToDelete(q)}
+      />
+
+      <DeleteQuestionDialog
+        isOpen={Boolean(questionToDelete)}
+        onClose={() => setQuestionToDelete(null)}
+        onConfirm={() => {
+          if (!questionToDelete) return;
+          deleteMutation.mutate(questionToDelete.id, {
+            onSuccess: () => setQuestionToDelete(null),
+          });
+        }}
+        title={questionToDelete?.title ?? ''}
+        description={
+          questionToDelete ? (
+            <>
+              <span className="font-medium text-fg">{questionToDelete.title}</span> will be removed from the question library. Contests that previously imported this question will keep their copies intact.
+            </>
+          ) : undefined
+        }
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   );
 };

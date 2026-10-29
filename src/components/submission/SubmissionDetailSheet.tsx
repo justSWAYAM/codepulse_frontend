@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, AlertTriangle } from 'lucide-react';
 import { Button, Dialog, Sheet, Skeleton, Tooltip } from '../ui';
 import { ErrorState } from '../states/ErrorState';
 import { OutputBlock, VerdictBadge } from '../editor/VerdictBadge';
@@ -70,6 +70,13 @@ export const SubmissionDetailSheet: React.FC<SubmissionDetailSheetProps> = ({
       }
     >
       <div className="space-y-6 p-5">
+        {(row?.questionChanged || data?.questionChanged) && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
+            <AlertTriangle className="size-4 shrink-0" />
+            <span>This question was swapped out during the live contest (-5 pts penalty applied to candidate score).</span>
+          </div>
+        )}
+
         {/* Summary */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="col-span-2 rounded-xl border border-line bg-surface-2/50 p-3.5">

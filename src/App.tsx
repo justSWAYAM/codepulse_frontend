@@ -16,6 +16,7 @@ import EvaluationPage from './pages/EvaluationPage';
 import MyResultPage from './pages/MyResultPage';
 import QuestionLibraryPage from './pages/QuestionLibraryPage';
 import LibraryQuestionCreatePage from './pages/LibraryQuestionCreatePage';
+import LibraryQuestionEditPage from './pages/LibraryQuestionEditPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -59,6 +60,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute roles={['ADMIN', 'EVALUATOR']}>
                   <LibraryQuestionCreatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="library/:questionId/edit"
+              element={
+                <ProtectedRoute roles={['ADMIN', 'EVALUATOR']}>
+                  <LibraryQuestionEditPage />
                 </ProtectedRoute>
               }
             />

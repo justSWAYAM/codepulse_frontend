@@ -63,6 +63,7 @@ export function exitFullscreen(): void {
 export function useExamLock(active: boolean, onViolation: (type: ViolationType) => void): void {
   // Keep a ref so we never need the callback in the dependency array
   const cbRef = useRef(onViolation);
+  const lastFullscreenExitRef = useRef<number>(0);
   useEffect(() => {
     cbRef.current = onViolation;
   });
@@ -80,19 +81,29 @@ export function useExamLock(active: boolean, onViolation: (type: ViolationType) 
 
     // ── Fullscreen ──
     const onFs = () => {
-      if (!document.fullscreenElement) fire('FULLSCREEN_EXIT');
+      if (!document.fullscreenElement) {
+        lastFullscreenExitRef.current = Date.now();
+        fire('FULLSCREEN_EXIT');
+      }
     };
 
     // ── Tab visibility ──
     const onVis = () => {
+      if (Date.now() - lastFullscreenExitRef.current < 1500) return;
       if (document.hidden) fire('TAB_HIDDEN');
     };
 
     // ── Window / app focus ──
-    const onBlur = () => fire('WINDOW_BLUR');
+    const onBlur = () => {
+      if (!document.fullscreenElement || Date.now() - lastFullscreenExitRef.current < 1500) return;
+      fire('WINDOW_BLUR');
+    };
 
     // ── Cursor leaving viewport ──
-    const onLeave = () => fire('MOUSE_LEFT');
+    const onLeave = () => {
+      if (!document.fullscreenElement || Date.now() - lastFullscreenExitRef.current < 1500) return;
+      fire('MOUSE_LEFT');
+    };
 
     // ── Keyboard shortcuts ──
     const onKey = (e: KeyboardEvent) => {

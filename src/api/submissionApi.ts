@@ -50,6 +50,7 @@ export interface SubmissionSummary {
   submittedAt: string;
   /** True on the best-scoring SUBMIT — the one that counts toward the result. */
   counted: boolean;
+  questionChanged?: boolean;
 }
 
 export interface SampleResult {
@@ -109,6 +110,7 @@ export interface SubmissionEvaluatorView {
   compileOutput: string | null;
   submittedAt: string;
   evaluatedAt: string | null;
+  questionChanged?: boolean;
   testCaseResults: EvaluatorTestCaseResult[];
 }
 
@@ -126,6 +128,7 @@ export interface ContestSubmissionRow {
   passedCount: number | null;
   totalCount: number | null;
   submittedAt: string;
+  questionChanged?: boolean;
 }
 
 export interface ContestSubmissionFilters {

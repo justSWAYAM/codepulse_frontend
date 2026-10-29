@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileCode2, RefreshCw } from 'lucide-react';
-import { Card, IconButton, Select, Skeleton } from '../ui';
+import { Card, IconButton, Select, Skeleton, Badge } from '../ui';
 import { EmptyState } from '../states/EmptyState';
 import { ErrorState } from '../states/ErrorState';
 import { VerdictBadge } from '../editor/VerdictBadge';
@@ -178,7 +178,14 @@ export const ContestSubmissionsPanel: React.FC<ContestSubmissionsPanelProps> = (
                             <div className="truncate text-[12px] text-fg-subtle">{r.candidateRollNumber ?? r.candidateEmail}</div>
                           </td>
                           <td className="max-w-56 px-4">
-                            <div className="truncate text-fg">{q ? `Q${qIndex + 1}. ${q.title}` : '—'}</div>
+                            <div className="truncate text-fg">
+                              {q ? `Q${qIndex + 1}. ${q.title}` : '—'}
+                              {r.questionChanged && (
+                                <Badge size="sm" tone="danger" className="ml-1.5" title="This question was swapped out (-5 pts penalty)">
+                                  Swapped (-5 pts)
+                                </Badge>
+                              )}
+                            </div>
                             <div className="text-[12px] text-fg-subtle">{r.type === 'SUBMIT' ? 'Submit' : 'Run'}</div>
                           </td>
                           <td className="px-4">

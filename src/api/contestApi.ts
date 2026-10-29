@@ -1,6 +1,6 @@
 import apiClient from '../lib/apiClient';
 
-// ── Types ──
+// -- Types --
 
 export type ContestStatus = 'DRAFT' | 'PUBLISHED' | 'ONGOING' | 'COMPLETED';
 export type ContestCandidateStatus = 'INVITED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -35,6 +35,8 @@ export interface ContestRecord {
   /** Module 9: results visible to candidates once an admin publishes them. */
   resultsPublished: boolean;
   resultsPublishedAt?: string | null;
+  randomizeQuestions: boolean;
+  questionsPerCandidate: number | null;
 }
 
 export interface ContestCandidate {
@@ -57,6 +59,8 @@ export interface CreateContestPayload {
   endTime: string;
   durationMinutes: number;
   allowedLanguages: string[];
+  randomizeQuestions?: boolean;
+  questionsPerCandidate?: number | null;
 }
 
 export interface UpdateContestPayload {
@@ -66,6 +70,8 @@ export interface UpdateContestPayload {
   endTime?: string;
   durationMinutes?: number;
   allowedLanguages?: string[];
+  randomizeQuestions?: boolean;
+  questionsPerCandidate?: number | null;
 }
 
 export interface AssignCandidatesPayload {
@@ -84,7 +90,41 @@ export interface UnassignCandidatesResult {
   notAssignedCount: number;
 }
 
-// ── API Functions ──
+export interface AssignedQuestionSummary {
+  questionId: string;
+  title: string;
+  orderIndex: number;
+  points: number;
+  difficulty: string;
+}
+
+export interface CandidateSessionAssignment {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  rollNumber?: string;
+  branch?: string;
+  division?: string;
+  batch?: string;
+  sessionId: string | null;
+  sessionStatus: 'NOT_YET_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'AUTO_SUBMITTED';
+  startedAt: string | null;
+  endsAt: string | null;
+  submittedAt: string | null;
+  faultCount: number;
+  questionChangeCount: number;
+  questionChangePenalty: number;
+  assignedQuestions: AssignedQuestionSummary[];
+  availablePoolQuestions: AssignedQuestionSummary[];
+}
+
+export interface ChangeSessionQuestionPayload {
+  currentQuestionId: string;
+  newQuestionId: string;
+  reason?: string;
+}
+
+// -- API Functions --
 
 export const contestApi = {
   list: async (params?: {
@@ -92,8 +132,6 @@ export const contestApi = {
     page?: number;
     size?: number;
   }): Promise<PagedData<ContestRecord>> => {
-    // The list page has no pager: ask for enough rows, newest first, instead of
-    // Spring's default of 20 in no particular order
     const { data } = await apiClient.get<ApiWrapper<PagedData<ContestRecord>>>('/contests', {
       params: { size: 200, sort: 'startTime,desc', ...params },
     });
@@ -117,6 +155,11 @@ export const contestApi = {
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/contests/${id}`);
+  },
+
+  reuse: async (id: string): Promise<ContestRecord> => {
+    const { data } = await apiClient.post<ApiWrapper<ContestRecord>>(`/contests/${id}/reuse`);
+    return data.data;
   },
 
   publish: async (id: string): Promise<ContestRecord> => {
@@ -148,6 +191,25 @@ export const contestApi = {
 
   getCandidates: async (id: string): Promise<ContestCandidate[]> => {
     const { data } = await apiClient.get<ApiWrapper<ContestCandidate[]>>(`/contests/${id}/candidates`);
+    return data.data;
+  },
+
+  getCandidateAssignments: async (contestId: string): Promise<CandidateSessionAssignment[]> => {
+    const { data } = await apiClient.get<ApiWrapper<CandidateSessionAssignment[]>>(
+      `/contests/${contestId}/session/candidate-assignments`
+    );
+    return data.data;
+  },
+
+  changeSessionQuestion: async (
+    contestId: string,
+    sessionId: string,
+    payload: ChangeSessionQuestionPayload
+  ): Promise<CandidateSessionAssignment> => {
+    const { data } = await apiClient.post<ApiWrapper<CandidateSessionAssignment>>(
+      `/contests/${contestId}/session/${sessionId}/change-question`,
+      payload
+    );
     return data.data;
   },
 };

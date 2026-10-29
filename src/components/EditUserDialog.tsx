@@ -10,6 +10,12 @@ import { Button, Dialog, Field, Input, Select } from './ui';
 const editUserSchema = z.object({
   role: z.enum(['CANDIDATE', 'EVALUATOR', 'ADMIN'] as const),
   isActive: z.boolean(),
+  password: z
+    .string()
+    .optional()
+    .refine((v) => !v || (v.length >= 8 && v.length <= 64), {
+      message: 'Password must be between 8 and 64 characters',
+    }),
   rollNumber: z.string().optional(),
   year: z.number().optional(),
   branch: z.enum(['CSE', 'CE', 'ECS', 'MECH', '']).optional(),
@@ -65,6 +71,9 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
     if (!editingUser) return;
 
     const payload: any = { role: data.role as UserRole, isActive: data.isActive };
+    if (data.password && data.password.trim() !== '') {
+      payload.password = data.password.trim();
+    }
     if (data.role === 'CANDIDATE') {
       if (data.rollNumber) payload.rollNumber = data.rollNumber;
       if (data.year) payload.year = data.year;
@@ -202,6 +211,10 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user: edit
               </Field>
             </div>
           )}
+
+          <Field label="Reset password" hint="Leave blank to keep current password." error={errors.password?.message}>
+            {(p) => <Input {...p} type="password" placeholder="••••••••" {...register('password')} />}
+          </Field>
 
           <div className="flex items-start gap-3 rounded-xl border border-line px-4 py-3">
             <input

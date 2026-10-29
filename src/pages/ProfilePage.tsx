@@ -222,7 +222,15 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="max-w-3xl space-y-6">
       <motion.div {...section(0)}>
-        <PageHeader eyebrow="Account" title="My profile" description="Manage your account information and password." />
+        <PageHeader
+          eyebrow="Account"
+          title="My profile"
+          description={
+            displayUser?.role === 'CANDIDATE'
+              ? 'View your account and academic information.'
+              : 'Manage your account information and password.'
+          }
+        />
       </motion.div>
 
       <motion.div {...section(1)}>
@@ -254,23 +262,37 @@ const ProfilePage: React.FC = () => {
         </Card>
       </motion.div>
 
-      <motion.div {...section(2)}>
-        <Card>
-          <CardHeader icon={<User className="size-4" />} title="Personal information" description="Update your display name." />
-          <CardBody>
-            <ProfileForm userName={displayUser?.fullName || ''} />
-          </CardBody>
-        </Card>
-      </motion.div>
+      {displayUser?.role === 'CANDIDATE' ? (
+        <motion.div {...section(2)}>
+          <Card className="border-warning/30 bg-warning/5">
+            <CardHeader
+              icon={<Lock className="size-4 text-warning" />}
+              title="Profile and credentials locked"
+              description="Your profile details (full name, email, roll number, academic allocation) and account credentials are managed exclusively by the administrator. Contact your administrator if you need any corrections or a password reset."
+            />
+          </Card>
+        </motion.div>
+      ) : (
+        <>
+          <motion.div {...section(2)}>
+            <Card>
+              <CardHeader icon={<User className="size-4" />} title="Personal information" description="Update your display name." />
+              <CardBody>
+                <ProfileForm userName={displayUser?.fullName || ''} />
+              </CardBody>
+            </Card>
+          </motion.div>
 
-      <motion.div {...section(3)}>
-        <Card>
-          <CardHeader icon={<Lock className="size-4" />} title="Change password" description="Use at least 8 characters." />
-          <CardBody>
-            <ChangePasswordForm />
-          </CardBody>
-        </Card>
-      </motion.div>
+          <motion.div {...section(3)}>
+            <Card>
+              <CardHeader icon={<Lock className="size-4" />} title="Change password" description="Use at least 8 characters." />
+              <CardBody>
+                <ChangePasswordForm />
+              </CardBody>
+            </Card>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 };

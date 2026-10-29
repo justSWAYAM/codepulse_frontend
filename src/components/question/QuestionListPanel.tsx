@@ -1,27 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
-import { FileCode2, LibraryBig, Lock, Plus } from 'lucide-react';
-import { Button, Card, Skeleton } from '../ui';
+import { FileCode2, LibraryBig, Lock, Plus, Shuffle } from 'lucide-react';
+import { Button, Card, Input, Skeleton } from '../ui';
 import { EmptyState } from '../states/EmptyState';
 import { QuestionCard } from './QuestionCard';
 import { DeleteQuestionDialog } from './DeleteQuestionDialog';
 import { useQuestions, useReorderQuestions, useDeleteQuestion } from '../../hooks/useQuestions';
+import { useContest, useUpdateContest } from '../../hooks/useContests';
 import type { UserRole } from '../../api/userApi';
-import type { ContestStatus } from '../../api/contestApi';
+import type { ContestDetailRecord, ContestRecord, ContestStatus } from '../../api/contestApi';
 import { LibraryPickerDialog } from '../library/LibraryPickerDialog';
+import { cn } from '../../lib/cn';
 
 interface QuestionListPanelProps {
   contestId: string;
   role: UserRole;
   contestStatus: ContestStatus;
+  contest?: ContestRecord | ContestDetailRecord;
 }
 
 export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
   contestId,
   role,
   contestStatus,
+  contest,
 }) => {
   const navigate = useNavigate();
   const isAdmin = role === 'ADMIN';
@@ -33,6 +37,41 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
   const { data: questions = [], isLoading } = useQuestions(contestId);
   const reorderMutation = useReorderQuestions(contestId);
   const deleteMutation = useDeleteQuestion(contestId);
+
+  const { data: fetchedContest } = useContest(contestId);
+  const currentContest = contest ?? fetchedContest;
+  const updateContestMutation = useUpdateContest(contestId);
+
+  const [randomizeEnabled, setRandomizeEnabled] = useState(false);
+  const [questionsPerCandidate, setQuestionsPerCandidate] = useState<number>(1);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (currentContest && !isInitialized) {
+      setRandomizeEnabled(Boolean(currentContest.randomizeQuestions));
+      setQuestionsPerCandidate(
+        currentContest.questionsPerCandidate ?? (questions.length > 0 ? questions.length : 1),
+      );
+      setIsInitialized(true);
+    }
+  }, [currentContest, isInitialized, questions.length]);
+
+  const hasChanges =
+    currentContest &&
+    (randomizeEnabled !== Boolean(currentContest.randomizeQuestions) ||
+      (randomizeEnabled && questionsPerCandidate !== currentContest.questionsPerCandidate));
+
+  const isCountTooHigh =
+    randomizeEnabled && questions.length > 0 && questionsPerCandidate > questions.length;
+  const isInvalid = randomizeEnabled && (questionsPerCandidate < 1 || isCountTooHigh);
+
+  const handleSaveRandomSettings = () => {
+    if (isInvalid) return;
+    updateContestMutation.mutate({
+      randomizeQuestions: randomizeEnabled,
+      questionsPerCandidate: randomizeEnabled ? Number(questionsPerCandidate) : null,
+    });
+  };
 
   const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; id: string; title: string }>({
     isOpen: false,
@@ -51,7 +90,7 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
     items.splice(result.destination.index, 0, reorderedItem);
 
     // Call API with new ordered list of IDs
-    const orderedIds = items.map(item => item.id);
+    const orderedIds = items.map((item) => item.id);
     reorderMutation.mutate({ orderedIds });
   };
 
@@ -147,6 +186,114 @@ export const QuestionListPanel: React.FC<QuestionListPanelProps> = ({
               {addButton}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Random Question Assignment Configuration (Admin, DRAFT) */}
+      {isAdmin && canEdit && (
+        <Card className="p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Shuffle className="size-4 text-primary" aria-hidden />
+                <span className="text-[14px] font-semibold text-fg">Random Question Assignment</span>
+                {randomizeEnabled && (
+                  <span className="rounded-md bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary-text">
+                    Active
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-fg-subtle">
+                Randomly assign a subset of questions from this pool to each candidate when their exam begins.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={randomizeEnabled}
+              onClick={() => setRandomizeEnabled(!randomizeEnabled)}
+              className={cn(
+                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                randomizeEnabled ? 'bg-primary' : 'bg-surface-3',
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  randomizeEnabled ? 'translate-x-5' : 'translate-x-0',
+                )}
+              />
+            </button>
+          </div>
+
+          {randomizeEnabled && (
+            <div className="mt-4 border-t border-line pt-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <label htmlFor="questions-per-candidate-input" className="text-xs font-medium text-fg">
+                    Questions per candidate
+                  </label>
+                  <p className="text-xs text-fg-subtle">
+                    Each candidate will receive <strong>{questionsPerCandidate}</strong> random question
+                    {questionsPerCandidate !== 1 ? 's' : ''} out of the <strong>{questions.length}</strong> available
+                    in the pool.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Input
+                    id="questions-per-candidate-input"
+                    type="number"
+                    min={1}
+                    max={questions.length}
+                    value={questionsPerCandidate}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setQuestionsPerCandidate(isNaN(val) ? 1 : Math.max(1, val));
+                    }}
+                    className="w-24 h-9 text-sm tabular font-medium text-center"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveRandomSettings}
+                    loading={updateContestMutation.isPending}
+                    disabled={!hasChanges || isInvalid}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+
+              {isCountTooHigh && (
+                <p className="text-xs text-danger-text font-medium">
+                  Cannot assign {questionsPerCandidate} questions: there are only {questions.length} questions in the contest pool.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!randomizeEnabled && hasChanges && (
+            <div className="mt-3 border-t border-line pt-3 flex justify-end">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleSaveRandomSettings}
+                loading={updateContestMutation.isPending}
+              >
+                Save disabled state
+              </Button>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Read-only Random Assignment Badge when locked or published */}
+      {currentContest?.randomizeQuestions && (locked || contestStatus === 'PUBLISHED') && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-primary/25 bg-primary-soft/30 px-3.5 py-2.5 text-xs text-fg">
+          <Shuffle className="size-4 text-primary shrink-0" aria-hidden />
+          <span>
+            <strong>Random Question Assignment Active:</strong> Each candidate receives{' '}
+            <strong>{currentContest.questionsPerCandidate}</strong> random questions drawn from this pool of {questions.length} questions.
+          </span>
         </div>
       )}
 

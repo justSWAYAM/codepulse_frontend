@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { ShieldAlert } from 'lucide-react';
 import { DataTable } from '../DataTable';
 import { Tooltip } from '../ui';
 import { ResultStatusBadge } from './ResultStatusBadge';
@@ -44,9 +45,20 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ questions, e
           const e = row.original;
           return (
             <div className="min-w-0">
-              <p className={e.status === 'ABSENT' ? 'truncate font-medium text-fg-subtle' : 'truncate font-medium text-fg'}>
+              <div className="flex items-center gap-2">
+                <p className={e.status === 'ABSENT' ? 'truncate font-medium text-fg-subtle' : 'truncate font-medium text-fg'}>
                 {e.candidateName || '—'}
-              </p>
+                </p>
+                {e.faultCount != null && e.faultCount > 0 && (
+                  <span
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning-soft px-1.5 py-0.5 text-[11px] font-medium text-warning-text"
+                    title={`${e.faultCount} violation(s) recorded`}
+                  >
+                    <ShieldAlert className="size-3" aria-hidden />
+                    {e.faultCount} {e.faultCount === 1 ? 'flag' : 'flags'}
+                  </span>
+                )}
+              </div>
               <p className="truncate text-[12px] text-fg-subtle">{e.candidateRollNumber || e.candidateEmail}</p>
             </div>
           );
@@ -78,11 +90,24 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ questions, e
         header: 'Total',
         accessorFn: (e) => e.totalScore,
         cell: ({ row }) => (
-          <span className="tabular whitespace-nowrap font-mono text-[13px] font-semibold text-fg">
-            {formatScore(row.original.totalScore)}
-            <span className="font-normal text-fg-subtle"> / {formatScore(row.original.maxScore)}</span>
-            {row.original.adjusted && <AdjustedDot />}
-          </span>
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="tabular font-mono text-[13px] font-semibold text-fg">
+              {formatScore(row.original.totalScore)}
+              <span className="font-normal text-fg-subtle"> / {formatScore(row.original.maxScore)}</span>
+              {row.original.adjusted && <AdjustedDot />}
+            </span>
+            {row.original.penaltyScore != null && row.original.penaltyScore > 0 && (
+              <Tooltip
+                content={`Question swapped ${row.original.questionChangeCount || 1}× (-${formatScore(
+                  row.original.penaltyScore,
+                )} pts penalty)`}
+              >
+                <span className="inline-flex items-center rounded border border-danger/30 bg-danger/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-danger">
+                  -{formatScore(row.original.penaltyScore)} pts
+                </span>
+              </Tooltip>
+            )}
+          </div>
         ),
       },
       {

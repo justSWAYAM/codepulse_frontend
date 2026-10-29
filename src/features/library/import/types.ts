@@ -44,7 +44,7 @@ export interface ImportQuestionsBody {
 
 export const IMPORT_TYPES: { value: QuestionType; label: string; hint: string }[] = [
   { value: 'MCQ', label: 'MCQ', hint: 'Questions with options and correct answer(s)' },
-  { value: 'DSA', label: 'DSA', hint: 'Coding problems (test cases added later)' },
+  { value: 'DSA', label: 'DSA', hint: 'Coding problems with 2 sample test cases' },
   { value: 'SQL', label: 'SQL', hint: 'Schema + question (test cases added later)' },
   { value: 'THEORY', label: 'Theory', hint: 'Written-answer questions' },
 ];

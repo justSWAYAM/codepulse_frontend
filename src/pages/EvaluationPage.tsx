@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ShieldAlert, RefreshCw } from 'lucide-react';
 import { ButtonLink, Card, Segmented, Skeleton } from '../components/ui';
 import { EmptyState } from '../components/states/EmptyState';
 import { ErrorState } from '../components/states/ErrorState';
@@ -80,6 +80,18 @@ const EvaluationPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-display text-2xl font-semibold tracking-[-0.03em] text-fg">{result.candidateName}</h1>
               <ResultStatusBadge status={result.status} reviewReasons={result.reviewReasons} showScored />
+              {result.faultCount != null && result.faultCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-2.5 py-0.5 text-[12px] font-medium text-warning-text">
+                  <ShieldAlert className="size-3.5 text-warning" aria-hidden />
+                  {result.faultCount} {result.faultCount === 1 ? 'fault' : 'faults'} recorded
+                </span>
+              )}
+              {result.questionChangeCount != null && result.questionChangeCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-soft px-2.5 py-0.5 text-[12px] font-medium text-danger">
+                  <RefreshCw className="size-3.5 text-danger" aria-hidden />
+                  {result.questionChangeCount} {result.questionChangeCount === 1 ? 'question' : 'questions'} swapped (-{formatScore(result.penaltyScore ?? 0)} pts)
+                </span>
+              )}
             </div>
             <p className="mt-1 text-[13px] text-fg-subtle">
               {[result.candidateRollNumber, result.candidateEmail, contest?.title].filter(Boolean).join(' · ')}
@@ -97,7 +109,7 @@ const EvaluationPage: React.FC = () => {
         </div>
 
         {result.sessionId && (
-          <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 rounded-2xl border border-line bg-surface px-4 py-3 text-[13px] sm:grid-cols-4">
+          <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 rounded-2xl border border-line bg-surface px-4 py-3 text-[13px] sm:grid-cols-5">
             <div>
               <dt className="text-fg-subtle">Started</dt>
               <dd className="tabular text-fg">{result.startedAt ? dateTime.format(new Date(result.startedAt)) : '—'}</dd>
@@ -116,6 +128,19 @@ const EvaluationPage: React.FC = () => {
             <div>
               <dt className="text-fg-subtle">Automatic score</dt>
               <dd className="tabular text-fg">{formatScore(result.autoScore)}</dd>
+            </div>
+            <div>
+              <dt className="text-fg-subtle">Faults / Flags</dt>
+              <dd className="tabular text-fg">
+                {result.faultCount != null && result.faultCount > 0 ? (
+                  <span className="inline-flex items-center gap-1 font-medium text-warning-text">
+                    <ShieldAlert className="size-3.5 text-warning" aria-hidden />
+                    {result.faultCount} {result.faultCount === 1 ? 'fault' : 'faults'}
+                  </span>
+                ) : (
+                  <span className="text-fg-subtle">0 (Clean)</span>
+                )}
+              </dd>
             </div>
           </dl>
         )}

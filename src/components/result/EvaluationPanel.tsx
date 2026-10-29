@@ -62,9 +62,9 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({ contestId, can
     : undefined;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid gap-5 xl:grid-cols-12">
       {/* Code */}
-      <section aria-label="Counted submission" className="min-w-0 space-y-3">
+      <section aria-label="Counted submission" className="min-w-0 space-y-3 xl:col-span-8">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-fg-muted">
           <VerdictBadge status={counted.status} size="md" />
           <span>{languageLabel(counted.language)}</span>
@@ -83,7 +83,7 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({ contestId, can
           </Card>
         ) : data ? (
           <>
-            <div data-theme="dark" className="h-80 overflow-hidden rounded-2xl border border-line bg-editor-bg xl:h-[28rem]">
+            <div className="h-80 overflow-hidden rounded-2xl border border-line bg-editor-bg xl:h-[34rem]">
               <Suspense fallback={<Skeleton className="h-full w-full" />}>
                 <MonacoEditor
                   value={data.sourceCode}
@@ -100,7 +100,7 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({ contestId, can
       </section>
 
       {/* Scoring */}
-      <div className="min-w-0 space-y-4">
+      <div className="min-w-0 space-y-4 xl:col-span-4">
         <ScoreOverrideForm
           contestId={contestId}
           candidateId={candidateId}
@@ -114,7 +114,7 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({ contestId, can
             <h3 id="tests-heading" className="mb-2 font-display text-[14px] font-semibold tracking-[-0.015em] text-fg">
               Test results <span className="tabular font-sans font-normal text-fg-subtle">({data.testCaseResults.length})</span>
             </h3>
-            <EvaluatorTestResults results={data.testCaseResults} />
+            <EvaluatorTestResults results={data.testCaseResults} compact />
           </section>
         )}
       </div>

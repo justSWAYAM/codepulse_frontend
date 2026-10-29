@@ -56,6 +56,7 @@ export interface CreateUserPayload {
 }
 
 export interface UpdateUserPayload {
+  password?: string;
   fullName?: string;
   role?: UserRole;
   isActive?: boolean;
